@@ -1,0 +1,13 @@
+
+<Files "bitrixAutomation.php">
+  # Bloqueia requisições diretas de navegador comuns
+  SetEnvIfNoCase User-Agent "Mozilla" bad_bot
+  SetEnvIfNoCase User-Agent "Chrome" bad_bot
+  SetEnvIfNoCase User-Agent "Safari" bad_bot
+  SetEnvIfNoCase User-Agent "Firefox" bad_bot
+  SetEnvIfNoCase User-Agent "Edge" bad_bot
+
+  Order Allow,Deny
+  Allow from all
+  Deny from env=bad_bot
+</Files>
