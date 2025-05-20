@@ -75,15 +75,26 @@ class BitrixHelper
         ]);
     }
 
-    private function call($method, $params)
-    {
-        $url = $this->webhook . '/' . $method;
+ private function call($method, $params)
+{
+    file_put_contents('log_debug_exec.txt', "Executando método: $method" . PHP_EOL, FILE_APPEND);
+    $url = $this->webhook . '/' . $method;
+
+    if ($method === 'crm.contact.get') {
+        $url .= '?' . http_build_query($params);
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    } else {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
-        $result = curl_exec($ch);
-        curl_close($ch);
-
-        return json_decode($result, true);
     }
+
+    $result = curl_exec($ch);
+    curl_close($ch);
+
+    file_put_contents('log_curl_raw.txt', "[$method] => " . json_encode($params) . PHP_EOL . $result . PHP_EOL, FILE_APPEND);
+
+    return json_decode($result, true);
+}
 }
