@@ -71,17 +71,17 @@ function criarNegocio($dados)
     $spa = $dados['spa'];
     unset($dados['spa']);
 
-    $params = [
-        'entityTypeId' => $spa
-    ];
+    $fields = formatarCampos($dados);
 
+    // categoryId vai dentro de fields
     if (isset($dados['CATEGORY_ID'])) {
-        $params['categoryId'] = $dados['CATEGORY_ID'];
-        unset($dados['CATEGORY_ID']);
+        $fields['categoryId'] = $dados['CATEGORY_ID'];
     }
 
-    $fields = formatarCampos($dados);
-    $params['fields'] = $fields;
+    $params = [
+        'entityTypeId' => $spa,
+        'fields' => $fields
+    ];
 
     $postData = http_build_query($params);
 
