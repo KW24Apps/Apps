@@ -84,12 +84,17 @@ function criarNegocio($dados)
     ];
 
     $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
+
     $resposta = curl_exec($ch);
+    $curlErro = curl_error($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    $log .= "URL usada: $url\nDados enviados: " . print_r($params, true) . "\nResposta: $resposta\n";
+    $log .= "URL usada: $url\nDados enviados: " . json_encode($params) . "\nHTTP Code: $httpCode\nErro cURL: $curlErro\nResposta: $resposta\n";
 
     $respostaJson = json_decode($resposta, true);
 
