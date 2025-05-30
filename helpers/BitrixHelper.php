@@ -71,27 +71,27 @@ function criarNegocio($dados)
     $spa = $dados['spa'];
     unset($dados['spa']);
 
+    $params = [
+        'entityTypeId' => $spa
+    ];
+
+    // categoryId fica fora de fields
     if (isset($dados['CATEGORY_ID'])) {
-        $dados['categoryId'] = $dados['CATEGORY_ID'];
+        $params['categoryId'] = $dados['CATEGORY_ID'];
         unset($dados['CATEGORY_ID']);
     }
 
     $fields = formatarCampos($dados);
-
-    $params = [
-        'entityTypeId' => $spa,
-        'fields' => $fields
-    ];
+    $params['fields'] = $fields;
 
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
-    
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-    
+
     $resposta = curl_exec($ch);
     $curlErro = curl_error($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
