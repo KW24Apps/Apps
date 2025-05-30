@@ -46,22 +46,28 @@ function buscarWebhook($clienteId, $tipo)
 // Função que cria o negócio (card) no Bitrix24 usando a API
 function criarNegocio($dados)
 {
-    // Log de entrada para depuração
-    file_put_contents(__DIR__ . '/../logs/criar_negocio.log', "==== NOVA REQUISIÇÃO ====\nEntrada: " . json_encode($dados) . "\n", FILE_APPEND);
+    $log = "==== NOVA REQUISIÇÃO ====\nEntrada: " . json_encode($dados) . "\n";
 
     if (!isset($dados['spa']) || empty($dados['spa'])) {
-        return ['erro' => 'SPA (entidade) não informada.'];
+        return [
+            'erro' => 'SPA (entidade) não informada.',
+            'debug' => $log
+        ];
     }
 
-    $cliente = $_GET['cliente'] ?? ''; // Identificador do cliente na URL
+    $cliente = $_GET['cliente'] ?? '';
     $webhookBase = buscarWebhook($cliente, 'deal');
 
     if (!$webhookBase) {
-        return ['erro' => 'Cliente não autorizado ou webhook não cadastrado.'];
+        return [
+            'erro' => 'Cliente não autorizado ou webhook não cadastrado.',
+            'cliente' => $cliente,
+            'debug' => $log
+        ];
     }
 
     $url = $webhookBase . '/crm.item.add.json';
-    
+
     $spa = $dados['spa'];
     unset($dados['spa']);
 
@@ -81,14 +87,9 @@ function criarNegocio($dados)
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     $resposta = curl_exec($ch);
-
-    // Log da URL e dos dados enviados
-    file_put_contents(__DIR__ . '/../logs/criar_negocio.log', "URL usada: $url\nDados enviados: " . print_r($params, true) . "\n", FILE_APPEND);
-
     curl_close($ch);
 
-    // Log da resposta do Bitrix
-    file_put_contents(__DIR__ . '/../logs/criar_negocio.log', "Resposta: " . $resposta . "\n", FILE_APPEND);
+    $log .= "URL usada: $url\nDados enviados: " . print_r($params, true) . "\nResposta: $resposta\n";
 
     $respostaJson = json_decode($resposta, true);
 
@@ -96,12 +97,16 @@ function criarNegocio($dados)
         return [
             'sucesso' => true,
             'id' => $respostaJson['result']['item']['id'],
-            'camposEnviados' => $fields
+            'urlUsada' => $url,
+            'camposEnviados' => $fields,
+            'debug' => $log
         ];
     } else {
         return [
             'erro' => 'Erro ao criar negócio',
-            'respostaCompleta' => $respostaJson
+            'urlUsada' => $url,
+            'respostaCompleta' => $respostaJson,
+            'debug' => $log
         ];
     }
 }
