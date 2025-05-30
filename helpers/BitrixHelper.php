@@ -61,7 +61,7 @@ function criarNegocio($dados)
     }
 
     $url = $webhookBase . '/crm.item.add.json';
-
+    
     $spa = $dados['spa'];
     unset($dados['spa']);
 
@@ -81,6 +81,10 @@ function criarNegocio($dados)
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     $resposta = curl_exec($ch);
+
+    // Log da URL e dos dados enviados
+    file_put_contents(__DIR__ . '/../logs/criar_negocio.log', "URL usada: $url\nDados enviados: " . print_r($params, true) . "\n", FILE_APPEND);
+
     curl_close($ch);
 
     // Log da resposta do Bitrix
