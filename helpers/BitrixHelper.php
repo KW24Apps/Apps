@@ -13,8 +13,8 @@ function formatarCampos($dados)
     return $formatado;
 }
 
-// Função que busca o webhook base do cliente no banco usando o domínio do Referer
-function buscarWebhook($referer, $tipo)
+// Função que busca o webhook base do cliente no banco usando o ID do cliente
+function buscarWebhook($clienteId, $tipo)
 {
     $host = 'localhost';
     $dbname = 'kw24co49_api_kwconfig';
@@ -25,10 +25,8 @@ function buscarWebhook($referer, $tipo)
         $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $usuario, $senha);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        $dominio = parse_url($referer, PHP_URL_HOST);
-
-        $stmt = $pdo->prepare("SELECT webhook_{$tipo} FROM clientes_api WHERE origem = :dominio LIMIT 1");
-        $stmt->bindParam(':dominio', $dominio);
+        $stmt = $pdo->prepare("SELECT webhook_{$tipo} FROM clientes_api WHERE origem = :cliente LIMIT 1");
+        $stmt->bindParam(':cliente', $clienteId);
         $stmt->execute();
         $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -40,6 +38,7 @@ function buscarWebhook($referer, $tipo)
     }
 }
 
+
 // Função que cria o negócio (card) no Bitrix24 usando a API
 function criarNegocio($dados)
 {
@@ -49,8 +48,9 @@ function criarNegocio($dados)
         return ['erro' => 'SPA (entidade) não informada.'];
     }
 
-    $referer = $_SERVER['HTTP_REFERER'] ?? '';
-    $webhookBase = buscarWebhook($referer, 'deal');
+        $cliente = $_GET['cliente'] ?? '';
+        $webhookBase = buscarWebhook($cliente, 'deal');
+
 
     if (!$webhookBase) {
         return ['erro' => 'Cliente não autorizado ou webhook não cadastrado.'];

@@ -5,15 +5,6 @@ error_reporting(E_ALL);                                // Captura todos os tipos
 ini_set('log_errors', 1);                              // Ativa o log
 ini_set('error_log', __DIR__ . '/logs/erros.log');     // Define o local do log
 
-// Chave esperada
-$chaveCorreta = 'C93fLq7RxKZVp28HswuAYMe1';
-
-// Verifica a chave na URL
-if (!isset($_GET['key']) || $_GET['key'] !== $chaveCorreta) {
-    http_response_code(403);
-    echo json_encode(['erro' => 'Chave inválida']);
-    exit;
-}
 // Captura a URI
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
