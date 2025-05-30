@@ -47,13 +47,13 @@ function buscarWebhook($clienteId, $tipo)
 function criarNegocio($dados)
 {
     // Log de entrada para depuração
-    file_put_contents(__DIR__ . '/../logs/criar_negocio.log', "Entrada: " . json_encode($dados) . "\n", FILE_APPEND);
+    file_put_contents(__DIR__ . '/../logs/criar_negocio.log', "==== NOVA REQUISIÇÃO ====\nEntrada: " . json_encode($dados) . "\n", FILE_APPEND);
 
     if (!isset($dados['spa']) || empty($dados['spa'])) {
         return ['erro' => 'SPA (entidade) não informada.'];
     }
 
-    $cliente = $_GET['cliente'] ?? '';
+    $cliente = $_GET['cliente'] ?? ''; // Identificador do cliente na URL
     $webhookBase = buscarWebhook($cliente, 'deal');
 
     if (!$webhookBase) {
@@ -65,21 +65,12 @@ function criarNegocio($dados)
     $spa = $dados['spa'];
     unset($dados['spa']);
 
-    $fields = [];
-
     if (isset($dados['CATEGORY_ID'])) {
-        $fields['categoryId'] = $dados['CATEGORY_ID'];
+        $dados['categoryId'] = $dados['CATEGORY_ID'];
         unset($dados['CATEGORY_ID']);
     }
 
-    foreach ($dados as $campo => $valor) {
-        if (strpos($campo, 'UF_CRM_') === 0) {
-            $chaveConvertida = lcfirst(str_replace('_', '', str_replace('UF_CRM_', 'ufCrm', $campo)));
-            $fields[$chaveConvertida] = $valor;
-        } else {
-            $fields[$campo] = $valor;
-        }
-    }
+    $fields = formatarCampos($dados);
 
     $params = [
         'entityTypeId' => $spa,
