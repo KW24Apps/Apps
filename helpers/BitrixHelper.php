@@ -46,6 +46,9 @@ function buscarWebhook($clienteId, $tipo)
 // Função que cria o negócio (card) no Bitrix24 usando a API
 function criarNegocio($dados)
 {
+    // Log de entrada para depuração
+    file_put_contents(__DIR__ . '/../logs/criar_negocio.log', "Entrada: " . json_encode($dados) . "\n", FILE_APPEND);
+
     if (!isset($dados['spa']) || empty($dados['spa'])) {
         return ['erro' => 'SPA (entidade) não informada.'];
     }
@@ -62,16 +65,25 @@ function criarNegocio($dados)
     $spa = $dados['spa'];
     unset($dados['spa']);
 
+    $fields = [];
+
     if (isset($dados['CATEGORY_ID'])) {
-        $dados['categoryId'] = $dados['CATEGORY_ID'];
+        $fields['categoryId'] = $dados['CATEGORY_ID'];
         unset($dados['CATEGORY_ID']);
     }
 
-    $camposFormatados = formatarCampos($dados);
+    foreach ($dados as $campo => $valor) {
+        if (strpos($campo, 'UF_CRM_') === 0) {
+            $chaveConvertida = lcfirst(str_replace('_', '', str_replace('UF_CRM_', 'ufCrm', $campo)));
+            $fields[$chaveConvertida] = $valor;
+        } else {
+            $fields[$campo] = $valor;
+        }
+    }
 
     $params = [
         'entityTypeId' => $spa,
-        'fields' => $camposFormatados
+        'fields' => $fields
     ];
 
     $ch = curl_init($url);
@@ -80,13 +92,16 @@ function criarNegocio($dados)
     $resposta = curl_exec($ch);
     curl_close($ch);
 
+    // Log da resposta do Bitrix
+    file_put_contents(__DIR__ . '/../logs/criar_negocio.log', "Resposta: " . $resposta . "\n", FILE_APPEND);
+
     $respostaJson = json_decode($resposta, true);
 
     if (isset($respostaJson['result']['item']['id'])) {
         return [
             'sucesso' => true,
             'id' => $respostaJson['result']['item']['id'],
-            'camposEnviados' => $camposFormatados
+            'camposEnviados' => $fields
         ];
     } else {
         return [
