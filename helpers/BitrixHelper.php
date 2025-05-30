@@ -71,11 +71,16 @@ function criarNegocio($dados)
     $spa = $dados['spa'];
     unset($dados['spa']);
 
+    // Isola e remove CATEGORY_ID antes de formatar os campos
+    if (isset($dados['CATEGORY_ID'])) {
+        $categoryId = $dados['CATEGORY_ID'];
+        unset($dados['CATEGORY_ID']);
+    }
+
     $fields = formatarCampos($dados);
 
-    // categoryId vai dentro de fields
-    if (isset($dados['CATEGORY_ID'])) {
-        $fields['categoryId'] = $dados['CATEGORY_ID'];
+    if (isset($categoryId)) {
+        $fields['categoryId'] = $categoryId;
     }
 
     $params = [
