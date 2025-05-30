@@ -71,7 +71,6 @@ function criarNegocio($dados)
     $spa = $dados['spa'];
     unset($dados['spa']);
 
-    // Isola e remove CATEGORY_ID antes de formatar os campos
     if (isset($dados['CATEGORY_ID'])) {
         $categoryId = $dados['CATEGORY_ID'];
         unset($dados['CATEGORY_ID']);
@@ -88,12 +87,13 @@ function criarNegocio($dados)
         'fields' => $fields
     ];
 
-    $postData = http_build_query($params);
+    $jsonData = json_encode($params);
 
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 
@@ -102,7 +102,7 @@ function criarNegocio($dados)
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    $log .= "URL usada: $url\nDados enviados: $postData\nHTTP Code: $httpCode\nErro cURL: $curlErro\nResposta: $resposta\n";
+    $log .= "URL usada: $url\nDados enviados: $jsonData\nHTTP Code: $httpCode\nErro cURL: $curlErro\nResposta: $resposta\n";
 
     $respostaJson = json_decode($resposta, true);
 
