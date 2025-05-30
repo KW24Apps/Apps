@@ -1,16 +1,21 @@
 <?php
 
-// Função para formatar os campos conforme esperado pelo Bitrix
+// Função para formatar os campos conforme esperado pelo Bitrix (SPA)
 function formatarCampos($dados)
 {
-    $formatado = [];
+    $fields = [];
 
     foreach ($dados as $campo => $valor) {
-        $campoFormatado = strtoupper($campo);
-        $formatado[$campoFormatado] = $valor;
+        if (strpos($campo, 'UF_CRM_') === 0) {
+            // Transforma UF_CRM_123_ABC em ufCrm123ABC
+            $chaveConvertida = lcfirst(str_replace('_', '', str_replace('UF_CRM_', 'ufCrm_', $campo)));
+            $fields[$chaveConvertida] = $valor;
+        } else {
+            $fields[$campo] = $valor;
+        }
     }
 
-    return $formatado;
+    return $fields;
 }
 
 // Função que busca o webhook base do cliente no banco usando o ID do cliente
@@ -19,7 +24,7 @@ function buscarWebhook($clienteId, $tipo)
     $host = 'localhost';
     $dbname = 'kw24co49_api_kwconfig';
     $usuario = 'kw24co49_kw24';
-    $senha = 'BlFOyf%X}#jXwrR-vi'; // 🔐 Substitua pela senha real do banco
+    $senha = 'BlFOyf%X}#jXwrR-vi';
 
     try {
         $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $usuario, $senha);
@@ -38,19 +43,15 @@ function buscarWebhook($clienteId, $tipo)
     }
 }
 
-
 // Função que cria o negócio (card) no Bitrix24 usando a API
 function criarNegocio($dados)
 {
-    file_put_contents(__DIR__ . '/../logs/teste_referer.log', "Referer recebido: " . ($_SERVER['HTTP_REFERER'] ?? 'vazio') . "\n", FILE_APPEND);
-
     if (!isset($dados['spa']) || empty($dados['spa'])) {
         return ['erro' => 'SPA (entidade) não informada.'];
     }
 
-        $cliente = $_GET['cliente'] ?? '';
-        $webhookBase = buscarWebhook($cliente, 'deal');
-
+    $cliente = $_GET['cliente'] ?? '';
+    $webhookBase = buscarWebhook($cliente, 'deal');
 
     if (!$webhookBase) {
         return ['erro' => 'Cliente não autorizado ou webhook não cadastrado.'];
