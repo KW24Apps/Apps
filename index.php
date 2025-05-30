@@ -14,7 +14,6 @@ if (!isset($_GET['key']) || $_GET['key'] !== $chaveCorreta) {
     echo json_encode(['erro' => 'Chave inválida']);
     exit;
 }
-echo '🚀 Chegamos no index da pasta Apps';
 // Captura a URI
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 

@@ -43,6 +43,8 @@ function buscarWebhook($referer, $tipo)
 // Função que cria o negócio (card) no Bitrix24 usando a API
 function criarNegocio($dados)
 {
+    file_put_contents(__DIR__ . '/../logs/teste_referer.log', "Referer recebido: " . ($_SERVER['HTTP_REFERER'] ?? 'vazio') . "\n", FILE_APPEND);
+
     if (!isset($dados['spa']) || empty($dados['spa'])) {
         return ['erro' => 'SPA (entidade) não informada.'];
     }
