@@ -99,7 +99,7 @@ class BitrixHelper
             foreach ($extras as $campo) {
                 $campo = trim($campo);
                 if (strpos($campo, 'UF_CRM_') === 0) {
-                    $convertido = strtolower(str_replace('UF_CRM_', 'ufCrm', $campo));
+                    $convertido = 'ufCrm' . substr($campo, 7);
                     if (!in_array($convertido, $select)) {
                         $select[] = $convertido;
                     }
@@ -130,7 +130,7 @@ class BitrixHelper
             $filtrado = ['id' => $item['id'] ?? null];
 
             foreach ($campos as $campo) {
-                $campoConvertido = strtolower(str_replace('UF_CRM_', 'ufCrm', $campo));
+                $campoConvertido = 'ufCrm' . substr($campo, 7);
                 if (isset($item[$campoConvertido])) {
                     $filtrado[$campoConvertido] = $item[$campoConvertido];
                 }
