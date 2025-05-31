@@ -5,16 +5,15 @@ error_reporting(E_ALL);                                // Captura todos os tipos
 ini_set('log_errors', 1);                              // Ativa o log
 ini_set('error_log', __DIR__ . '/logs/erros.log');     // Define o local do log
 
-// Captura a URI
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+// Captura a URI e limpa barras
+$uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 
-// Decide qual grupo de rotas carregar
-
-if (strpos($uri, '/criar') === 0) {
+// Direcionamento com base no prefixo
+if (strpos($uri, 'deal') === 0) {
     require_once 'routers/dealRoutes.php';
-} elseif (strpos($uri, '/apps/chat/') === 0) {
-    require_once 'routers/chatRoutes.php';
+} elseif (strpos($uri, 'clicksign') === 0) {
+    require_once 'routers/clicksignRoutes.php';
 } else {
     http_response_code(404);
-    echo json_encode(['erro' => 'Rota não reconhecida']);
-} 
+    echo json_encode(['erro' => 'Projeto não reconhecido']);
+}
