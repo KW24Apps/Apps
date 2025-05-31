@@ -92,7 +92,7 @@ class BitrixHelper
             return ['erro' => 'ID do negócio (deal) não informado.'];
         }
 
-        $select = ['id', 'title'];
+        $select = ['id'];
 
         if (!empty($filtros['campos'])) {
             $extras = explode(',', $filtros['campos']);
@@ -100,7 +100,9 @@ class BitrixHelper
                 $campo = trim($campo);
                 if (strpos($campo, 'UF_CRM_') === 0) {
                     $convertido = strtolower(str_replace('UF_CRM_', 'ufCrm', $campo));
-                    $select[] = $convertido;
+                    if (!in_array($convertido, $select)) {
+                        $select[] = $convertido;
+                    }
                 }
             }
         }
