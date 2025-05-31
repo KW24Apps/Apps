@@ -85,7 +85,7 @@ class BitrixHelper
     public static function editarNegociacao($dados = [])
     {
         $dados = $_POST ?: $_GET;
-        $cliente = $_GET['cliente'] ?? '';
+        $cliente = $dados['cliente'] ?? '';
         $spa = $dados['spa'] ?? null;
         $dealId = $dados['deal'] ?? null;
 
