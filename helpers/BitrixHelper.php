@@ -1,118 +1,124 @@
 <?php
 
-// Formata os campos conforme o padrão esperado pelo Bitrix (camelCase)
-function formatarCampos($dados)
+class BitrixHelper
 {
-    $fields = [];
+    // Formata os campos conforme o padrão esperado pelo Bitrix (camelCase)
+    public static function formatarCampos($dados)
+    {
+        $fields = [];
 
-    foreach ($dados as $campo => $valor) {
-        if (strpos($campo, 'UF_CRM_') === 0) {
-            $chaveConvertida = lcfirst(str_replace('_', '', str_replace('UF_CRM_', 'ufCrm_', $campo)));
-            $fields[$chaveConvertida] = $valor;
-        } else {
-            $fields[$campo] = $valor;
+        foreach ($dados as $campo => $valor) {
+            if (strpos($campo, 'UF_CRM_') === 0) {
+                $chaveConvertida = lcfirst(str_replace('_', '', str_replace('UF_CRM_', 'ufCrm_', $campo)));
+                $fields[$chaveConvertida] = $valor;
+            } else {
+                $fields[$campo] = $valor;
+            }
+        }
+
+        return $fields;
+    }
+
+    // Busca o webhook no banco de dados com segurança
+    public static function buscarWebhook($clienteId, $tipo)
+    {
+        $host = 'localhost';
+        $dbname = 'kw24co49_api_kwconfig';
+        $usuario = 'kw24co49_kw24';
+        $senha = 'BlFOyf%X}#jXwrR-vi';
+
+        try {
+            $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $usuario, $senha);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $stmt = $pdo->prepare("SELECT webhook_{$tipo} FROM clientes_api WHERE origem = :cliente LIMIT 1");
+            $stmt->bindParam(':cliente', $clienteId);
+            $stmt->execute();
+            $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $resultado ? trim($resultado["webhook_{$tipo}"]) : null;
+        } catch (PDOException $e) {
+            error_log("Erro DB: " . $e->getMessage());
+            return null;
         }
     }
 
-    return $fields;
-}
+    // Cria um negócio no Bitrix24 via API
+    public static function criarNegocio($dados)
+    {
+        $cliente = $_GET['cliente'] ?? '';
+        $spa = $dados['spa'] ?? null;
+        $categoryId = $dados['CATEGORY_ID'] ?? null;
 
-// Busca o webhook no banco de dados com segurança
-function buscarWebhook($clienteId, $tipo)
-{
-    $host = 'localhost';
-    $dbname = 'kw24co49_api_kwconfig';
-    $usuario = 'kw24co49_kw24';
-    $senha = 'BlFOyf%X}#jXwrR-vi';
+        unset($dados['cliente'], $dados['spa'], $dados['CATEGORY_ID']);
 
-    try {
-        $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $usuario, $senha);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $fields = self::formatarCampos($dados);
+        if ($categoryId) {
+            $fields['categoryId'] = $categoryId;
+        }
 
-        $stmt = $pdo->prepare("SELECT webhook_{$tipo} FROM clientes_api WHERE origem = :cliente LIMIT 1");
-        $stmt->bindParam(':cliente', $clienteId);
-        $stmt->execute();
-        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        return $resultado ? trim($resultado["webhook_{$tipo}"]) : null;
-
-    } catch (PDOException $e) {
-        error_log("Erro DB: " . $e->getMessage());
-        return null;
-    }
-}
-
-// Cria um negócio no Bitrix24 via API
-function criarNegocio($dados)
-{
-    $log = "==== NOVA REQUISIÇÃO ====\nEntrada: " . json_encode($dados) . "\n";
-
-    if (!isset($dados['spa']) || empty($dados['spa'])) {
-        return ['erro' => 'SPA (entidade) não informada.', 'debug' => $log];
-    }
-
-    $cliente = $_GET['cliente'] ?? '';
-    unset($dados['cliente']);
-
-    $webhookBase = buscarWebhook($cliente, 'deal');
-    $log .= "Webhook base recebido: [$webhookBase]\n";
-
-    if (!$webhookBase) {
-        return ['erro' => 'Cliente não autorizado ou webhook não cadastrado.', 'cliente' => $cliente, 'debug' => $log];
-    }
-
-    $url = $webhookBase . '/crm.item.add.json';
-
-    $spa = $dados['spa'];
-    unset($dados['spa']);
-
-    if (isset($dados['CATEGORY_ID'])) {
-        $categoryId = $dados['CATEGORY_ID'];
-        unset($dados['CATEGORY_ID']);
-    }
-
-    $fields = formatarCampos($dados);
-    if (isset($categoryId)) {
-        $fields['categoryId'] = $categoryId;
-    }
-
-    $params = [
-        'entityTypeId' => $spa,
-        'fields' => $fields
-    ];
-
-    $postData = http_build_query($params);
-
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-
-    $resposta = curl_exec($ch);
-    $curlErro = curl_error($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    $log .= "URL usada: $url\nDados enviados: $postData\nHTTP Code: $httpCode\nErro cURL: $curlErro\nResposta: $resposta\n";
-
-    $respostaJson = json_decode($resposta, true);
-
-    if (isset($respostaJson['result']['item']['id'])) {
-        return [
-            'sucesso' => true,
-            'id' => $respostaJson['result']['item']['id'],
-            'urlUsada' => $url,
-            'camposEnviados' => $fields,
-            'debug' => $log
+        $params = [
+            'entityTypeId' => $spa,
+            'fields' => $fields
         ];
-    } else {
-        return [
-            'erro' => 'Erro ao criar negócio',
-            'urlUsada' => $url,
-            'respostaCompleta' => $respostaJson,
-            'debug' => $log
+
+        return self::chamarApi('crm.item.add', $params, [
+            'cliente' => $cliente,
+            'tipo' => 'deal',
+            'log' => true
+        ]);
+    }
+
+    // Consulta um negócio no Bitrix24 via API
+    public static function consultarNegociacao($filtros)
+    {
+        $cliente = $filtros['cliente'] ?? '';
+        $params = [
+            'entityTypeId' => $filtros['spa'] ?? 0,
+            'filter' => [
+                'ufCrm_identificador' => $filtros['cliente'] ?? ''
+            ],
+            'select' => ['id', 'title', 'ufCrm_*']
         ];
+
+        return self::chamarApi('crm.item.list', $params, [
+            'cliente' => $cliente,
+            'tipo' => 'deal',
+            'log' => false
+        ]);
+    }
+
+    // Envia requisição para API Bitrix com endpoint e parâmetros fornecidos
+    public static function chamarApi($endpoint, $params, $opcoes = [])
+    {
+        $cliente = $opcoes['cliente'] ?? ($_GET['cliente'] ?? '');
+        $tipo = $opcoes['tipo'] ?? 'deal';
+        $logAtivo = $opcoes['log'] ?? false;
+
+        $webhookBase = self::buscarWebhook($cliente, $tipo);
+        $url = $webhookBase . '/' . $endpoint . '.json';
+        $postData = http_build_query($params);
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+        $resposta = curl_exec($ch);
+        $curlErro = curl_error($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $respostaJson = json_decode($resposta, true);
+
+        if ($logAtivo) {
+            $log = "==== CHAMADA API ====\n";
+            $log .= "Endpoint: $endpoint\nURL: $url\nDados: $postData\nHTTP: $httpCode\nErro: $curlErro\nResposta: $resposta\n";
+            file_put_contents(__DIR__ . '/logs/bitrix_api.log', $log, FILE_APPEND);
+        }
+
+        return $respostaJson;
     }
 }

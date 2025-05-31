@@ -6,10 +6,9 @@ class DealController
     {
         require_once __DIR__ . '/../helpers/BitrixHelper.php';
 
-       $dados = $_GET;
+        $dados = $_GET;
 
-
-        $resultado = criarNegocio($dados);
+        $resultado = BitrixHelper::criarNegocio($dados);
 
         header('Content-Type: application/json');
         echo json_encode($resultado);
@@ -17,7 +16,13 @@ class DealController
 
     public function consultar()
     {
-        echo json_encode(['mensagem' => 'Rota CONSULTAR acessada com sucesso']);
+        require_once __DIR__ . '/../helpers/BitrixHelper.php';
+
+        $filtros = $_GET;
+        $resultado = BitrixHelper::consultarNegociacao($filtros);
+
+        header('Content-Type: application/json');
+        echo json_encode($resultado);
     }
 
     public function editar()
