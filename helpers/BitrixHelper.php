@@ -62,16 +62,28 @@ class BitrixHelper
             'fields' => $fields
         ];
 
-        return self::chamarApi('crm.item.add', $params, [
+        $resultado = self::chamarApi('crm.item.add', $params, [
             'cliente' => $cliente,
             'tipo' => 'deal',
             'log' => true
         ]);
+
+        if (isset($resultado['result']['item']['id'])) {
+            return [
+                'success' => true,
+                'id' => $resultado['result']['item']['id']
+            ];
+        }
+
+        return [
+            'success' => false,
+            'error' => $resultado['error_description'] ?? 'Erro desconhecido ao criar negócio.'
+        ];
     }
 
     // Consulta uma negociação específica no Bitrix24 via ID
     public static function consultarNegociacao($filtros)
-{
+    {
         $cliente = $filtros['cliente'] ?? '';
         $spa = $filtros['spa'] ?? 0;
         $dealId = $filtros['deal'] ?? null;
@@ -90,23 +102,43 @@ class BitrixHelper
                     $convertido = strtolower(str_replace('UF_CRM_', 'ufCrm', $campo));
                     $select[] = $convertido;
                 }
+            }
         }
+
+        $params = [
+            'entityTypeId' => $spa,
+            'id' => (int)$dealId,
+            'select' => $select
+        ];
+
+        $resultado = self::chamarApi('crm.item.get', $params, [
+            'cliente' => $cliente,
+            'tipo' => 'deal',
+            'log' => false
+        ]);
+
+        if (!isset($resultado['result']['item'])) {
+            return $resultado;
+        }
+
+        $item = $resultado['result']['item'];
+
+        if (!empty($filtros['campos'])) {
+            $campos = explode(',', $filtros['campos']);
+            $filtrado = ['id' => $item['id'] ?? null];
+
+            foreach ($campos as $campo) {
+                $campoConvertido = strtolower(str_replace('UF_CRM_', 'ufCrm', $campo));
+                if (isset($item[$campoConvertido])) {
+                    $filtrado[$campoConvertido] = $item[$campoConvertido];
+                }
+            }
+
+            return ['result' => ['item' => $filtrado]];
+        }
+
+        return $resultado;
     }
-
-    $params = [
-        'entityTypeId' => $spa,
-        'id' => (int)$dealId,
-        'select' => $select
-    ];
-
-    return self::chamarApi('crm.item.get', $params, [
-        'cliente' => $cliente,
-        'tipo' => 'deal',
-        'log' => false
-    ]);
-}
-
-
 
     // Envia requisição para API Bitrix com endpoint e parâmetros fornecidos
     public static function chamarApi($endpoint, $params, $opcoes = [])
