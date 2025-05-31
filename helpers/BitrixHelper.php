@@ -69,27 +69,27 @@ class BitrixHelper
         ]);
     }
 
-// Consulta uma negociação específica no Bitrix24 via ID
-public static function consultarNegociacao($filtros)
+    // Consulta uma negociação específica no Bitrix24 via ID
+    public static function consultarNegociacao($filtros)
 {
-    $cliente = $filtros['cliente'] ?? '';
-    $spa = $filtros['spa'] ?? 0;
-    $dealId = $filtros['deal'] ?? null;
+        $cliente = $filtros['cliente'] ?? '';
+        $spa = $filtros['spa'] ?? 0;
+        $dealId = $filtros['deal'] ?? null;
 
-    if (!$dealId) {
-        return ['erro' => 'ID do negócio (deal) não informado.'];
-    }
+        if (!$dealId) {
+            return ['erro' => 'ID do negócio (deal) não informado.'];
+        }
 
-    $select = ['id', 'title'];
+        $select = ['id', 'title'];
 
-    if (!empty($filtros['campos'])) {
-        $extras = explode(',', $filtros['campos']);
-        foreach ($extras as $campo) {
-            $campo = trim($campo);
-            if (strpos($campo, 'UF_CRM_') === 0) {
-                $convertido = strtolower(str_replace('UF_CRM_', 'ufCrm', $campo));
-                $select[] = $convertido;
-            }
+        if (!empty($filtros['campos'])) {
+            $extras = explode(',', $filtros['campos']);
+            foreach ($extras as $campo) {
+                $campo = trim($campo);
+                if (strpos($campo, 'UF_CRM_') === 0) {
+                    $convertido = strtolower(str_replace('UF_CRM_', 'ufCrm', $campo));
+                    $select[] = $convertido;
+                }
         }
     }
 
