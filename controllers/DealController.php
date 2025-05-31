@@ -27,6 +27,12 @@ class DealController
 
     public function editar()
     {
-        echo json_encode(['mensagem' => 'Rota EDITAR acessada com sucesso']);
+        require_once __DIR__ . '/../helpers/BitrixHelper.php';
+
+        $dados = $_GET;
+        $resultado = BitrixHelper::editarNegociacao($dados);
+
+        header('Content-Type: application/json');
+        echo json_encode($resultado);
     }
 }

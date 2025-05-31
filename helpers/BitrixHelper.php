@@ -81,6 +81,49 @@ class BitrixHelper
         ];
     }
 
+    // Edita um negócio existente no Bitrix24 via API
+    public static function editarNegociacao($dados)
+    {
+        $cliente = $_GET['cliente'] ?? '';
+        $spa = $dados['spa'] ?? null;
+        $dealId = $dados['deal'] ?? null;
+
+        unset($dados['cliente'], $dados['spa'], $dados['deal']);
+
+        if (!$spa || !$dealId || empty($dados)) {
+            return [
+                'success' => false,
+                'error' => 'Parâmetros obrigatórios não informados.'
+            ];
+        }
+
+        $fields = self::formatarCampos($dados);
+
+        $params = [
+            'entityTypeId' => $spa,
+            'id' => (int)$dealId,
+            'fields' => $fields
+        ];
+
+        $resultado = self::chamarApi('crm.item.update', $params, [
+            'cliente' => $cliente,
+            'tipo' => 'deal',
+            'log' => true
+        ]);
+
+        if (isset($resultado['result']) && $resultado['result'] === true) {
+            return [
+                'success' => true,
+                'id' => $dealId
+            ];
+        }
+
+        return [
+            'success' => false,
+            'error' => $resultado['error_description'] ?? 'Erro desconhecido ao editar negócio.'
+        ];
+    }
+
     // Consulta uma negociação específica no Bitrix24 via ID
     public static function consultarNegociacao($filtros)
     {
