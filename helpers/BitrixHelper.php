@@ -56,6 +56,7 @@ function criarNegocio($dados)
     }
 
     $cliente = $_GET['cliente'] ?? '';
+    unset($dados['cliente']);
     $webhookBase = buscarWebhook($cliente, 'deal');
 
     if (!$webhookBase) {
