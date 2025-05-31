@@ -82,8 +82,9 @@ class BitrixHelper
     }
 
     // Edita um negócio existente no Bitrix24 via API
-    public static function editarNegociacao($dados)
+    public static function editarNegociacao($dados = [])
     {
+        $dados = $_POST ?: $_GET;
         $cliente = $_GET['cliente'] ?? '';
         $spa = $dados['spa'] ?? null;
         $dealId = $dados['deal'] ?? null;
