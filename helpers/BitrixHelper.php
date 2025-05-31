@@ -46,6 +46,7 @@ class BitrixHelper
     // Cria um negócio no Bitrix24 via API
     public static function criarNegocio($dados)
     {
+        $dados = $_POST ?: $_GET;
         $cliente = $_GET['cliente'] ?? '';
         $spa = $dados['spa'] ?? null;
         $categoryId = $dados['CATEGORY_ID'] ?? null;
@@ -84,7 +85,6 @@ class BitrixHelper
     // Edita um negócio existente no Bitrix24 via API
     public static function editarNegociacao($dados = [])
     {
-        $dados = $_POST ?: $_GET;
         $cliente = $dados['cliente'] ?? '';
         $spa = $dados['spa'] ?? null;
         $dealId = $dados['deal'] ?? null;
@@ -112,7 +112,7 @@ class BitrixHelper
             'log' => true
         ]);
 
-        if (isset($resultado['result']) && $resultado['result'] === true) {
+        if (isset($resultado['result'])) {
             return [
                 'success' => true,
                 'id' => $dealId
@@ -124,7 +124,6 @@ class BitrixHelper
             'debug' => $resultado,
             'error' => $resultado['error_description'] ?? 'Erro desconhecido ao editar negócio.'
         ];
-
     }
 
     // Consulta uma negociação específica no Bitrix24 via ID
@@ -214,8 +213,9 @@ class BitrixHelper
         $respostaJson = json_decode($resposta, true);
 
         if ($logAtivo) {
-            $log = "==== CHAMADA API ====\n";
+            $log = "==== CHAMADA API ====" . "\n";
             $log .= "Endpoint: $endpoint\nURL: $url\nDados: $postData\nHTTP: $httpCode\nErro: $curlErro\nResposta: $resposta\n";
+            $log .= "Campos enviados (params): " . print_r($params, true) . "\n";
             file_put_contents(__DIR__ . '/logs/bitrix_api.log', $log, FILE_APPEND);
         }
 
