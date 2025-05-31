@@ -69,13 +69,17 @@ class BitrixHelper
         ]);
     }
 
-// Consulta um negócio no Bitrix24 via API
+// Consulta uma negociação específica no Bitrix24 via ID
 public static function consultarNegociacao($filtros)
 {
     $cliente = $filtros['cliente'] ?? '';
     $spa = $filtros['spa'] ?? 0;
+    $dealId = $filtros['deal'] ?? null;
 
-    // Campos customizados que o usuário quer consultar (visíveis na resposta)
+    if (!$dealId) {
+        return ['erro' => 'ID do negócio (deal) não informado.'];
+    }
+
     $select = ['id', 'title'];
 
     if (!empty($filtros['campos'])) {
@@ -91,16 +95,17 @@ public static function consultarNegociacao($filtros)
 
     $params = [
         'entityTypeId' => $spa,
-        'filter' => ['ufCrm_identificador' => $cliente],
+        'id' => (int)$dealId,
         'select' => $select
     ];
 
-    return self::chamarApi('crm.item.list', $params, [
+    return self::chamarApi('crm.item.get', $params, [
         'cliente' => $cliente,
         'tipo' => 'deal',
         'log' => false
     ]);
 }
+
 
 
     // Envia requisição para API Bitrix com endpoint e parâmetros fornecidos
