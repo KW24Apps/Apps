@@ -69,24 +69,39 @@ class BitrixHelper
         ]);
     }
 
-    // Consulta um negócio no Bitrix24 via API
-    public static function consultarNegociacao($filtros)
-    {
-        $cliente = $filtros['cliente'] ?? '';
-        $params = [
-            'entityTypeId' => $filtros['spa'] ?? 0,
-            'filter' => [
-                'ufCrm_identificador' => $filtros['cliente'] ?? ''
-            ],
-            'select' => ['id', 'title', 'ufCrm_*']
-        ];
+// Consulta um negócio no Bitrix24 via API
+public static function consultarNegociacao($filtros)
+{
+    $cliente = $filtros['cliente'] ?? '';
+    $spa = $filtros['spa'] ?? 0;
 
-        return self::chamarApi('crm.item.list', $params, [
-            'cliente' => $cliente,
-            'tipo' => 'deal',
-            'log' => false
-        ]);
+    // Campos customizados que o usuário quer consultar (visíveis na resposta)
+    $select = ['id', 'title'];
+
+    if (!empty($filtros['campos'])) {
+        $extras = explode(',', $filtros['campos']);
+        foreach ($extras as $campo) {
+            $campo = trim($campo);
+            if (strpos($campo, 'UF_CRM_') === 0) {
+                $convertido = strtolower(str_replace('UF_CRM_', 'ufCrm', $campo));
+                $select[] = $convertido;
+            }
+        }
     }
+
+    $params = [
+        'entityTypeId' => $spa,
+        'filter' => ['ufCrm_identificador' => $cliente],
+        'select' => $select
+    ];
+
+    return self::chamarApi('crm.item.list', $params, [
+        'cliente' => $cliente,
+        'tipo' => 'deal',
+        'log' => false
+    ]);
+}
+
 
     // Envia requisição para API Bitrix com endpoint e parâmetros fornecidos
     public static function chamarApi($endpoint, $params, $opcoes = [])
