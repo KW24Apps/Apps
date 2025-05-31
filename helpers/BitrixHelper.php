@@ -1,13 +1,12 @@
 <?php
 
-// Função para formatar os campos conforme esperado pelo Bitrix (SPA)
+// Formata os campos conforme o padrão esperado pelo Bitrix (camelCase)
 function formatarCampos($dados)
 {
     $fields = [];
 
     foreach ($dados as $campo => $valor) {
         if (strpos($campo, 'UF_CRM_') === 0) {
-            // Transforma UF_CRM_123_ABC em ufCrm123ABC
             $chaveConvertida = lcfirst(str_replace('_', '', str_replace('UF_CRM_', 'ufCrm_', $campo)));
             $fields[$chaveConvertida] = $valor;
         } else {
@@ -18,7 +17,7 @@ function formatarCampos($dados)
     return $fields;
 }
 
-// Função que busca o webhook base do cliente no banco usando o ID do cliente
+// Busca o webhook no banco de dados com segurança
 function buscarWebhook($clienteId, $tipo)
 {
     $host = 'localhost';
@@ -35,7 +34,7 @@ function buscarWebhook($clienteId, $tipo)
         $stmt->execute();
         $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return $resultado ? $resultado["webhook_{$tipo}"] : null;
+        return $resultado ? trim($resultado["webhook_{$tipo}"]) : null;
 
     } catch (PDOException $e) {
         error_log("Erro DB: " . $e->getMessage());
@@ -43,30 +42,23 @@ function buscarWebhook($clienteId, $tipo)
     }
 }
 
-// Função que cria o negócio (card) no Bitrix24 usando a API
+// Cria um negócio no Bitrix24 via API
 function criarNegocio($dados)
 {
     $log = "==== NOVA REQUISIÇÃO ====\nEntrada: " . json_encode($dados) . "\n";
 
     if (!isset($dados['spa']) || empty($dados['spa'])) {
-        return [
-            'erro' => 'SPA (entidade) não informada.',
-            'debug' => $log
-        ];
+        return ['erro' => 'SPA (entidade) não informada.', 'debug' => $log];
     }
 
     $cliente = $_GET['cliente'] ?? '';
     unset($dados['cliente']);
+
     $webhookBase = buscarWebhook($cliente, 'deal');
-    $webhookBase = trim(buscarWebhook($cliente, 'deal'));
     $log .= "Webhook base recebido: [$webhookBase]\n";
 
     if (!$webhookBase) {
-        return [
-            'erro' => 'Cliente não autorizado ou webhook não cadastrado.',
-            'cliente' => $cliente,
-            'debug' => $log
-        ];
+        return ['erro' => 'Cliente não autorizado ou webhook não cadastrado.', 'cliente' => $cliente, 'debug' => $log];
     }
 
     $url = $webhookBase . '/crm.item.add.json';
@@ -80,7 +72,6 @@ function criarNegocio($dados)
     }
 
     $fields = formatarCampos($dados);
-
     if (isset($categoryId)) {
         $fields['categoryId'] = $categoryId;
     }
