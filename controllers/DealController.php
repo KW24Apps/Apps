@@ -6,7 +6,7 @@ class DealController
     {
         require_once __DIR__ . '/../helpers/BitrixHelper.php';
 
-       $dados = json_decode(file_get_contents('php://input'), true);
+       $dados = $_GET;
 
 
         $resultado = criarNegocio($dados);
