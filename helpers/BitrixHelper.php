@@ -121,8 +121,10 @@ class BitrixHelper
 
         return [
             'success' => false,
+            'debug' => $resultado,
             'error' => $resultado['error_description'] ?? 'Erro desconhecido ao editar negócio.'
         ];
+
     }
 
     // Consulta uma negociação específica no Bitrix24 via ID
