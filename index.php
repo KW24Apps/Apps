@@ -11,8 +11,8 @@ $uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 // Direcionamento com base no prefixo
 if (strpos($uri, 'deal') === 0) {
     require_once 'routers/dealRoutes.php';
-} elseif (strpos($uri, 'clicksign') === 0) {
-    require_once 'routers/clicksignRoutes.php';
+} elseif (strpos($uri, 'extenso') === 0) {
+    require_once __DIR__ . '/routes/extensoRoutes.php';
 } else {
     http_response_code(404);
     echo json_encode(['erro' => 'Projeto não reconhecido']);
