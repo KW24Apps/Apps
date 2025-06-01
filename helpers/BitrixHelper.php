@@ -22,7 +22,7 @@ class BitrixHelper
     // Cria um negócio no Bitrix24 via API
     public static function criarNegocio($dados)
     {
-        $dados = $_POST ?: $_GET;
+        //$dados = $_POST ?: $_GET;
         $spa = $dados['spa'] ?? null;
         $categoryId = $dados['CATEGORY_ID'] ?? null;
         $webhook = $dados['webhook'] ?? null;
