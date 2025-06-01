@@ -39,7 +39,7 @@ class ExtensoController
         $valor = floatval($item['ufCrm' . substr($campoValor, 7)]);
         $extenso = $this->valorPorExtenso($valor);
 
-        BitrixHelper::editarDeal($cliente, $spa, $dealId, [
+        BitrixHelper::editarNegociacao($cliente, $spa, $dealId, [
             $campoRetorno => $extenso
         ]);
 
