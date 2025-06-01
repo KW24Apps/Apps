@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../helpers/FormataHelper.php';
+require_once __DIR__ . '/../helpers/PermissaoHelper.php';
 
 class ExtensoController
 {
@@ -23,8 +24,16 @@ class ExtensoController
             return;
         }
 
+        $webhook = PermissaoHelper::obterWebhookPermitido($cliente, 'deal');
+
+        if (!$webhook) {
+            http_response_code(403);
+            echo json_encode(['erro' => 'Acesso negado para executar operação de extenso.']);
+            return;
+        }
+
         $dados = BitrixHelper::consultarNegociacao([
-            'cliente' => $cliente,
+            'webhook' => $webhook,
             'spa' => $spa,
             'deal' => $dealId,
             'campos' => implode(',', $camposSelecionados)
@@ -41,7 +50,7 @@ class ExtensoController
         $extenso = FormataHelper::valorPorExtenso($valor);
 
         BitrixHelper::editarNegociacao([
-            'cliente' => $cliente,
+            'webhook' => $webhook,
             'spa' => $spa,
             'deal' => $dealId,
             $campoRetorno => $extenso

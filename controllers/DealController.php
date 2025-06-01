@@ -1,13 +1,23 @@
 <?php
 
+require_once __DIR__ . '/../helpers/BitrixHelper.php';
+require_once __DIR__ . '/../helpers/PermissaoHelper.php';
+
 class DealController
 {
     public function criar()
     {
-        require_once __DIR__ . '/../helpers/BitrixHelper.php';
-
         $dados = $_GET;
+        $cliente = $dados['cliente'] ?? null;
+        $webhook = PermissaoHelper::obterWebhookPermitido($cliente, 'deal');
 
+        if (!$webhook) {
+            http_response_code(403);
+            echo json_encode(['erro' => 'Acesso negado para criar negociação.']);
+            return;
+        }
+
+        $dados['webhook'] = $webhook;
         $resultado = BitrixHelper::criarNegocio($dados);
 
         header('Content-Type: application/json');
@@ -16,9 +26,17 @@ class DealController
 
     public function consultar()
     {
-        require_once __DIR__ . '/../helpers/BitrixHelper.php';
-
         $filtros = $_GET;
+        $cliente = $filtros['cliente'] ?? null;
+        $webhook = PermissaoHelper::obterWebhookPermitido($cliente, 'deal');
+
+        if (!$webhook) {
+            http_response_code(403);
+            echo json_encode(['erro' => 'Acesso negado para consultar negociação.']);
+            return;
+        }
+
+        $filtros['webhook'] = $webhook;
         $resultado = BitrixHelper::consultarNegociacao($filtros);
 
         header('Content-Type: application/json');
@@ -27,9 +45,17 @@ class DealController
 
     public function editar()
     {
-        require_once __DIR__ . '/../helpers/BitrixHelper.php';
-
         $dados = $_GET;
+        $cliente = $dados['cliente'] ?? null;
+        $webhook = PermissaoHelper::obterWebhookPermitido($cliente, 'deal');
+
+        if (!$webhook) {
+            http_response_code(403);
+            echo json_encode(['erro' => 'Acesso negado para editar negociação.']);
+            return;
+        }
+
+        $dados['webhook'] = $webhook;
         $resultado = BitrixHelper::editarNegociacao($dados);
 
         header('Content-Type: application/json');

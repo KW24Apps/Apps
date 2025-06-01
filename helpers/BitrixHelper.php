@@ -19,39 +19,15 @@ class BitrixHelper
         return $fields;
     }
 
-    // Busca o webhook no banco de dados com segurança
-    public static function buscarWebhook($clienteId, $tipo)
-    {
-        $host = 'localhost';
-        $dbname = 'kw24co49_api_kwconfig';
-        $usuario = 'kw24co49_kw24';
-        $senha = 'BlFOyf%X}#jXwrR-vi';
-
-        try {
-            $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $usuario, $senha);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-            $stmt = $pdo->prepare("SELECT webhook_{$tipo} FROM clientes_api WHERE origem = :cliente LIMIT 1");
-            $stmt->bindParam(':cliente', $clienteId);
-            $stmt->execute();
-            $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            return $resultado ? trim($resultado["webhook_{$tipo}"]) : null;
-        } catch (PDOException $e) {
-            error_log("Erro DB: " . $e->getMessage());
-            return null;
-        }
-    }
-
     // Cria um negócio no Bitrix24 via API
     public static function criarNegocio($dados)
     {
         $dados = $_POST ?: $_GET;
-        $cliente = $_GET['cliente'] ?? '';
         $spa = $dados['spa'] ?? null;
         $categoryId = $dados['CATEGORY_ID'] ?? null;
+        $webhook = $dados['webhook'] ?? null;
 
-        unset($dados['cliente'], $dados['spa'], $dados['CATEGORY_ID']);
+        unset($dados['cliente'], $dados['spa'], $dados['CATEGORY_ID'], $dados['webhook']);
 
         $fields = self::formatarCampos($dados);
         if ($categoryId) {
@@ -64,8 +40,7 @@ class BitrixHelper
         ];
 
         $resultado = self::chamarApi('crm.item.add', $params, [
-            'cliente' => $cliente,
-            'tipo' => 'deal',
+            'webhook' => $webhook,
             'log' => true
         ]);
 
@@ -85,11 +60,11 @@ class BitrixHelper
     // Edita um negócio existente no Bitrix24 via API
     public static function editarNegociacao($dados = [])
     {
-        $cliente = $dados['cliente'] ?? '';
         $spa = $dados['spa'] ?? null;
         $dealId = $dados['deal'] ?? null;
+        $webhook = $dados['webhook'] ?? null;
 
-        unset($dados['cliente'], $dados['spa'], $dados['deal']);
+        unset($dados['cliente'], $dados['spa'], $dados['deal'], $dados['webhook']);
 
         if (!$spa || !$dealId || empty($dados)) {
             return [
@@ -107,8 +82,7 @@ class BitrixHelper
         ];
 
         $resultado = self::chamarApi('crm.item.update', $params, [
-            'cliente' => $cliente,
-            'tipo' => 'deal',
+            'webhook' => $webhook,
             'log' => true
         ]);
 
@@ -129,12 +103,12 @@ class BitrixHelper
     // Consulta uma negociação específica no Bitrix24 via ID
     public static function consultarNegociacao($filtros)
     {
-        $cliente = $filtros['cliente'] ?? '';
         $spa = $filtros['spa'] ?? 0;
         $dealId = $filtros['deal'] ?? null;
+        $webhook = $filtros['webhook'] ?? null;
 
-        if (!$dealId) {
-            return ['erro' => 'ID do negócio (deal) não informado.'];
+        if (!$dealId || !$webhook) {
+            return ['erro' => 'ID do negócio ou webhook não informado.'];
         }
 
         $select = ['id'];
@@ -159,8 +133,7 @@ class BitrixHelper
         ];
 
         $resultado = self::chamarApi('crm.item.get', $params, [
-            'cliente' => $cliente,
-            'tipo' => 'deal',
+            'webhook' => $webhook,
             'log' => false
         ]);
 
@@ -190,11 +163,12 @@ class BitrixHelper
     // Envia requisição para API Bitrix com endpoint e parâmetros fornecidos
     public static function chamarApi($endpoint, $params, $opcoes = [])
     {
-        $cliente = $opcoes['cliente'] ?? ($_GET['cliente'] ?? '');
-        $tipo = $opcoes['tipo'] ?? 'deal';
-        $logAtivo = $opcoes['log'] ?? false;
+        $webhookBase = $opcoes['webhook'] ?? '';
+        if (!$webhookBase) {
+            return ['error' => 'Webhook não informado'];
+        }
 
-        $webhookBase = self::buscarWebhook($cliente, $tipo);
+        $logAtivo = $opcoes['log'] ?? false;
         $url = $webhookBase . '/' . $endpoint . '.json';
         $postData = http_build_query($params);
 
@@ -213,11 +187,10 @@ class BitrixHelper
         $respostaJson = json_decode($resposta, true);
 
         if ($logAtivo) {
-            $log = "==== CHAMADA API ====" . "\n";
+            $log = "==== CHAMADA API ====\n";
             $log .= "Endpoint: $endpoint\nURL: $url\nDados: $postData\nHTTP: $httpCode\nErro: $curlErro\nResposta: $resposta\n";
             $log .= "Campos enviados (params): " . print_r($params, true) . "\n";
             file_put_contents(__DIR__ . '/../logs/editar_negocio.log', $log, FILE_APPEND);
-
         }
 
         return $respostaJson;
