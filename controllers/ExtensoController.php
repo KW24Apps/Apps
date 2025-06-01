@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
+require_once __DIR__ . '/../helpers/FormataHelper.php';
 
 class ExtensoController
 {
@@ -36,8 +37,8 @@ class ExtensoController
             return;
         }
 
-        $valor = floatval($item['ufCrm' . substr($campoValor, 7)]);
-        $extenso = $this->valorPorExtenso($valor);
+        $valor = FormataHelper::normalizarValor($item['ufCrm' . substr($campoValor, 7)]);
+        $extenso = FormataHelper::valorPorExtenso($valor);
 
         BitrixHelper::editarNegociacao([
             'cliente' => $cliente,
@@ -47,19 +48,5 @@ class ExtensoController
         ]);
 
         echo json_encode(['extenso' => $extenso]);
-    }
-
-    private function valorPorExtenso($valor)
-    {
-        $fmt = new \NumberFormatter('pt_BR', \NumberFormatter::SPELLOUT);
-        $inteiro = floor($valor);
-        $centavos = round(($valor - $inteiro) * 100);
-
-        $texto = $fmt->format($inteiro) . ' reais';
-        if ($centavos > 0) {
-            $texto .= ' e ' . $fmt->format($centavos) . ' centavos';
-        }
-
-        return $texto;
     }
 }
