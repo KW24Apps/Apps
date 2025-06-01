@@ -12,7 +12,7 @@ $uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 if (strpos($uri, 'deal') === 0) {
     require_once 'routers/dealRoutes.php';
 } elseif (strpos($uri, 'extenso') === 0) {
-    require_once __DIR__ . '/routes/extensoRoutes.php';
+    require_once __DIR__ . '/routers/extensoRoutes.php';
 } else {
     http_response_code(404);
     echo json_encode(['erro' => 'Projeto não reconhecido']);
