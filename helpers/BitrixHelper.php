@@ -9,7 +9,7 @@ class BitrixHelper
 
         foreach ($dados as $campo => $valor) {
             if (strpos($campo, 'UF_CRM_') === 0) {
-                $chaveConvertida = lcfirst(str_replace('_', '', str_replace('UF_CRM_', 'ufCrm_', $campo)));
+                $chaveConvertida = 'ufCrm' . substr($campo, 7);
                 $fields[$chaveConvertida] = $valor;
             } else {
                 $fields[$campo] = $valor;
