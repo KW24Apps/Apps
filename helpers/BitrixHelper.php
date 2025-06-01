@@ -53,6 +53,7 @@ class BitrixHelper
 
         return [
             'success' => false,
+            'debug' => $resultado,
             'error' => $resultado['error_description'] ?? 'Erro desconhecido ao criar negócio.'
         ];
     }
