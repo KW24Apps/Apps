@@ -4,13 +4,14 @@ class PermissaoHelper
 {
     public static function obterWebhookPermitido($clienteId, $tipo)
     {
-        $host = 'localhost';
-        $dbname = 'kw24co49_api_kwconfig';
-        $usuario = 'kw24co49_kw24';
-        $senha = 'BlFOyf%X}#jXwrR-vi';
+        $config = require __DIR__ . '/../config/config.php';
 
         try {
-            $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $usuario, $senha);
+            $pdo = new PDO(
+                "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+                $config['usuario'],
+                $config['senha']
+            );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             $stmt = $pdo->prepare("SELECT webhook_{$tipo} FROM clientes_api WHERE origem = :cliente LIMIT 1");

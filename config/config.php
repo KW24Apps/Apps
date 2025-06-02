@@ -1,12 +1,13 @@
 <?php
 
-// Ambiente de execução: 'local' ou 'producao'
-$ambiente = 'local';
+$ambiente = getenv('APP_ENV') ?: 'local';
+
+$config = [];
 
 if ($ambiente === 'local') {
     $config = [
         'host' => 'localhost',
-        'dbname' => 'bitrix_local', // ou APIs_kw24_local se tiver usado esse
+        'dbname' => 'bitrix_local',
         'usuario' => 'root',
         'senha' => ''
     ];
@@ -18,3 +19,5 @@ if ($ambiente === 'local') {
         'senha' => 'BlFOyf%X}#jXwrR-vi'
     ];
 }
+
+return $config;
