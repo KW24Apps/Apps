@@ -7,7 +7,7 @@ $config = [];
 if ($ambiente === 'local') {
     $config = [
         'host' => 'localhost',
-        'dbname' => 'bitrix_local',
+        'dbname' => 'apis_kw24_local',
         'usuario' => 'root',
         'senha' => ''
     ];
