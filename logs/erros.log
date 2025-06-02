@@ -1,1 +1,36 @@
 [02-Jun-2025 01:31:03 UTC] Erro DB: could not find driver
+[02-Jun-2025 03:29:59 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function curl_init() in X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php:176
+Stack trace:
+#0 X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php(136): BitrixHelper::chamarApi('crm.item.get', Array, Array)
+#1 X:\VSCode\apis.kw24.com.br\Apps\controllers\ExtensoController.php(35): BitrixHelper::consultarNegociacao(Array)
+#2 X:\VSCode\apis.kw24.com.br\Apps\routers\extensoRoutes.php(10): ExtensoController->executar(Array)
+#3 X:\VSCode\apis.kw24.com.br\Apps\index.php(15): require_once('X:\\VSCode\\apis....')
+#4 X:\VSCode\apis.kw24.com.br\index.php(8): require_once('X:\\VSCode\\apis....')
+#5 {main}
+  thrown in X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php on line 176
+[02-Jun-2025 03:30:04 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function curl_init() in X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php:176
+Stack trace:
+#0 X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php(136): BitrixHelper::chamarApi('crm.item.get', Array, Array)
+#1 X:\VSCode\apis.kw24.com.br\Apps\controllers\ExtensoController.php(35): BitrixHelper::consultarNegociacao(Array)
+#2 X:\VSCode\apis.kw24.com.br\Apps\routers\extensoRoutes.php(10): ExtensoController->executar(Array)
+#3 X:\VSCode\apis.kw24.com.br\Apps\index.php(15): require_once('X:\\VSCode\\apis....')
+#4 X:\VSCode\apis.kw24.com.br\index.php(8): require_once('X:\\VSCode\\apis....')
+#5 {main}
+  thrown in X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php on line 176
+[02-Jun-2025 03:36:09 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function curl_init() in X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php:176
+Stack trace:
+#0 X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php(136): BitrixHelper::chamarApi('crm.item.get', Array, Array)
+#1 X:\VSCode\apis.kw24.com.br\Apps\controllers\ExtensoController.php(35): BitrixHelper::consultarNegociacao(Array)
+#2 X:\VSCode\apis.kw24.com.br\Apps\routers\extensoRoutes.php(10): ExtensoController->executar(Array)
+#3 X:\VSCode\apis.kw24.com.br\Apps\index.php(15): require_once('X:\\VSCode\\apis....')
+#4 X:\VSCode\apis.kw24.com.br\index.php(8): require_once('X:\\VSCode\\apis....')
+#5 {main}
+  thrown in X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php on line 176
+[02-Jun-2025 03:41:04 UTC] PHP Fatal error:  Uncaught Error: Class "NumberFormatter" not found in X:\VSCode\apis.kw24.com.br\Apps\helpers\FormataHelper.php:28
+Stack trace:
+#0 X:\VSCode\apis.kw24.com.br\Apps\controllers\ExtensoController.php(50): FormataHelper::valorPorExtenso(20030.23)
+#1 X:\VSCode\apis.kw24.com.br\Apps\routers\extensoRoutes.php(10): ExtensoController->executar(Array)
+#2 X:\VSCode\apis.kw24.com.br\Apps\index.php(15): require_once('X:\\VSCode\\apis....')
+#3 X:\VSCode\apis.kw24.com.br\index.php(8): require_once('X:\\VSCode\\apis....')
+#4 {main}
+  thrown in X:\VSCode\apis.kw24.com.br\Apps\helpers\FormataHelper.php on line 28
