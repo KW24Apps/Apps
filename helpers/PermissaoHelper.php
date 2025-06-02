@@ -19,9 +19,21 @@ class PermissaoHelper
             $stmt->execute();
             $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            return $resultado ? trim($resultado["webhook_{$tipo}"]) : null;
+            if ($resultado && isset($resultado["webhook_{$tipo}"])) {
+                return trim($resultado["webhook_{$tipo}"]);
+            }
+
+            // Log customizado para debug
+            $log = [
+                'clienteId' => $clienteId,
+                'tipo' => $tipo,
+                'resultado' => $resultado,
+            ];
+            file_put_contents(__DIR__ . '/../logs/permissao_debug.log', json_encode($log) . PHP_EOL, FILE_APPEND);
+
+            return null;
         } catch (PDOException $e) {
-            error_log("Erro DB: " . $e->getMessage());
+            file_put_contents(__DIR__ . '/../logs/permissao_debug.log', 'Erro DB: ' . $e->getMessage() . PHP_EOL, FILE_APPEND);
             return null;
         }
     }
