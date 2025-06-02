@@ -13,7 +13,7 @@ if (strpos($uri, 'deal') === 0) {
     require_once 'routers/dealRoutes.php';
 } elseif (strpos($uri, 'extenso') === 0) {
     require_once __DIR__ . '/routers/extensoRoutes.php';
-} elseif (strpos($uri, 'sync') === 0) {
+} elseif (strpos($uri, 'bitrix-sync') === 0) {
     require_once __DIR__ .'/routers/bitrixSyncRoutes.php';
 } else {
     http_response_code(404);
