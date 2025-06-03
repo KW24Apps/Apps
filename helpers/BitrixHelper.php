@@ -257,8 +257,10 @@ private static function calcularDataUtil(int $dias): DateTime
             foreach ((array)$ids as $id) {
                 $resposta = self::consultarEmpresa([
                     'empresa' => $id,
-                    'webhook' => $webhook
+                    'webhook' => $webhook,
+                    'campos' => $camposDesejados
                 ]);
+
 
                 $log = "[consultarEmpresas] Origem: $origem | ID: $id | Resultado: " . json_encode($resposta) . PHP_EOL;
                 file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', $log, FILE_APPEND);
@@ -284,8 +286,10 @@ private static function calcularDataUtil(int $dias): DateTime
             foreach ((array)$ids as $id) {
                 $resposta = self::consultarContato([
                     'contato' => $id,
-                    'webhook' => $webhook
+                    'webhook' => $webhook,
+                    'campos' => $camposDesejados
                 ]);
+
 
                 $log = "[consultarContatos] Origem: $origem | ID: $id | Resultado: " . json_encode($resposta) . PHP_EOL;
                 file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', $log, FILE_APPEND);
