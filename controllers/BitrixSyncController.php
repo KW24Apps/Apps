@@ -139,7 +139,7 @@ class BitrixSyncController
                 foreach ($aplicacoes as $aplicacaoId => $campos) {
                     $valorCampoBruto = $company[$campos['ativo']] ?? '';
                     $valorCampo = strtolower(trim((string) $valorCampoBruto));
-                    $ativo = $valorCampo === 'true' ? 1 : 0;
+                    $ativo = in_array($valorCampo, ['1', 'y', 'yes', 'true']) ? 1 : 0;
                     $webhook = $company[$campos['webhook']] ?? null;
 
                     $this->log("Aplicação ID $aplicacaoId | Valor bruto: {$valorCampoBruto} | Interpretado: {$valorCampo} | Ativo: {$ativo}");
