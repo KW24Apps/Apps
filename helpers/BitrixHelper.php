@@ -212,7 +212,6 @@ class BitrixHelper
         return ['erro' => 'Parâmetros obrigatórios ausentes.'];
     }
 
-<<<<<<< HEAD
     $dataConclusao = self::calcularDataUtil($prazo);
     if (in_array($dataConclusao->format('N'), [6, 7])) {
         $dataConclusao->modify('next monday');
@@ -247,31 +246,7 @@ private static function calcularDataUtil(int $dias): DateTime
     }
     return $data;
 }
-=======
-    // Consultar contatos no Bitrix24 via ID
-    public static function consultarContatos(array $campos, string $webhook)
-    {
-        $resultado = [];
-
-        foreach ($campos as $origem => $ids) {
-            $resultado[$origem] = [];
-
-            foreach ((array)$ids as $id) {
-                $resposta = self::consultarContato([
-                    'contato' => $id,
-                    'webhook' => $webhook
-                ]);
-
-                if (!isset($resposta['erro'])) {
-                    $resultado[$origem][] = $resposta;
-                }
-            }
-        }
-
-        return $resultado;
-    }
-
-    // Consultar uma empresa no Bitrix24 via ID
+    // Consulta múltiplas empresas organizadas por campo de origem
     public static function consultarEmpresas(array $campos, string $webhook)
     {
         $resultado = [];
@@ -285,6 +260,36 @@ private static function calcularDataUtil(int $dias): DateTime
                     'webhook' => $webhook
                 ]);
 
+                $log = "[consultarEmpresas] Origem: $origem | ID: $id | Resultado: " . json_encode($resposta) . PHP_EOL;
+                file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', $log, FILE_APPEND);
+
+                if (!isset($resposta['erro'])) {
+                    $resultado[$origem][] = $resposta;
+                }
+            }
+        }
+
+        return $resultado;
+    }
+
+
+    // Consulta múltiplos contatos organizados por campo de origem
+    public static function consultarContatos(array $campos, string $webhook)
+    {
+        $resultado = [];
+
+        foreach ($campos as $origem => $ids) {
+            $resultado[$origem] = [];
+
+            foreach ((array)$ids as $id) {
+                $resposta = self::consultarContato([
+                    'contato' => $id,
+                    'webhook' => $webhook
+                ]);
+
+                $log = "[consultarContatos] Origem: $origem | ID: $id | Resultado: " . json_encode($resposta) . PHP_EOL;
+                file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', $log, FILE_APPEND);
+
                 if (!isset($resposta['erro'])) {
                     $resultado[$origem][] = $resposta;
                 }
@@ -296,5 +301,5 @@ private static function calcularDataUtil(int $dias): DateTime
 
 
 
->>>>>>> ca2f66b (atualizar servidor)
+
 }
