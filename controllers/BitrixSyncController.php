@@ -55,6 +55,7 @@ class BitrixSyncController
            $resultadoEmpresas = $this->bitrixHelper->consultarEmpresas(['bitrix' => [$companyId]], $webhookPadrao, $camposEmpresa);
 
             $company = $resultadoEmpresas['bitrix'][0] ?? null;
+            $this->log("Retorno bruto da empresa: " . json_encode($company));
 
             if (!$company) {
                 $this->log("Empresa ID $companyId não encontrada no Bitrix.");
