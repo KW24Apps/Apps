@@ -1,14 +1,17 @@
 <?php
 
-require_once __DIR__ . '/../config/config.php';  // (para parâmetros)
-
 class BitrixSincDAO
 {
     private $conn;
 
     public function __construct()
     {
-        $this->conn = (new Config())->getConnection();
+        $config = require __DIR__ . '/../config/config.php';
+
+        $dsn = "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8mb4";
+        $this->conn = new PDO($dsn, $config['usuario'], $config['senha'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+        ]);
     }
 
     public function buscarEmpresaPorIdBitrix($idBitrix)
