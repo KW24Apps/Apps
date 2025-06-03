@@ -7,7 +7,7 @@ use PDOException;
 
 class AplicacaoAcessoDAO
 {
-    public static function obterWebhookPermitido($clienteId, $tipo)
+    public static function obterWebhookPermitido($chaveAcesso, $slugAplicacao)
     {
         $config = require __DIR__ . '/../config/config.php';
 
@@ -19,26 +19,31 @@ class AplicacaoAcessoDAO
             );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            $stmt = $pdo->prepare("SELECT webhook_{$tipo} FROM clientes_api WHERE origem = :cliente LIMIT 1");
-            $stmt->bindParam(':cliente', $clienteId);
+            $sql = "
+                SELECT ca.webhook_bitrix
+                FROM clientes c
+                JOIN cliente_aplicacoes ca ON ca.cliente_id = c.id
+                JOIN aplicacoes a ON ca.aplicacao_id = a.id
+                WHERE c.chave_acesso = :chave
+                  AND a.slug = :slug
+                  AND ca.ativo = 1
+                LIMIT 1
+            ";
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindParam(':chave', $chaveAcesso);
+            $stmt->bindParam(':slug', $slugAplicacao);
             $stmt->execute();
             $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            // Log para debug
             $log = [
-                'clienteId' => $clienteId,
-                'tipo' => $tipo,
-                'query' => $stmt->queryString,
-                'resultado' => $resultado,
-                'clienteId_dump' => bin2hex($clienteId),
+                'chaveAcesso' => $chaveAcesso,
+                'slugAplicacao' => $slugAplicacao,
+                'resultado' => $resultado
             ];
             file_put_contents(__DIR__ . '/../logs/aplicacao_acesso_debug.log', json_encode($log) . PHP_EOL, FILE_APPEND);
 
-            if ($resultado && isset($resultado["webhook_{$tipo}"])) {
-                return trim($resultado["webhook_{$tipo}"]);
-            }
-
-            return null;
+            return $resultado['webhook_bitrix'] ?? null;
         } catch (PDOException $e) {
             file_put_contents(__DIR__ . '/../logs/aplicacao_acesso_debug.log', 'Erro DB: ' . $e->getMessage() . PHP_EOL, FILE_APPEND);
             return null;
