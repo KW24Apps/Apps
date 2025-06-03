@@ -2,7 +2,9 @@
 
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../helpers/FormataHelper.php';
-require_once __DIR__ . '/../helpers/PermissaoHelper.php';
+require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
+
+use dao\AplicacaoAcessoDAO;
 
 class ExtensoController
 {
@@ -24,7 +26,7 @@ class ExtensoController
             return;
         }
 
-        $webhook = PermissaoHelper::obterWebhookPermitido($cliente, 'deal');
+        $webhook = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'deal');
 
         if (!$webhook) {
             http_response_code(403);
