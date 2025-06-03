@@ -1,5 +1,6 @@
 <?php
-
+require_once __DIR__ . '/../helpers/BitrixHelper.php';
+require_once __DIR__ .'/../dao/BitrixSincDAO.php';
 class BitrixSyncController
 {
     private $bitrixHelper;
