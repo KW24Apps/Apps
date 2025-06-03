@@ -1,6 +1,6 @@
 <?php
 
-class BitrixInController
+class BitrixSyncController
 {
     private $bitrixHelper;
     private $dao;
