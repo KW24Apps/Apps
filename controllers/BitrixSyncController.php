@@ -26,11 +26,34 @@ class BitrixSyncController
 
             $companyId = $_GET['company_id'];
             $this->log("Iniciando sincronização para company_id: $companyId");
+                $camposEmpresa = [
+                    'ID',
+                    'TITLE',
+                    'UF_CRM_1641693445101',
+                    'UF_CRM_1748955982',
+                    'PHONE',
+                    'EMAIL',
+                    'ADDRESS',
+                    'UF_CRM_1684436968',
+                    'UF_CRM_1695306238',
+                    'UF_CRM_1733848071',
+                    'UF_CRM_1748893926',
+                    'UF_CRM_1748894560',
+                    'UF_CRM_1748893996',
+                    'UF_CRM_1748894312',
+                    'UF_CRM_1748893997',
+                    'UF_CRM_1748894313',
+                    'UF_CRM_1748893998',
+                    'UF_CRM_1748894314',
+                    'UF_CRM_1748894247',
+                    'UF_CRM_1748894311'
+                ];
 
             // define webhook padrão
             $webhookPadrao = 'https://gnapp.bitrix24.com.br/rest/21/yzwc932754bgujc3'; // ajuste se necessário
 
-            $resultadoEmpresas = $this->bitrixHelper->consultarEmpresas(['bitrix' => [$companyId]], $webhookPadrao);
+           $resultadoEmpresas = $this->bitrixHelper->consultarEmpresas(['bitrix' => [$companyId]], $webhookPadrao, $camposEmpresa);
+
             $company = $resultadoEmpresas['bitrix'][0] ?? null;
 
             if (!$company) {
@@ -78,7 +101,20 @@ class BitrixSyncController
             }
 
             if (!empty($idsContatos)) {
-                $resultadoContatos = $this->bitrixHelper->consultarContatos(['bitrix' => $idsContatos], $webhookPadrao);
+                $camposContato = [
+                    'ID',
+                    'NAME',
+                    'LAST_NAME',
+                    'POST',
+                    'PHONE',
+                    'EMAIL'
+                ];
+
+                $resultadoContatos = $this->bitrixHelper->consultarContatos(
+                    ['bitrix' => $idsContatos],
+                    $webhookPadrao,
+                    $camposContato
+);
                 foreach ($resultadoContatos['bitrix'] as $contato) {
                     $dadosContato = [
                         'id_bitrix' => $contato['ID'],
