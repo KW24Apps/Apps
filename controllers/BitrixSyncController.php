@@ -137,8 +137,8 @@ class BitrixSyncController
             ];
 
             foreach ($aplicacoes as $aplicacaoId => $campos) {
-                $valorCampo = $company[$campos['ativo']] ?? 'N';
-                $ativo = $valorCampo === '1' ? 1 : 0;
+                $valorCampo = strtolower(trim((string) ($company[$campos['ativo']] ?? '')));
+                $ativo = $valorCampo === 'true' ? 1 : 0;
                 $webhook = $company[$campos['webhook']] ?? null;
                 $this->dao->sincronizarAplicacao($empresa['id'], $aplicacaoId, $ativo, $webhook);
                 $this->log("Aplicação ID $aplicacaoId sincronizada. Ativo: $ativo, Webhook: $webhook");
