@@ -7,6 +7,6 @@ if (strpos($uri, '/bitrix-sync') !== false) {
     
 
     $controller = new BitrixSyncController();
-    $controller->executar();
+    $controller->syncCompany();
     exit;
 }
