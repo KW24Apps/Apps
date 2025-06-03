@@ -247,7 +247,7 @@ private static function calcularDataUtil(int $dias): DateTime
     return $data;
 }
     // Consulta múltiplas empresas organizadas por campo de origem
-    public static function consultarEmpresas(array $campos, string $webhook)
+    public static function consultarEmpresas(array $campos, string $webhook, array $camposDesejados = [])
     {
         $resultado = [];
 
@@ -274,7 +274,7 @@ private static function calcularDataUtil(int $dias): DateTime
 
 
     // Consulta múltiplos contatos organizados por campo de origem
-    public static function consultarContatos(array $campos, string $webhook)
+    public static function consultarContatos(array $campos, string $webhook, array $camposDesejados = [])
     {
         $resultado = [];
 
