@@ -136,13 +136,15 @@ class BitrixSyncController
                 5 => ['ativo' => 'UF_CRM_1748894247', 'webhook' => 'UF_CRM_1748894311']
             ];
 
-            foreach ($aplicacoes as $aplicacaoId => $campos) {
-                $valorCampo = strtolower(trim((string) ($company[$campos['ativo']] ?? '')));
-                $ativo = $valorCampo === 'true' ? 1 : 0;
-                $webhook = $company[$campos['webhook']] ?? null;
-                $this->dao->sincronizarAplicacao($empresa['id'], $aplicacaoId, $ativo, $webhook);
-                $this->log("Aplicação ID $aplicacaoId sincronizada. Ativo: $ativo, Webhook: $webhook");
-            }
+                foreach ($aplicacoes as $aplicacaoId => $campos) {
+                    $valorCampoBruto = $company[$campos['ativo']] ?? '';
+                    $valorCampo = strtolower(trim((string) $valorCampoBruto));
+                    $ativo = $valorCampo === 'true' ? 1 : 0;
+                    $webhook = $company[$campos['webhook']] ?? null;
+
+                    $this->log("Aplicação ID $aplicacaoId | Valor bruto: {$valorCampoBruto} | Interpretado: {$valorCampo} | Ativo: {$ativo}");
+                    $this->dao->sincronizarAplicacao($empresa['id'], $aplicacaoId, $ativo, $webhook);
+                }
 
 
             $this->log("Sincronização concluída para company_id: $companyId");
