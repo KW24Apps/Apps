@@ -73,7 +73,7 @@ class BitrixSincDAO
         $stmt->execute([$empresaId, $aplicacaoId]);
         $registro = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $ativo = ($ativo === 'Y') ? 1 : 0;
+        //$ativo = ($ativo === 'Y') ? 1 : 0;
 
         if ($registro) {
             $sql = "UPDATE cliente_aplicacoes SET ativo = ?, webhook_bitrix = ? WHERE id = ?";
