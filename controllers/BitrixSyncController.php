@@ -28,7 +28,7 @@ class BitrixSyncController
             $this->log("Iniciando sincronização para company_id: $companyId");
 
             // define webhook padrão
-            $webhookPadrao = 'SEU_WEBHOOK_PADRAO'; // ajuste se necessário
+            $webhookPadrao = 'https://gnapp.bitrix24.com.br/rest/21/yzwc932754bgujc3'; // ajuste se necessário
 
             $resultadoEmpresas = $this->bitrixHelper->consultarEmpresas(['bitrix' => [$companyId]], $webhookPadrao);
             $company = $resultadoEmpresas['bitrix'][0] ?? null;
