@@ -198,11 +198,8 @@ class BitrixHelper
 
         return $resultado;
     }
-<<<<<<< HEAD
-=======
 
-    
->>>>>>> 9d017b43f2409b15858068f1b7cc4bf743d78c26
+    //Criar tarefa automatica 
     public static function criarTarefaAutomatica(array $dados)
     {
     $titulo = $dados['titulo'] ?? null;
