@@ -1,6 +1,7 @@
 <?php
 
-require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/config.php';  // (para parâmetros)
+require_once __DIR__ . '/../config.php';         // (para classe Config)
 class BitrixSincDAO
 {
     private $conn;
