@@ -27,7 +27,12 @@ class BitrixSyncController
             $companyId = $_GET['company_id'];
             $this->log("Iniciando sincronização para company_id: $companyId");
 
-            $company = $this->bitrixHelper->getCompany($companyId);
+            // define webhook padrão
+            $webhookPadrao = 'SEU_WEBHOOK_PADRAO'; // ajuste se necessário
+
+            $resultadoEmpresas = $this->bitrixHelper->consultarEmpresas(['bitrix' => [$companyId]], $webhookPadrao);
+            $company = $resultadoEmpresas['bitrix'][0] ?? null;
+
             if (!$company) {
                 $this->log("Empresa ID $companyId não encontrada no Bitrix.");
                 http_response_code(404);
@@ -63,22 +68,27 @@ class BitrixSyncController
                 'UF_CRM_1733848071'
             ];
 
+            $idsContatos = [];
             foreach ($camposContatos as $campo) {
                 if (!empty($company[$campo])) {
                     foreach ((array)$company[$campo] as $idContato) {
-                        $contato = $this->bitrixHelper->getContact($idContato);
-                        if ($contato) {
-                            $dadosContato = [
-                                'id_bitrix' => $contato['ID'],
-                                'nome'      => trim($contato['NAME'] . ' ' . $contato['LAST_NAME']),
-                                'cargo'     => $contato['POST'] ?? null,
-                                'telefone'  => $contato['PHONE'][0]['VALUE'] ?? null,
-                                'email'     => $contato['EMAIL'][0]['VALUE'] ?? null
-                            ];
-                            $this->dao->sincronizarContato($empresa['id'], $dadosContato);
-                            $this->log("Contato sincronizado: " . json_encode($dadosContato));
-                        }
+                        $idsContatos[] = $idContato;
                     }
+                }
+            }
+
+            if (!empty($idsContatos)) {
+                $resultadoContatos = $this->bitrixHelper->consultarContatos(['bitrix' => $idsContatos], $webhookPadrao);
+                foreach ($resultadoContatos['bitrix'] as $contato) {
+                    $dadosContato = [
+                        'id_bitrix' => $contato['ID'],
+                        'nome'      => trim($contato['NAME'] . ' ' . $contato['LAST_NAME']),
+                        'cargo'     => $contato['POST'] ?? null,
+                        'telefone'  => $contato['PHONE'][0]['VALUE'] ?? null,
+                        'email'     => $contato['EMAIL'][0]['VALUE'] ?? null
+                    ];
+                    $this->dao->sincronizarContato($empresa['id'], $dadosContato);
+                    $this->log("Contato sincronizado: " . json_encode($dadosContato));
                 }
             }
 
