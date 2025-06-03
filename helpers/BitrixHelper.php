@@ -314,6 +314,8 @@ private static function calcularDataUtil(int $dias): DateTime
         $params = [
             'ID' => $empresaId
         ];
+        
+        file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', "[Webhook usado] $webhook\n", FILE_APPEND);
 
         $resultado = self::chamarApi('crm.company.get', $params, [
             'webhook' => $webhook,
