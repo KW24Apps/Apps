@@ -1,7 +1,45 @@
 <?php
 
 class BitrixHelper
+
+
 {
+    // Envia requisição para API Bitrix com endpoint e parâmetros fornecidos
+    public static function chamarApi($endpoint, $params, $opcoes = [])
+    {
+        $webhookBase = $opcoes['webhook'] ?? '';
+        if (!$webhookBase) {
+            return ['error' => 'Webhook não informado'];
+        }
+
+        $logAtivo = $opcoes['log'] ?? false;
+        $url = $webhookBase . '/' . $endpoint . '.json';
+        $postData = http_build_query($params);
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+        $resposta = curl_exec($ch);
+        $curlErro = curl_error($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $respostaJson = json_decode($resposta, true);
+
+        if ($logAtivo) {
+            $log = "==== CHAMADA API ====\n";
+            $log .= "Endpoint: $endpoint\nURL: $url\nDados: $postData\nHTTP: $httpCode\nErro: $curlErro\nResposta: $resposta\n";
+            $log .= "Campos enviados (params): " . print_r($params, true) . "\n";
+            file_put_contents(__DIR__ . '/../logs/editar_negocio.log', $log, FILE_APPEND);
+        }
+
+        return $respostaJson;
+    }
+    
     // Formata os campos conforme o padrão esperado pelo Bitrix (camelCase)
     public static function formatarCampos($dados)
     {
@@ -161,42 +199,7 @@ class BitrixHelper
         return $resultado;
     }
 
-    // Envia requisição para API Bitrix com endpoint e parâmetros fornecidos
-    public static function chamarApi($endpoint, $params, $opcoes = [])
-    {
-        $webhookBase = $opcoes['webhook'] ?? '';
-        if (!$webhookBase) {
-            return ['error' => 'Webhook não informado'];
-        }
-
-        $logAtivo = $opcoes['log'] ?? false;
-        $url = $webhookBase . '/' . $endpoint . '.json';
-        $postData = http_build_query($params);
-
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-
-        $resposta = curl_exec($ch);
-        $curlErro = curl_error($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        $respostaJson = json_decode($resposta, true);
-
-        if ($logAtivo) {
-            $log = "==== CHAMADA API ====\n";
-            $log .= "Endpoint: $endpoint\nURL: $url\nDados: $postData\nHTTP: $httpCode\nErro: $curlErro\nResposta: $resposta\n";
-            $log .= "Campos enviados (params): " . print_r($params, true) . "\n";
-            file_put_contents(__DIR__ . '/../logs/editar_negocio.log', $log, FILE_APPEND);
-        }
-
-        return $respostaJson;
-    }
-
+    
     public static function criarTarefaAutomatica(array $dados)
 {
     $titulo = $dados['titulo'] ?? null;
