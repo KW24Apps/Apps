@@ -7,7 +7,6 @@ class BitrixSincDAO
 
     public function __construct()
     {
-        require_once __DIR__ . '/../config.php';
         $this->conn = (new Config())->getConnection();
     }
 
