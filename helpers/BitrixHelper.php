@@ -299,7 +299,60 @@ private static function calcularDataUtil(int $dias): DateTime
         return $resultado;
     }
 
+    // Consulta única empresa no Bitrix24
+    public static function consultarEmpresa($dados)
+    {
+        $empresaId = $dados['empresa'] ?? null;
+        $webhook = $dados['webhook'] ?? null;
 
+        if (!$empresaId || !$webhook) {
+            $log = "[consultarEmpresa] Parâmetros ausentes. Dados: " . json_encode($dados) . PHP_EOL;
+            file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', $log, FILE_APPEND);
+            return ['erro' => 'Parâmetros obrigatórios não informados.'];
+        }
+
+        $params = [
+            'ID' => $empresaId
+        ];
+
+        $resultado = self::chamarApi('crm.company.get', $params, [
+            'webhook' => $webhook,
+            'log' => true
+        ]);
+
+        $log = "[consultarEmpresa] ID: $empresaId | Resultado: " . json_encode($resultado) . PHP_EOL;
+        file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', $log, FILE_APPEND);
+
+        return $resultado['result'] ?? null;
+    }
+
+
+    // Consulta único contato no Bitrix24
+    public static function consultarContato($dados)
+    {
+        $contatoId = $dados['contato'] ?? null;
+        $webhook = $dados['webhook'] ?? null;
+
+        if (!$contatoId || !$webhook) {
+            $log = "[consultarContato] Parâmetros ausentes. Dados: " . json_encode($dados) . PHP_EOL;
+            file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', $log, FILE_APPEND);
+            return ['erro' => 'Parâmetros obrigatórios não informados.'];
+        }
+
+        $params = [
+            'ID' => $contatoId
+        ];
+
+        $resultado = self::chamarApi('crm.contact.get', $params, [
+            'webhook' => $webhook,
+            'log' => true
+        ]);
+
+        $log = "[consultarContato] ID: $contatoId | Resultado: " . json_encode($resultado) . PHP_EOL;
+        file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', $log, FILE_APPEND);
+
+        return $resultado['result'] ?? null;
+    }
 
 
 }
