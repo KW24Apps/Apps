@@ -306,26 +306,30 @@ private static function calcularDataUtil(int $dias): DateTime
         $webhook = $dados['webhook'] ?? null;
 
         if (!$empresaId || !$webhook) {
-            $log = "[consultarEmpresa] Parâmetros ausentes. Dados: " . json_encode($dados) . PHP_EOL;
-            file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', $log, FILE_APPEND);
+            file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', "[consultarEmpresa] Parâmetros ausentes. Dados: " . json_encode($dados) . PHP_EOL, FILE_APPEND);
             return ['erro' => 'Parâmetros obrigatórios não informados.'];
         }
 
-        $params = [
-            'ID' => $empresaId
-        ];
-        
-        file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', "[Webhook usado] $webhook\n", FILE_APPEND);
+        $params = ['ID' => $empresaId];
 
         $resultado = self::chamarApi('crm.company.get', $params, [
             'webhook' => $webhook,
             'log' => true
         ]);
 
-        $log = "[consultarEmpresa] ID: $empresaId | Resultado: " . json_encode($resultado) . PHP_EOL;
-        file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', $log, FILE_APPEND);
+        $empresa = $resultado['result'] ?? null;
 
-        return $resultado['result'] ?? null;
+        if (!empty($dados['campos']) && is_array($dados['campos'])) {
+            $filtrado = [];
+            foreach ($dados['campos'] as $campo) {
+                if (isset($empresa[$campo])) {
+                    $filtrado[$campo] = $empresa[$campo];
+                }
+            }
+            return $filtrado;
+        }
+
+        return $empresa;
     }
 
 
@@ -336,24 +340,30 @@ private static function calcularDataUtil(int $dias): DateTime
         $webhook = $dados['webhook'] ?? null;
 
         if (!$contatoId || !$webhook) {
-            $log = "[consultarContato] Parâmetros ausentes. Dados: " . json_encode($dados) . PHP_EOL;
-            file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', $log, FILE_APPEND);
+            file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', "[consultarContato] Parâmetros ausentes. Dados: " . json_encode($dados) . PHP_EOL, FILE_APPEND);
             return ['erro' => 'Parâmetros obrigatórios não informados.'];
         }
 
-        $params = [
-            'ID' => $contatoId
-        ];
+        $params = ['ID' => $contatoId];
 
         $resultado = self::chamarApi('crm.contact.get', $params, [
             'webhook' => $webhook,
             'log' => true
         ]);
 
-        $log = "[consultarContato] ID: $contatoId | Resultado: " . json_encode($resultado) . PHP_EOL;
-        file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', $log, FILE_APPEND);
+        $contato = $resultado['result'] ?? null;
 
-        return $resultado['result'] ?? null;
+        if (!empty($dados['campos']) && is_array($dados['campos'])) {
+            $filtrado = [];
+            foreach ($dados['campos'] as $campo) {
+                if (isset($contato[$campo])) {
+                    $filtrado[$campo] = $contato[$campo];
+                }
+            }
+            return $filtrado;
+        }
+
+        return $contato;
     }
 
 
