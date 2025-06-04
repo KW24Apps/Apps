@@ -1,15 +1,17 @@
 <?php
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../dao/BitrixSincDao.php';
+require_once __DIR__ . '/../helpers/BitrixCompanyHelper.php';
+require_once __DIR__ . '/../helpers/BitrixContactHelper.php';
+
+
 class BitrixSyncController
 {
-    private $bitrixHelper;
     private $dao;
     private $logFile;
 
     public function __construct()
     {
-        $this->bitrixHelper = new BitrixHelper();
         $this->dao = new BitrixSincDAO();
         $this->logFile = __DIR__ . '/../logs/bitrix_sync.log';
     }
@@ -52,7 +54,8 @@ class BitrixSyncController
             // define webhook padrão
             $webhookPadrao = 'https://gnapp.bitrix24.com.br/rest/21/yzwc932754bgujc3'; // ajuste se necessário
 
-           $resultadoEmpresas = $this->bitrixHelper->consultarEmpresas(['bitrix' => [$companyId]], $webhookPadrao, $camposEmpresa);
+            $resultadoEmpresas = BitrixCompanyHelper::consultarEmpresas(['bitrix' => [$companyId]], $webhookPadrao, $camposEmpresa);
+
 
             $company = $resultadoEmpresas['bitrix'][0] ?? null;
             
@@ -110,7 +113,7 @@ class BitrixSyncController
                     'EMAIL'
                 ];
 
-                $resultadoContatos = $this->bitrixHelper->consultarContatos(
+                $resultadoContatos = BitrixContactHelper::consultarContatos(    
                     ['bitrix' => $idsContatos],
                     $webhookPadrao,
                     $camposContato

@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
+require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
 
 use dao\AplicacaoAcessoDAO;
 
@@ -20,7 +21,7 @@ class DealController
         }
 
         $dados['webhook'] = $webhook;
-        $resultado = BitrixHelper::criarNegocio($dados);
+        $resultado = BitrixDealHelper::criarNegocio($dados);
 
         header('Content-Type: application/json');
         echo json_encode($resultado);
@@ -39,7 +40,7 @@ class DealController
         }
 
         $filtros['webhook'] = $webhook;
-        $resultado = BitrixHelper::consultarNegociacao($filtros);
+        $resultado = BitrixDealHelper::consultarNegociacao($filtros);
 
         header('Content-Type: application/json');
         echo json_encode($resultado);
@@ -58,7 +59,7 @@ class DealController
         }
 
         $dados['webhook'] = $webhook;
-        $resultado = BitrixHelper::editarNegociacao($dados);
+        $resultado = BitrixDealHelper::editarNegociacao($dados);
 
         header('Content-Type: application/json');
         echo json_encode($resultado);

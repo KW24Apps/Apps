@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
+require_once __DIR__ . '/../helpers/BitrixTaskHelper.php';
 
 use dao\AplicacaoAcessoDAO;
 
@@ -20,7 +21,7 @@ class TaskController
         }
 
         $dados['webhook'] = $webhook;
-        $resultado = BitrixHelper::criarTarefaAutomatica($dados);
+        $resultado = BitrixTaskHelper::criarTarefaAutomatica($dados);
 
         header('Content-Type: application/json');
         echo json_encode($resultado);
