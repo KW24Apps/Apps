@@ -64,6 +64,13 @@ class ClickSignController
 
         file_put_contents($logPath, "[OK] Validações concluídas com sucesso." . PHP_EOL, FILE_APPEND);
 
+        file_put_contents($logPath, "[DEBUG] Envio para consultarNegociacao: " . json_encode([
+            'webhook' => $webhookBitrix,
+            'deal' => $idDeal,
+            'spa' => $spa
+        ]) . PHP_EOL, FILE_APPEND);
+
+
         $negociacao = BitrixDealHelper::consultarNegociacao([
             'webhook' => $webhookBitrix,
             'id' => $idDeal,
