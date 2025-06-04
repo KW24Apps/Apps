@@ -7,7 +7,7 @@ class ClickSignHelper
         $url = 'https://api.clicksign.com/api/v1' . $endpoint;
         $headers = [
             'Content-Type: application/json',
-            'access_token: ' . $token
+            'Authorization: Bearer ' . $token
         ];
 
         $logPath = __DIR__ . '/../logs/clicksign_envio.log';
