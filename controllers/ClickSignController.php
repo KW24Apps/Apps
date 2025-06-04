@@ -65,6 +65,9 @@ class ClickSignController
             'spa' => $spa
         ]);
 
+        file_put_contents($logPath, "[DEBUG] Dados do retorno Bitrix: " . json_encode($negociacao) . PHP_EOL, FILE_APPEND);
+
+
         if (!$negociacao || !isset($negociacao['result']['item'])) {
             http_response_code(404);
             $msg = 'Negociação não encontrada no Bitrix.';
