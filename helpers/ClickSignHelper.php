@@ -4,7 +4,7 @@ class ClickSignHelper
 {
     private static function enviarRequisicao($metodo, $endpoint, $token, $dados = null)
     {
-        $url = 'https://api.clicksign.com/api/v1' . $endpoint;
+        $url = 'https://app.clicksign.com/api/v1' . $endpoint;
         $headers = [
             'Content-Type: application/json',
             'Authorization: Bearer ' . $token
