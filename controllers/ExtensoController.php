@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../helpers/FormataHelper.php';
 require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
+require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
 
 use dao\AplicacaoAcessoDAO;
 
@@ -34,7 +35,7 @@ class ExtensoController
             return;
         }
 
-        $dados = BitrixHelper::consultarNegociacao([
+        $dados = BitrixDealHelper::consultarNegociacao([
             'webhook' => $webhook,
             'spa' => $spa,
             'deal' => $dealId,
@@ -51,7 +52,7 @@ class ExtensoController
         $valor = FormataHelper::normalizarValor($item['ufCrm' . substr($campoValor, 7)]);
         $extenso = FormataHelper::valorPorExtenso($valor);
 
-        BitrixHelper::editarNegociacao([
+        BitrixDealHelper::editarNegociacao([
             'webhook' => $webhook,
             'spa' => $spa,
             'deal' => $dealId,
