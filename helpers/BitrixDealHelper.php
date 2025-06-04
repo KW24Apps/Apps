@@ -4,7 +4,7 @@ class BitrixDealHelper
 
 {
     // Cria um negócio no Bitrix24 via API
-    public static function criarNegocio($dados)
+    public static function criarNegocio($dados): array 
     {
         //$dados = $_POST ?: $_GET;
         $spa = $dados['spa'] ?? null;
@@ -43,7 +43,7 @@ class BitrixDealHelper
     }
 
     // Edita um negócio existente no Bitrix24 via API
-    public static function editarNegociacao($dados = [])
+    public static function editarNegociacao($dados = []): array
     {
         $spa = $dados['spa'] ?? null;
         $dealId = $dados['deal'] ?? null;
@@ -86,7 +86,7 @@ class BitrixDealHelper
     }
 
     // Consulta uma Negócio específico no Bitrix24 via ID
-    public static function consultarNegociacao($filtros)
+    public static function consultarNegociacao($filtros): array
     {
         $spa = $filtros['spa'] ?? 0;
         $dealId = $filtros['deal'] ?? null;
