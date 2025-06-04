@@ -2,12 +2,11 @@
 
 class ClickSignHelper
 {
-    private static function enviarRequisicao($metodo, $endpoint, $token, $dados = null)
+     private static function enviarRequisicao($metodo, $endpoint, $token, $dados = null)
     {
-        $url = 'https://app.clicksign.com/api/v1' . $endpoint;
+        $url = 'https://app.clicksign.com/api/v1' . $endpoint . '?access_token=' . $token;
         $headers = [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $token
+            'Content-Type: application/json'
         ];
 
         $logPath = __DIR__ . '/../logs/clicksign_envio.log';
