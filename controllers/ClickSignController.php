@@ -19,8 +19,7 @@ class ClickSignController
         file_put_contents($logPath, "[INICIO] Requisição recebida: " . json_encode($dados) . PHP_EOL, FILE_APPEND);
 
         $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($chave, 'clicksign');
-        file_put_contents(__DIR__ . '/../logs/clicksign_dbinfo.log',"[DADOS BANCO] Acesso carregado: " . json_encode($acesso) . PHP_EOL,FILE_APPEND);
-
+        file_put_contents(__DIR__ . '/../logs/clicksign_dbinfo.log', "[DADOS BANCO] Acesso carregado: " . json_encode($acesso) . PHP_EOL, FILE_APPEND);
 
         $webhookBitrix = trim($acesso['webhook_bitrix'] ?? '');
         file_put_contents($logPath, "[DEBUG] Webhook usado: [" . $webhookBitrix . "]" . PHP_EOL, FILE_APPEND);
@@ -38,19 +37,62 @@ class ClickSignController
 
         $idDeal = $dados['deal'] ?? null;
         $spa = $dados['spa'] ?? null;
-        $campoSignatario = $dados['signatario'] ?? null;
+        $campoContratante = $dados['contratante'] ?? null;
+        $campoContratada = $dados['contratada'] ?? null;
+        $campoTestemunhas = $dados['testemunhas'] ?? null;
         $campoData = $dados['data'] ?? null;
         $campoArquivo = $dados['arquivoaserassinado'] ?? null;
         $campoArquivoFinal = $dados['arquivoassinado'] ?? null;
         $campoIdClicksign = $dados['idclicksign'] ?? null;
         $campoRetorno = $dados['retorno'] ?? null;
 
-        if (!$idDeal || !$spa || !$campoSignatario || !$campoData || !$campoArquivo || !$campoArquivoFinal || !$campoIdClicksign || !$campoRetorno) {
+        if (!$idDeal || !$spa || !$campoData || !$campoArquivo || !$campoArquivoFinal || !$campoIdClicksign || !$campoRetorno || !($campoContratante || $campoContratada || $campoTestemunhas)) {
             http_response_code(400);
             $msg = 'Parâmetros obrigatórios ausentes.';
             file_put_contents($logPath, "[ERRO] $msg" . PHP_EOL, FILE_APPEND);
             echo json_encode(['erro' => $msg]);
             return;
+        }
+
+        // Função para buscar os contatos usando a função existente
+        function buscarContatos($campos, $webhook) {
+            return BitrixContactHelper::consultarContatos($campos, $webhook, ['EMAIL']);
+        }
+
+        // Inicializa um array de signatários
+        $signatarios = [];
+
+        // Verifica se o campo "contratante" foi informado na URL e adiciona ao array de signatários
+        if ($campoContratante) {
+            $contatoContratante = buscarContatos(['contratante' => $campoContratante], $webhookBitrix);
+            if (!empty($contatoContratante)) {
+                $signatarios[] = [
+                    'email' => $contatoContratante[0]['EMAIL'],
+                    'role' => 'contratante' // Papel de parte contratante
+                ];
+            }
+        }
+
+        // Verifica se o campo "contratada" foi informado na URL e adiciona ao array de signatários
+        if ($campoContratada) {
+            $contatoContratada = buscarContatos(['contratada' => $campoContratada], $webhookBitrix);
+            if (!empty($contatoContratada)) {
+                $signatarios[] = [
+                    'email' => $contatoContratada[0]['EMAIL'],
+                    'role' => 'contratada' // Papel de parte contratada
+                ];
+            }
+        }
+
+        // Verifica se o campo "testemunhas" foi informado na URL e adiciona ao array de signatários
+        if ($campoTestemunhas) {
+            $contatoTestemunha = buscarContatos(['testemunhas' => $campoTestemunhas], $webhookBitrix);
+            if (!empty($contatoTestemunha)) {
+                $signatarios[] = [
+                    'email' => $contatoTestemunha[0]['EMAIL'],
+                    'role' => 'testemunha' // Papel de testemunha
+                ];
+            }
         }
 
         file_put_contents($logPath, "[OK] Validações concluídas com sucesso." . PHP_EOL, FILE_APPEND);
@@ -102,7 +144,6 @@ class ClickSignController
             echo json_encode(['erro' => $msg]);
             return;
         }
-
 
         file_put_contents($logPath, "[OK] Link do arquivo obtido: $linkArquivo" . PHP_EOL, FILE_APPEND);
 
