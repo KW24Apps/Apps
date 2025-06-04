@@ -45,10 +45,11 @@ class ClickSignHelper
         finfo_close($finfo);
 
         $base64 = "data:$mime;base64," . base64_encode($conteudo);
-
+        $path = '/' . basename(parse_url($urlArquivo, PHP_URL_PATH));
 
         return self::enviarRequisicao('POST', '/documents', $token, [
             'document' => [
+                'path' => $path,
                 'content_base64' => $base64,
                 'name' => $nome
             ]
