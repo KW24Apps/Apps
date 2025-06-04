@@ -4,14 +4,26 @@ class ClickSignHelper
 {
     private static function enviarRequisicao($metodo, $endpoint, $token, $dados = null)
     {
+        $url = 'https://api.clicksign.com/api/v1' . $endpoint;
+        $headers = [
+            'Content-Type: application/json',
+            'access_token: ' . $token
+        ];
+
+        $logPath = __DIR__ . '/../logs/clicksign_envio.log';
+        $logDados = [
+            'url' => $url,
+            'metodo' => $metodo,
+            'headers' => $headers,
+            'dados' => $dados
+        ];
+        file_put_contents($logPath, "[ENVIANDO PARA CLICKSIGN] " . json_encode($logDados) . PHP_EOL, FILE_APPEND);
+
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'https://api.clicksign.com/api/v1' . $endpoint);
+        curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $metodo);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $token
-        ]);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
         if ($dados !== null) {
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($dados));
@@ -25,13 +37,12 @@ class ClickSignHelper
     }
 
     // Documentos
-    public static function criarDocumento($token, $nome, $link)
+    public static function criarDocumento($token, $nome, $base64)
     {
         return self::enviarRequisicao('POST', '/documents', $token, [
             'document' => [
-                'path' => $link,
-                'name' => $nome,
-                'content_base64' => true
+                'content_base64' => $base64,
+                'name' => $nome
             ]
         ]);
     }
