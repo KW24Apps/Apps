@@ -2,38 +2,22 @@
 
 class ClickSignHelper
 {
-     private static function enviarRequisicao($metodo, $endpoint, $token, $dados = null)
+    private static function enviarRequisicao($metodo, $endpoint, $token, $dados = [])
     {
         $url = 'https://app.clicksign.com/api/v1' . $endpoint . '?access_token=' . $token;
-        $headers = [
-            'Content-Type: application/json'
-        ];
 
-        $logPath = __DIR__ . '/../logs/clicksign_envio.log';
-        $logDados = [
-            'url' => $url,
-            'metodo' => $metodo,
-            'headers' => $headers,
-            'dados' => $dados
-        ];
-        file_put_contents($logPath, "[ENVIANDO PARA CLICKSIGN] " . json_encode($logDados) . PHP_EOL, FILE_APPEND);
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
+        $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $metodo);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-        if ($dados !== null) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($dados));
-        }
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($dados));
 
         $resposta = curl_exec($ch);
-        $erro = curl_error($ch);
         curl_close($ch);
 
-        return $erro ? ['erro' => $erro] : json_decode($resposta, true);
+        return json_decode($resposta, true);
     }
+
 
     // Documentos
     public static function criarDocumento($token, $nome, $urlArquivo)
@@ -49,12 +33,6 @@ class ClickSignHelper
         $mime = finfo_buffer($finfo, $conteudo);
         finfo_close($finfo);
 
-        // Ajustar nome se estiver sem extensão
-        $extensao = pathinfo(parse_url($urlArquivo, PHP_URL_PATH), PATHINFO_EXTENSION);
-        if (!str_ends_with($nome, ".{$extensao}")) {
-            $nome .= ".{$extensao}";
-        }
-
         // Montar content_base64 com prefixo "data:<mime>;base64,"
         $dataBase64 = "data:$mime;base64," . base64_encode($conteudo);
         $path = '/' . basename(parse_url($urlArquivo, PHP_URL_PATH));
@@ -62,13 +40,12 @@ class ClickSignHelper
         return self::enviarRequisicao('POST', '/documents', $token, [
             'document' => [
                 'path' => $path,
-                'name' => $nome,
                 'content_base64' => $dataBase64,
-                'content_type' => $mime
+                'name' => $nome
             ]
         ]);
     }
-    
+
     public static function buscarDocumento($token, $documentKey)
     {
         return self::enviarRequisicao('GET', "/documents/$documentKey", $token);
