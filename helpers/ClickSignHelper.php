@@ -51,6 +51,7 @@ class ClickSignHelper
             'document' => [
                 'path' => $path,
                 'content_base64' => $base64,
+                'content_type' => $mime,
                 'name' => $nome
             ]
         ]);
