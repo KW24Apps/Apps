@@ -89,6 +89,8 @@ class ClickSignController
         }
 
         $item = $negociacao['result']['item'];
+        file_put_contents($logPath, "[DEBUG] Conteúdo do campo arquivo [$campoArquivo]: " . json_encode($item[$campoArquivo] ?? 'NULO') . PHP_EOL, FILE_APPEND);
+
         $valorCampoArquivo = $item[$campoArquivo] ?? null;
         $fileId = is_array($valorCampoArquivo) && isset($valorCampoArquivo[0]['id'])
             ? $valorCampoArquivo[0]['id']
