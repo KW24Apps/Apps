@@ -104,6 +104,8 @@ class ClickSignController
         }
 
         $linkArquivo = BitrixDiskHelper::obterLinkExterno($webhookBitrix, $fileId);
+        file_put_contents($logPath, "[DEBUG] Resposta obterLinkExterno: " . json_encode($linkArquivo) . PHP_EOL, FILE_APPEND);
+
 
         if (!$linkArquivo) {
             http_response_code(500);
