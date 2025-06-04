@@ -5,6 +5,7 @@ require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
 require_once __DIR__ . '/../helpers/BitrixDiskHelper.php';
 require_once __DIR__ . '/../helpers/ClickSignHelper.php';
+require_once __DIR__ . '/../helpers/BitrixContactHelper.php';
 
 use dao\AplicacaoAcessoDAO;
 
