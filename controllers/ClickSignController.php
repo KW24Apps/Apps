@@ -73,7 +73,7 @@ class ClickSignController
 
         $negociacao = BitrixDealHelper::consultarNegociacao([
             'webhook' => $webhookBitrix,
-            'id' => $idDeal,
+            'deal' => $idDeal,
             'spa' => $spa
         ]);
 
