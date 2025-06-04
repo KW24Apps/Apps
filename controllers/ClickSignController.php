@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
+require_once __DIR__ . '/../helpers/BitrixDiskHelper.php';
 
 use dao\AplicacaoAcessoDAO;
 
@@ -16,7 +17,6 @@ class ClickSignController
         $logPath = __DIR__ . '/../logs/clicksign.log';
         file_put_contents($logPath, "[INICIO] Requisição recebida: " . json_encode($dados) . PHP_EOL, FILE_APPEND);
 
-        // Valida chave e aplicação via slug 'clicksign'
         $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($chave, 'clicksign');
 
         $webhookBitrix = $acesso['webhook_bitrix'] ?? null;
@@ -58,7 +58,6 @@ class ClickSignController
 
         file_put_contents($logPath, "[OK] Validações concluídas com sucesso." . PHP_EOL, FILE_APPEND);
 
-        // Consulta o Deal no Bitrix
         $negociacao = BitrixDealHelper::consultarNegociacao([
             'webhook' => $webhookBitrix,
             'id' => $idDeal,
@@ -84,13 +83,23 @@ class ClickSignController
             return;
         }
 
-        file_put_contents($logPath, "[OK] Negociação localizada e arquivo ID obtido: $fileId" . PHP_EOL, FILE_APPEND);
+        $linkArquivo = BitrixDiskHelper::obterLinkExterno($webhookBitrix, $fileId);
 
-        // Placeholder para busca do arquivo
+        if (!$linkArquivo) {
+            http_response_code(500);
+            $msg = 'Não foi possível obter link do arquivo.';
+            file_put_contents($logPath, "[ERRO] $msg" . PHP_EOL, FILE_APPEND);
+            echo json_encode(['erro' => $msg]);
+            return;
+        }
+
+        file_put_contents($logPath, "[OK] Link do arquivo obtido: $linkArquivo" . PHP_EOL, FILE_APPEND);
+
         echo json_encode([
             'status' => 'ok',
             'mensagem' => 'Negociação localizada e arquivo identificado.',
             'fileId' => $fileId,
+            'linkArquivo' => $linkArquivo,
             'clicksign_token' => $clicksignToken,
             'clicksign_secret' => $clicksignSecret
         ]);
