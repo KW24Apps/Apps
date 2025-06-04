@@ -49,6 +49,12 @@ class ClickSignHelper
         $mime = finfo_buffer($finfo, $conteudo);
         finfo_close($finfo);
 
+        // Ajustar nome se estiver sem extensão
+        $extensao = pathinfo(parse_url($urlArquivo, PHP_URL_PATH), PATHINFO_EXTENSION);
+        if (!str_ends_with($nome, ".{$extensao}")) {
+            $nome .= ".{$extensao}";
+        }
+
         // Montar content_base64 com prefixo "data:<mime>;base64,"
         $dataBase64 = "data:$mime;base64," . base64_encode($conteudo);
         $path = '/' . basename(parse_url($urlArquivo, PHP_URL_PATH));
@@ -56,12 +62,13 @@ class ClickSignHelper
         return self::enviarRequisicao('POST', '/documents', $token, [
             'document' => [
                 'path' => $path,
+                'name' => $nome,
                 'content_base64' => $dataBase64,
-                'name' => $nome
+                'content_type' => $mime
             ]
         ]);
     }
-
+    
     public static function buscarDocumento($token, $documentKey)
     {
         return self::enviarRequisicao('GET', "/documents/$documentKey", $token);
