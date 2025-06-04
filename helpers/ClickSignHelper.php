@@ -10,7 +10,7 @@ class ClickSignHelper
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $metodo);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json',
-            'access_token: ' . $token
+            'Authorization: Bearer ' . $token
         ]);
 
         if ($dados !== null) {
