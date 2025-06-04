@@ -43,7 +43,7 @@ class AplicacaoAcessoDAO
             ];
             file_put_contents(__DIR__ . '/../logs/aplicacao_acesso_debug.log', json_encode($log) . PHP_EOL, FILE_APPEND);
 
-           return $resultado ?: null;
+          return $resultado ?: null;
         } catch (PDOException $e) {
             file_put_contents(__DIR__ . '/../logs/aplicacao_acesso_debug.log', 'Erro DB: ' . $e->getMessage() . PHP_EOL, FILE_APPEND);
             return null;

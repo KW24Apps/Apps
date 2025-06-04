@@ -12,8 +12,8 @@ class DealController
     {
         $dados = $_GET;
         $cliente = $dados['cliente'] ?? null;
-        $webhook = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'deal');
-
+        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'deal');
+        $webhook = $acesso['webhook_bitrix'] ?? null;
         if (!$webhook) {
             http_response_code(403);
             echo json_encode(['erro' => 'Acesso negado para criar negociação.']);
@@ -31,8 +31,8 @@ class DealController
     {
         $filtros = $_GET;
         $cliente = $filtros['cliente'] ?? null;
-        $webhook = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'deal');
-
+        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'deal');
+        $webhook = $acesso['webhook_bitrix'] ?? null;
         if (!$webhook) {
             http_response_code(403);
             echo json_encode(['erro' => 'Acesso negado para consultar negociação.']);
@@ -50,8 +50,9 @@ class DealController
     {
         $dados = $_GET;
         $cliente = $dados['cliente'] ?? null;
-        $webhook = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'deal');
-
+        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'deal');
+        $webhook = $acesso['webhook_bitrix'] ?? null;
+        
         if (!$webhook) {
             http_response_code(403);
             echo json_encode(['erro' => 'Acesso negado para editar negociação.']);
