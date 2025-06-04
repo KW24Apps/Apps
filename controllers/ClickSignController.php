@@ -4,6 +4,7 @@ require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
 require_once __DIR__ . '/../helpers/BitrixDiskHelper.php';
+require_once __DIR__ . '/../helpers/ClickSignHelper.php';
 
 use dao\AplicacaoAcessoDAO;
 
@@ -95,13 +96,15 @@ class ClickSignController
 
         file_put_contents($logPath, "[OK] Link do arquivo obtido: $linkArquivo" . PHP_EOL, FILE_APPEND);
 
+        $nomeDocumento = 'Assinatura - ' . ($item['TITLE'] ?? 'Documento');
+        $respostaClicksign = ClickSignHelper::criarDocumento($clicksignToken, $nomeDocumento, $linkArquivo);
+
+        file_put_contents($logPath, "[RESPOSTA CLICK] " . json_encode($respostaClicksign) . PHP_EOL, FILE_APPEND);
+
         echo json_encode([
             'status' => 'ok',
-            'mensagem' => 'Negociação localizada e arquivo identificado.',
-            'fileId' => $fileId,
-            'linkArquivo' => $linkArquivo,
-            'clicksign_token' => $clicksignToken,
-            'clicksign_secret' => $clicksignSecret
+            'mensagem' => 'Documento enviado para ClickSign com sucesso.',
+            'resposta' => $respostaClicksign
         ]);
     }
 }
