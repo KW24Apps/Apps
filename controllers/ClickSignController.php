@@ -45,7 +45,7 @@ class ClickSignController
             return;
         }
 
-        $idDeal = $dados['iddeal'] ?? null;
+        $idDeal = $dados['deal'] ?? null;
         $spa = $dados['spa'] ?? null;
         $campoSignatario = $dados['signatario'] ?? null;
         $campoData = $dados['data'] ?? null;
