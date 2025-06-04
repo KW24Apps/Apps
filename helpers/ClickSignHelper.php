@@ -10,7 +10,7 @@ class ClickSignHelper
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $metodo);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json',
-            'Authorization: Bearer ' . $token
+            'access_token: ' . $token
         ]);
 
         if ($dados !== null) {
@@ -28,7 +28,11 @@ class ClickSignHelper
     public static function criarDocumento($token, $nome, $link)
     {
         return self::enviarRequisicao('POST', '/documents', $token, [
-            'document' => ['path' => $link, 'name' => $nome]
+            'document' => [
+                'path' => $link,
+                'name' => $nome,
+                'content_base64' => true
+            ]
         ]);
     }
 
