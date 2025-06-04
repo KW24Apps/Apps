@@ -90,16 +90,17 @@ class ClickSignController
             return;
         }
 
-        $linkArquivo = BitrixDiskHelper::obterLinkExterno($webhookBitrix, $fileId);
-        file_put_contents($logPath, "[DEBUG] Resposta obterLinkExterno: " . json_encode($linkArquivo) . PHP_EOL, FILE_APPEND);
+        $linkArquivo = $valorCampoArquivo[0]['urlMachine'] ?? null;
+        file_put_contents($logPath, "[DEBUG] Link do arquivo extraído diretamente do campo: " . json_encode($linkArquivo) . PHP_EOL, FILE_APPEND);
 
         if (!$linkArquivo) {
             http_response_code(500);
-            $msg = 'Não foi possível obter link do arquivo.';
+            $msg = 'Link do arquivo ausente no campo retornado.';
             file_put_contents($logPath, "[ERRO] $msg" . PHP_EOL, FILE_APPEND);
             echo json_encode(['erro' => $msg]);
             return;
         }
+
 
         file_put_contents($logPath, "[OK] Link do arquivo obtido: $linkArquivo" . PHP_EOL, FILE_APPEND);
 
