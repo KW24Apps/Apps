@@ -37,8 +37,11 @@ class ClickSignHelper
     }
 
     // Documentos
-    public static function criarDocumento($token, $nome, $base64)
+    public static function criarDocumento($token, $nome, $urlArquivo)
     {
+        $conteudo = @file_get_contents($urlArquivo);
+        $base64 = base64_encode($conteudo);
+
         return self::enviarRequisicao('POST', '/documents', $token, [
             'document' => [
                 'content_base64' => $base64,
