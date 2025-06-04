@@ -27,7 +27,9 @@ class ExtensoController
             return;
         }
 
-        $webhook = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'extenso');
+        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'extenso');
+        $webhook = $acesso['webhook_bitrix'] ?? null;
+
 
         if (!$webhook) {
             http_response_code(403);

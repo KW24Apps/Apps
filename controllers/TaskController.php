@@ -12,7 +12,8 @@ class TaskController
     {
         $dados = $_GET;
         $cliente = $dados['cliente'] ?? null;
-        $webhook = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'task');
+        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'task');
+        $webhook = $acesso['webhook_bitrix'] ?? null;
 
         if (!$webhook) {
             http_response_code(403);
