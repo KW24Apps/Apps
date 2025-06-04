@@ -21,6 +21,11 @@ class ClickSignController
         $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($chave, 'clicksign');
 
         $webhookBitrix = $acesso['webhook_bitrix'] ?? null;
+
+        $webhookBitrix = trim($webhookBitrix);
+        file_put_contents($logPath, "[DEBUG] Webhook usado: [" . $webhookBitrix . "]" . PHP_EOL, FILE_APPEND);
+
+
         $clicksignToken = $acesso['clicksign_token'] ?? null;
         $clicksignSecret = $acesso['clicksign_secret'] ?? null;
 
