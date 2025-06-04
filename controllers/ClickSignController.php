@@ -89,7 +89,11 @@ class ClickSignController
         }
 
         $item = $negociacao['result']['item'];
-        $fileId = $item[$campoArquivo] ?? null;
+        $valorCampoArquivo = $item[$campoArquivo] ?? null;
+        $fileId = is_array($valorCampoArquivo) && isset($valorCampoArquivo[0]['id'])
+            ? $valorCampoArquivo[0]['id']
+            : null;
+
 
         if (!$fileId) {
             http_response_code(422);
