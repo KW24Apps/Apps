@@ -13,45 +13,57 @@ class ClickSignHelper
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($dados));
 
         $resposta = curl_exec($ch);
+        file_put_contents(__DIR__ . '/../logs/clicksign_debug.log', "[RESPOSTA] " . $resposta . PHP_EOL, FILE_APPEND);
         curl_close($ch);
 
         return json_decode($resposta, true);
     }
 
 
+
     // Documentos
-    public static function criarDocumento($token, $nome, $urlArquivo)
-    {
-        // Baixar conteúdo
-        $conteudo = @file_get_contents($urlArquivo);
-        if (!$conteudo) {
-            return ['erro' => 'Erro ao acessar o arquivo!'];
+        public static function criarDocumento($token, $nome, $urlArquivo)
+        {
+            // Baixar conteúdo
+            $conteudo = @file_get_contents($urlArquivo);
+            if (!$conteudo) {
+                file_put_contents(__DIR__ . '/../logs/clicksign_debug.log', "[ERRO] Erro ao acessar arquivo: $urlArquivo" . PHP_EOL, FILE_APPEND);
+                return ['erro' => 'Erro ao acessar o arquivo!'];
+            }
+
+            // Detectar MIME
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_buffer($finfo, $conteudo);
+            finfo_close($finfo);
+
+            // Ajustar nome se estiver sem extensão
+            $extensao = pathinfo(parse_url($urlArquivo, PHP_URL_PATH), PATHINFO_EXTENSION);
+            if (!str_ends_with($nome, ".{$extensao}")) {
+                $nome .= ".{$extensao}";
+            }
+
+            // Montar content_base64 com prefixo "data:<mime>;base64,"
+            $dataBase64 = "data:$mime;base64," . base64_encode($conteudo);
+            $path = '/' . basename(parse_url($urlArquivo, PHP_URL_PATH));
+
+            $logData = [
+                'token' => $token,
+                'nome' => $nome,
+                'urlArquivo' => $urlArquivo,
+                'mime' => $mime,
+                'path' => $path
+            ];
+            file_put_contents(__DIR__ . '/../logs/clicksign_debug.log', "[ENVIO] " . json_encode($logData) . PHP_EOL, FILE_APPEND);
+
+            return self::enviarRequisicao('POST', '/documents', $token, [
+                'document' => [
+                    'path' => $path,
+                    'name' => $nome,
+                    'content_base64' => $dataBase64,
+                    'content_type' => $mime
+                ]
+            ]);
         }
-
-        // Detectar MIME
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_buffer($finfo, $conteudo);
-        finfo_close($finfo);
-
-        // Ajustar nome se estiver sem extensão
-        $extensao = pathinfo(parse_url($urlArquivo, PHP_URL_PATH), PATHINFO_EXTENSION);
-        if (!str_ends_with($nome, ".{$extensao}")) {
-            $nome .= ".{$extensao}";
-        }
-
-        // Montar content_base64 com prefixo "data:<mime>;base64,"
-        $dataBase64 = "data:$mime;base64," . base64_encode($conteudo);
-        $path = '/' . basename(parse_url($urlArquivo, PHP_URL_PATH));
-
-        return self::enviarRequisicao('POST', '/documents', $token, [
-            'document' => [
-                'path' => $path,
-                'name' => $nome,
-                'content_base64' => $dataBase64,
-                'content_type' => $mime
-            ]
-        ]);
-    }
 
     public static function buscarDocumento($token, $documentKey)
     {
