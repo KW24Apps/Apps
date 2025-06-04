@@ -27,7 +27,7 @@ class ExtensoController
             return;
         }
 
-        $webhook = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'deal');
+        $webhook = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'extenso');
 
         if (!$webhook) {
             http_response_code(403);
