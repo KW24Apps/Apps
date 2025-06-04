@@ -13,63 +13,100 @@ class ClickSignController
     public function novo()
     {
         $dados = $_GET;
-        $logPath = __DIR__ . '/../logs/clicksign.log';
+        $chave = $dados['cliente'] ?? null;
 
-        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($dados['cliente'] ?? '', 'clicksign');
+        $logPath = __DIR__ . '/../logs/clicksign.log';
+        file_put_contents($logPath, "[INICIO] Requisição recebida: " . json_encode($dados) . PHP_EOL, FILE_APPEND);
+
+        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($chave, 'clicksign');
+
         $webhookBitrix = trim($acesso['webhook_bitrix'] ?? '');
+        file_put_contents($logPath, "[DEBUG] Webhook usado: [" . $webhookBitrix . "]" . PHP_EOL, FILE_APPEND);
+
         $clicksignToken = $acesso['clicksign_token'] ?? null;
         $clicksignSecret = $acesso['clicksign_secret'] ?? null;
 
         if (!$webhookBitrix || !$clicksignToken || !$clicksignSecret) {
             http_response_code(403);
-            echo json_encode(['erro' => 'Acesso negado ou credenciais incompletas.']);
+            $msg = 'Acesso negado ou credenciais ClickSign ausentes/incompletas.';
+            file_put_contents($logPath, "[ERRO] $msg" . PHP_EOL, FILE_APPEND);
+            echo json_encode(['erro' => $msg]);
             return;
         }
 
-        $params = ['deal', 'spa', 'signatario', 'data', 'arquivoaserassinado', 'arquivoassinado', 'idclicksign', 'retorno'];
-        foreach ($params as $param) {
-            if (empty($dados[$param])) {
-                http_response_code(400);
-                echo json_encode(['erro' => 'Parâmetros obrigatórios ausentes.']);
-                return;
-            }
+        $idDeal = $dados['deal'] ?? null;
+        $spa = $dados['spa'] ?? null;
+        $campoSignatario = $dados['signatario'] ?? null;
+        $campoData = $dados['data'] ?? null;
+        $campoArquivo = $dados['arquivoaserassinado'] ?? null;
+        $campoArquivoFinal = $dados['arquivoassinado'] ?? null;
+        $campoIdClicksign = $dados['idclicksign'] ?? null;
+        $campoRetorno = $dados['retorno'] ?? null;
+
+        if (!$idDeal || !$spa || !$campoSignatario || !$campoData || !$campoArquivo || !$campoArquivoFinal || !$campoIdClicksign || !$campoRetorno) {
+            http_response_code(400);
+            $msg = 'Parâmetros obrigatórios ausentes.';
+            file_put_contents($logPath, "[ERRO] $msg" . PHP_EOL, FILE_APPEND);
+            echo json_encode(['erro' => $msg]);
+            return;
         }
+
+        file_put_contents($logPath, "[OK] Validações concluídas com sucesso." . PHP_EOL, FILE_APPEND);
 
         $negociacao = BitrixDealHelper::consultarNegociacao([
             'webhook' => $webhookBitrix,
-            'deal' => $dados['deal'],
-            'spa' => $dados['spa']
+            'deal' => $idDeal,
+            'spa' => $spa
         ]);
 
-        if (!isset($negociacao['result']['item'])) {
+        file_put_contents($logPath, "[DEBUG] Dados do retorno Bitrix: " . json_encode($negociacao) . PHP_EOL, FILE_APPEND);
+
+        if (!$negociacao || !isset($negociacao['result']['item'])) {
             http_response_code(404);
-            echo json_encode(['erro' => 'Negociação não encontrada no Bitrix.']);
+            $msg = 'Negociação não encontrada no Bitrix.';
+            file_put_contents($logPath, "[ERRO] $msg" . PHP_EOL, FILE_APPEND);
+            echo json_encode(['erro' => $msg]);
             return;
         }
 
         $item = $negociacao['result']['item'];
-        $camposConvertidos = BitrixHelper::formatarCampos($item);
-        $campoArquivo = BitrixHelper::formatarCampos([$dados['arquivoaserassinado'] => ''])[key($camposConvertidos)];
 
-        $valorCampoArquivo = $camposConvertidos[$campoArquivo] ?? null;
-        $fileId = is_array($valorCampoArquivo) && isset($valorCampoArquivo[0]['id']) ? $valorCampoArquivo[0]['id'] : null;
+        // Conversão do campo
+        $camposConvertidos = BitrixHelper::formatarCampos([$campoArquivo => 1]);
+        $chaveConvertida = array_key_first($camposConvertidos);
+        $valorCampoArquivo = $item[$chaveConvertida] ?? null;
+
+        file_put_contents($logPath, "[DEBUG] Conteúdo do campo arquivo [$chaveConvertida]: " . json_encode($valorCampoArquivo) . PHP_EOL, FILE_APPEND);
+
+        $fileId = is_array($valorCampoArquivo) && isset($valorCampoArquivo[0]['id'])
+            ? $valorCampoArquivo[0]['id']
+            : null;
 
         if (!$fileId) {
             http_response_code(422);
-            echo json_encode(['erro' => 'ID do arquivo não encontrado no campo especificado.']);
+            $msg = 'ID do arquivo não encontrado no campo especificado.';
+            file_put_contents($logPath, "[ERRO] $msg" . PHP_EOL, FILE_APPEND);
+            echo json_encode(['erro' => $msg]);
             return;
         }
 
         $linkArquivo = BitrixDiskHelper::obterLinkExterno($webhookBitrix, $fileId);
+        file_put_contents($logPath, "[DEBUG] Resposta obterLinkExterno: " . json_encode($linkArquivo) . PHP_EOL, FILE_APPEND);
 
         if (!$linkArquivo) {
             http_response_code(500);
-            echo json_encode(['erro' => 'Não foi possível obter link do arquivo.']);
+            $msg = 'Não foi possível obter link do arquivo.';
+            file_put_contents($logPath, "[ERRO] $msg" . PHP_EOL, FILE_APPEND);
+            echo json_encode(['erro' => $msg]);
             return;
         }
 
+        file_put_contents($logPath, "[OK] Link do arquivo obtido: $linkArquivo" . PHP_EOL, FILE_APPEND);
+
         $nomeDocumento = 'Assinatura - ' . ($item['TITLE'] ?? 'Documento');
         $respostaClicksign = ClickSignHelper::criarDocumento($clicksignToken, $nomeDocumento, $linkArquivo);
+
+        file_put_contents($logPath, "[RESPOSTA CLICK] " . json_encode($respostaClicksign) . PHP_EOL, FILE_APPEND);
 
         echo json_encode([
             'status' => 'ok',
