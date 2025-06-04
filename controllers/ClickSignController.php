@@ -127,6 +127,26 @@ class ClickSignController
             ? $valorCampoArquivo[0]['id']
             : null;
 
+        // Teste de acesso ao arquivo
+        if ($fileId) {
+            $arquivo = BitrixDiskHelper::obterArquivoPorId($webhookBitrix, $fileId);
+
+            if ($arquivo) {
+                echo "Arquivo recuperado com sucesso!";
+                // Aqui você pode também salvar a resposta em log se precisar para depuração
+                file_put_contents($logPath, "[DEBUG] Arquivo recuperado com sucesso." . PHP_EOL, FILE_APPEND);
+            } else {
+                echo "Erro ao acessar o arquivo!";
+                file_put_contents($logPath, "[ERRO] Não foi possível acessar o arquivo." . PHP_EOL, FILE_APPEND);
+            }
+        } else {
+            echo "ID do arquivo não encontrado.";
+            file_put_contents($logPath, "[ERRO] ID do arquivo não encontrado." . PHP_EOL, FILE_APPEND);
+        }
+
+
+
+
         if (!$fileId) {
             http_response_code(422);
             $msg = 'ID do arquivo não encontrado no campo especificado.';
