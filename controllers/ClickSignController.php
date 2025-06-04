@@ -19,6 +19,8 @@ class ClickSignController
         file_put_contents($logPath, "[INICIO] Requisição recebida: " . json_encode($dados) . PHP_EOL, FILE_APPEND);
 
         $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($chave, 'clicksign');
+        file_put_contents(__DIR__ . '/../logs/clicksign_dbinfo.log',"[DADOS BANCO] Acesso carregado: " . json_encode($acesso) . PHP_EOL,FILE_APPEND);
+
 
         $webhookBitrix = trim($acesso['webhook_bitrix'] ?? '');
         file_put_contents($logPath, "[DEBUG] Webhook usado: [" . $webhookBitrix . "]" . PHP_EOL, FILE_APPEND);
