@@ -7,7 +7,7 @@ $config = [];
 if ($ambiente === 'local') {
     $config = [
         'host' => 'localhost',
-        'dbname' => 'dificil',
+        'dbname' => 'apis_local',
         'usuario' => 'root',
         'senha' => ''
     ];

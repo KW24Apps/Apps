@@ -1,0 +1,36 @@
+==== CHAMADA API ====
+Endpoint: crm.contact.get
+URL: https://gnapp.bitrix24.com.br/rest/21/348n8xqhp06wp41c//crm.contact.get.json
+Dados: ID=UF_CRM_41_1727793339
+HTTP: 400
+Erro: 
+Resposta: {"error":"","error_description":"ID is not defined or invalid."}
+Campos enviados (params): Array
+(
+    [ID] => UF_CRM_41_1727793339
+)
+
+==== CHAMADA API ====
+Endpoint: crm.contact.get
+URL: https://gnapp.bitrix24.com.br/rest/21/348n8xqhp06wp41c//crm.contact.get.json
+Dados: ID=UF_CRM_41_1747700402
+HTTP: 400
+Erro: 
+Resposta: {"error":"","error_description":"ID is not defined or invalid."}
+Campos enviados (params): Array
+(
+    [ID] => UF_CRM_41_1747700402
+)
+
+==== CHAMADA API ====
+Endpoint: crm.contact.get
+URL: https://gnapp.bitrix24.com.br/rest/21/348n8xqhp06wp41c//crm.contact.get.json
+Dados: ID=UF_CRM_41_1747700459
+HTTP: 400
+Erro: 
+Resposta: {"error":"","error_description":"ID is not defined or invalid."}
+Campos enviados (params): Array
+(
+    [ID] => UF_CRM_41_1747700459
+)
+
