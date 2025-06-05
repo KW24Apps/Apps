@@ -7,7 +7,7 @@ $config = [];
 if ($ambiente === 'local') {
     $config = [
         'host' => 'localhost',
-        'dbname' => 'apis_kw24_local',
+        'dbname' => 'dificil',
         'usuario' => 'root',
         'senha' => ''
     ];
