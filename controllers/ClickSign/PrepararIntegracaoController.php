@@ -75,14 +75,14 @@ class PrepararIntegracaoController
             }
         }
 
-       // $resumo = [
-       //     'empresa' => $empresa,
-       //     'contatos' => $contatos,
-       //     'data_assinatura' => $item[$campoData] ?? null,
-       //     'arquivo' => $arquivo,
-       //     'negocio' => $item,
-       //    'token_clicksign' => $acesso['clicksign_token'] ?? null,
-       //     'secret_clicksign' => $acesso['clicksign_secret'] ?? null
+        $resumo = [
+            'empresa' => $empresa,
+            'contatos' => $contatos,
+            'data_assinatura' => $item[$campoData] ?? null,
+            'arquivo' => $arquivo,
+            'negocio' => $item,
+            'token_clicksign' => $acesso['clicksign_token'] ?? null,
+            'secret_clicksign' => $acesso['clicksign_secret'] ?? null
         ];
 
         echo json_encode($resumo, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
