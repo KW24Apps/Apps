@@ -61,6 +61,7 @@ class BitrixCompanyHelper
             return $filtrado;
         }
 
+        
         return $empresa;
     }
 
