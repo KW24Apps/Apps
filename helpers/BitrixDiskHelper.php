@@ -2,15 +2,19 @@
 
 class BitrixDiskHelper
 {
-    public static function obterArquivoPorId($webhook, $fileId)
+    /**
+     * Ao invés de buscar novamente via API, retornamos direto o valor do campo do item
+     * Isso evita erro de retorno vazio do disk.file.get
+     */
+    public static function extrairArquivoDoItem($item, $chaveCampo)
     {
-        $params = ["id" => $fileId];
+        $valor = $item[$chaveCampo] ?? null;
 
-        $resposta = BitrixHelper::chamarApi("disk.file.get", $params, [
-            'webhook' => $webhook
-        ]);
+        if (is_array($valor) && isset($valor[0]['urlMachine'])) {
+            return $valor[0];
+        }
 
-        return $resposta['result'] ?? null;
+        return null;
     }
 
     public static function obterLinkExterno($webhook, $fileId)

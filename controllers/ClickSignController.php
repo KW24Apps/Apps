@@ -55,43 +55,38 @@ class ClickSignController
             return;
         }
 
-        // Função para buscar os contatos usando a função existente
         function buscarContatos($campos, $webhook) {
             return BitrixContactHelper::consultarContatos($campos, $webhook, ['EMAIL']);
         }
 
-        // Inicializa um array de signatários
         $signatarios = [];
 
-        // Verifica se o campo "contratante" foi informado na URL e adiciona ao array de signatários
         if ($campoContratante) {
             $contatoContratante = buscarContatos(['contratante' => $campoContratante], $webhookBitrix);
             if (!empty($contatoContratante)) {
                 $signatarios[] = [
                     'email' => $contatoContratante[0]['EMAIL'],
-                    'role' => 'contratante' // Papel de parte contratante
+                    'role' => 'contratante'
                 ];
             }
         }
 
-        // Verifica se o campo "contratada" foi informado na URL e adiciona ao array de signatários
         if ($campoContratada) {
             $contatoContratada = buscarContatos(['contratada' => $campoContratada], $webhookBitrix);
             if (!empty($contatoContratada)) {
                 $signatarios[] = [
                     'email' => $contatoContratada[0]['EMAIL'],
-                    'role' => 'contratada' // Papel de parte contratada
+                    'role' => 'contratada'
                 ];
             }
         }
 
-        // Verifica se o campo "testemunhas" foi informado na URL e adiciona ao array de signatários
         if ($campoTestemunhas) {
             $contatoTestemunha = buscarContatos(['testemunhas' => $campoTestemunhas], $webhookBitrix);
             if (!empty($contatoTestemunha)) {
                 $signatarios[] = [
                     'email' => $contatoTestemunha[0]['EMAIL'],
-                    'role' => 'testemunha' // Papel de testemunha
+                    'role' => 'testemunha'
                 ];
             }
         }
@@ -116,7 +111,6 @@ class ClickSignController
 
         $item = $negociacao['result']['item'];
 
-        // Conversão do campo
         $camposConvertidos = BitrixHelper::formatarCampos([$campoArquivo => 1]);
         $chaveConvertida = array_key_first($camposConvertidos);
         $valorCampoArquivo = $item[$chaveConvertida] ?? null;
@@ -127,26 +121,6 @@ class ClickSignController
             ? $valorCampoArquivo[0]['id']
             : null;
 
-        // Teste de acesso ao arquivo
-        if ($fileId) {
-            $arquivo = BitrixDiskHelper::obterArquivoPorId($webhookBitrix, $fileId);
-
-            if ($arquivo) {
-                echo "Arquivo recuperado com sucesso!";
-                // Aqui você pode também salvar a resposta em log se precisar para depuração
-                file_put_contents($logPath, "[DEBUG] Arquivo recuperado com sucesso." . PHP_EOL, FILE_APPEND);
-            } else {
-                echo "Erro ao acessar o arquivo!";
-                file_put_contents($logPath, "[ERRO] Não foi possível acessar o arquivo." . PHP_EOL, FILE_APPEND);
-            }
-        } else {
-            echo "ID do arquivo não encontrado.";
-            file_put_contents($logPath, "[ERRO] ID do arquivo não encontrado." . PHP_EOL, FILE_APPEND);
-        }
-
-
-
-
         if (!$fileId) {
             http_response_code(422);
             $msg = 'ID do arquivo não encontrado no campo especificado.';
@@ -155,21 +129,36 @@ class ClickSignController
             return;
         }
 
-        $linkArquivo = $valorCampoArquivo[0]['urlMachine'] ?? null;
-        file_put_contents($logPath, "[DEBUG] Link do arquivo extraído diretamente do campo: " . json_encode($linkArquivo) . PHP_EOL, FILE_APPEND);
+        $arquivo = BitrixDiskHelper::extrairArquivoDoItem($item, $chaveConvertida);
 
-        if (!$linkArquivo) {
+
+        if (!$arquivo || empty($arquivo['urlMachine'])) {
             http_response_code(500);
-            $msg = 'Link do arquivo ausente no campo retornado.';
+            $msg = 'Link do arquivo ausente no retorno da API.';
             file_put_contents($logPath, "[ERRO] $msg" . PHP_EOL, FILE_APPEND);
             echo json_encode(['erro' => $msg]);
             return;
         }
 
-        file_put_contents($logPath, "[OK] Link do arquivo obtido: $linkArquivo" . PHP_EOL, FILE_APPEND);
+        $conteudoArquivo = file_get_contents($arquivo['urlMachine']);
 
-        $nomeDocumento = 'Assinatura - ' . ($item['TITLE'] ?? 'Documento');
-        $respostaClicksign = ClickSignHelper::criarDocumento($clicksignToken, $nomeDocumento, $linkArquivo);
+        $tmpPath = tempnam(sys_get_temp_dir(), 'mime');
+        file_put_contents($tmpPath, $conteudoArquivo);
+        $mime = mime_content_type($tmpPath);
+        unlink($tmpPath);
+
+        $extensoes = [
+            'application/pdf' => 'pdf',
+            'image/png' => 'png',
+            'image/jpeg' => 'jpg'
+        ];
+        $ext = $extensoes[$mime] ?? 'bin';
+
+        $nomeEmpresa = preg_replace('/[^\w\d_-]+/', '_', $item['TITLE'] ?? 'empresa_desconhecida');
+        $nomeFinal = $nomeEmpresa . '_' . $idDeal . '.' . $ext;
+
+        $base64 = "data:$mime;base64," . base64_encode($conteudoArquivo);
+        $respostaClicksign = ClickSignHelper::criarDocumento($clicksignToken, $nomeFinal, $base64);
 
         file_put_contents($logPath, "[RESPOSTA CLICK] " . json_encode($respostaClicksign) . PHP_EOL, FILE_APPEND);
 
