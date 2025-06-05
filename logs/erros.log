@@ -1,0 +1,62 @@
+[02-Jun-2025 01:31:03 UTC] Erro DB: could not find driver
+[02-Jun-2025 03:29:59 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function curl_init() in X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php:176
+Stack trace:
+#0 X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php(136): BitrixHelper::chamarApi('crm.item.get', Array, Array)
+#1 X:\VSCode\apis.kw24.com.br\Apps\controllers\ExtensoController.php(35): BitrixHelper::consultarNegociacao(Array)
+#2 X:\VSCode\apis.kw24.com.br\Apps\routers\extensoRoutes.php(10): ExtensoController->executar(Array)
+#3 X:\VSCode\apis.kw24.com.br\Apps\index.php(15): require_once('X:\\VSCode\\apis....')
+#4 X:\VSCode\apis.kw24.com.br\index.php(8): require_once('X:\\VSCode\\apis....')
+#5 {main}
+  thrown in X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php on line 176
+[02-Jun-2025 03:30:04 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function curl_init() in X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php:176
+Stack trace:
+#0 X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php(136): BitrixHelper::chamarApi('crm.item.get', Array, Array)
+#1 X:\VSCode\apis.kw24.com.br\Apps\controllers\ExtensoController.php(35): BitrixHelper::consultarNegociacao(Array)
+#2 X:\VSCode\apis.kw24.com.br\Apps\routers\extensoRoutes.php(10): ExtensoController->executar(Array)
+#3 X:\VSCode\apis.kw24.com.br\Apps\index.php(15): require_once('X:\\VSCode\\apis....')
+#4 X:\VSCode\apis.kw24.com.br\index.php(8): require_once('X:\\VSCode\\apis....')
+#5 {main}
+  thrown in X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php on line 176
+[02-Jun-2025 03:36:09 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function curl_init() in X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php:176
+Stack trace:
+#0 X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php(136): BitrixHelper::chamarApi('crm.item.get', Array, Array)
+#1 X:\VSCode\apis.kw24.com.br\Apps\controllers\ExtensoController.php(35): BitrixHelper::consultarNegociacao(Array)
+#2 X:\VSCode\apis.kw24.com.br\Apps\routers\extensoRoutes.php(10): ExtensoController->executar(Array)
+#3 X:\VSCode\apis.kw24.com.br\Apps\index.php(15): require_once('X:\\VSCode\\apis....')
+#4 X:\VSCode\apis.kw24.com.br\index.php(8): require_once('X:\\VSCode\\apis....')
+#5 {main}
+  thrown in X:\VSCode\apis.kw24.com.br\Apps\helpers\BitrixHelper.php on line 176
+[02-Jun-2025 03:41:04 UTC] PHP Fatal error:  Uncaught Error: Class "NumberFormatter" not found in X:\VSCode\apis.kw24.com.br\Apps\helpers\FormataHelper.php:28
+Stack trace:
+#0 X:\VSCode\apis.kw24.com.br\Apps\controllers\ExtensoController.php(50): FormataHelper::valorPorExtenso(20030.23)
+#1 X:\VSCode\apis.kw24.com.br\Apps\routers\extensoRoutes.php(10): ExtensoController->executar(Array)
+#2 X:\VSCode\apis.kw24.com.br\Apps\index.php(15): require_once('X:\\VSCode\\apis....')
+#3 X:\VSCode\apis.kw24.com.br\index.php(8): require_once('X:\\VSCode\\apis....')
+#4 {main}
+  thrown in X:\VSCode\apis.kw24.com.br\Apps\helpers\FormataHelper.php on line 28
+[02-Jun-2025 19:36:07 UTC] PHP Warning:  require_once(X:\VSCode\apis.kw24.com.br\Apps\controllers/../DAO/BitrixSyncDAO.php): Failed to open stream: No such file or directory in X:\VSCode\apis.kw24.com.br\Apps\controllers\BitrixSyncController.php on line 4
+[02-Jun-2025 19:36:07 UTC] PHP Fatal error:  Uncaught Error: Failed opening required 'X:\VSCode\apis.kw24.com.br\Apps\controllers/../DAO/BitrixSyncDAO.php' (include_path='.;C:\php\pear') in X:\VSCode\apis.kw24.com.br\Apps\controllers\BitrixSyncController.php:4
+Stack trace:
+#0 X:\VSCode\apis.kw24.com.br\Apps\routers\bitrixSyncRoutes.php(6): require_once()
+#1 X:\VSCode\apis.kw24.com.br\Apps\index.php(17): require_once('X:\\VSCode\\apis....')
+#2 X:\VSCode\apis.kw24.com.br\index.php(8): require_once('X:\\VSCode\\apis....')
+#3 {main}
+  thrown in X:\VSCode\apis.kw24.com.br\Apps\controllers\BitrixSyncController.php on line 4
+[05-Jun-2025 04:51:01 UTC] PHP Fatal error:  Cannot redeclare class LoopController (previously declared in C:\Users\lucas\Desktop\git\Apps\controllers\TaskController.php:4) in C:\Users\lucas\Desktop\git\Apps\controllers\LoopController.php on line 4
+[05-Jun-2025 04:51:26 UTC] PHP Fatal error:  Cannot redeclare class LoopController (previously declared in C:\Users\lucas\Desktop\git\Apps\controllers\TaskController.php:4) in C:\Users\lucas\Desktop\git\Apps\controllers\LoopController.php on line 4
+[05-Jun-2025 04:52:42 UTC] PHP Fatal error:  Cannot redeclare class LoopController (previously declared in C:\Users\lucas\Desktop\git\Apps\controllers\TaskController.php:4) in C:\Users\lucas\Desktop\git\Apps\controllers\LoopController.php on line 4
+[05-Jun-2025 04:55:45 UTC] PHP Fatal error:  Cannot redeclare class LoopController (previously declared in C:\Users\lucas\Desktop\git\Apps\controllers\TaskController.php:4) in C:\Users\lucas\Desktop\git\Apps\controllers\LoopController.php on line 4
+[05-Jun-2025 05:07:25 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function curl_init() in C:\Users\lucas\Desktop\git\Apps\helpers\BitrixHelper.php:19
+Stack trace:
+#0 C:\Users\lucas\Desktop\git\Apps\controllers\LoopController.php(34): BitrixHelper::chamarApi('tasks.task.upda...', Array, Array)
+#1 C:\Users\lucas\Desktop\git\Apps\routers\TaskRoutes.php(16): LoopController->executar()
+#2 C:\Users\lucas\Desktop\git\Apps\index.php(19): require_once('C:\\Users\\lucas\\...')
+#3 {main}
+  thrown in C:\Users\lucas\Desktop\git\Apps\helpers\BitrixHelper.php on line 19
+[05-Jun-2025 05:07:29 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function curl_init() in C:\Users\lucas\Desktop\git\Apps\helpers\BitrixHelper.php:19
+Stack trace:
+#0 C:\Users\lucas\Desktop\git\Apps\controllers\LoopController.php(34): BitrixHelper::chamarApi('tasks.task.upda...', Array, Array)
+#1 C:\Users\lucas\Desktop\git\Apps\routers\TaskRoutes.php(16): LoopController->executar()
+#2 C:\Users\lucas\Desktop\git\Apps\index.php(19): require_once('C:\\Users\\lucas\\...')
+#3 {main}
+  thrown in C:\Users\lucas\Desktop\git\Apps\helpers\BitrixHelper.php on line 19
