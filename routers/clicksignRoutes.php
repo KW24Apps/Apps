@@ -4,10 +4,10 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 file_put_contents(__DIR__ . '/../logs/debug_routes.log', "[ROTA] URI: $uri | METHOD: $method" . PHP_EOL, FILE_APPEND);
 
-require_once __DIR__ . '/../controllers/ClickSign/PrepararIntegracaoController.php';
+require_once __DIR__ . '/../controllers/ClickSignController.php';
 
 if ($uri === 'clicksignnew' && $method === 'GET') {
-    (new PrepararIntegracaoController())->preparar();
+    (new ClickSignController())->assinar();
 } else {
     http_response_code(404);
     echo json_encode(['erro' => 'Rota ClickSign não encontrada']);
