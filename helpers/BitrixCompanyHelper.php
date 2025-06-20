@@ -98,7 +98,7 @@ class BitrixCompanyHelper
                 $fields[$campo] = $valor;
             }
         }
-
+        
         if (empty($fields)) {
             return ['erro' => 'Nenhum campo UF_CRM_ enviado para atualização.'];
         }
