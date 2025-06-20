@@ -67,4 +67,4 @@ class CompanyController
         header('Content-Type: application/json');
         echo json_encode($resultado);
     }
-}
+} 
