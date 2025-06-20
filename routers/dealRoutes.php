@@ -14,4 +14,3 @@ if ($uri === 'dealcriar' && $method === 'POST') {
     http_response_code(404);
     echo json_encode(['erro' => 'Rota não encontrada']);
 }
-// Fim do arquivo dealRoutes.phpa

@@ -65,4 +65,50 @@ class BitrixCompanyHelper
         return $empresa;
     }
 
+    public static function criarEmpresa($dados)
+    {
+        $webhook = $dados['webhook'] ?? null;
+        if (!$webhook) {
+            return ['erro' => 'Webhook não informado.'];
+        }
+
+        unset($dados['webhook'], $dados['cliente']);
+
+        $payload = [
+            'fields' => $dados
+        ];
+
+        return BitrixHelper::chamarApi($webhook, 'crm.company.add', $payload);
+    }
+
+    public static function editarCamposEmpresa($dados)
+    {
+        $webhook = $dados['webhook'] ?? null;
+        $id = $dados['id'] ?? null;
+
+        if (!$webhook || !$id) {
+            return ['erro' => 'Webhook ou ID não informado.'];
+        }
+
+        unset($dados['webhook'], $dados['cliente'], $dados['id']);
+
+        $fields = [];
+        foreach ($dados as $campo => $valor) {
+            if (strpos($campo, 'UF_CRM_') === 0) {
+                $fields[$campo] = $valor;
+            }
+        }
+
+        if (empty($fields)) {
+            return ['erro' => 'Nenhum campo UF_CRM_ enviado para atualização.'];
+        }
+
+        $payload = [
+            'id' => $id,
+            'fields' => $fields
+        ];
+
+        return BitrixHelper::chamarApi($webhook, 'crm.company.update', $payload);
+    }
+
 }

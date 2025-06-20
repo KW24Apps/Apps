@@ -19,6 +19,8 @@ if (strpos($uri, 'deal') === 0) {
     require_once __DIR__ . '/routers/taskRoutes.php';
 } elseif (strpos($uri, 'clicksign') === 0) {
     require_once __DIR__ . '/routers/clicksignRoutes.php';    
+} else if (strpos($uri, 'company') === 0) {
+    require_once 'companyRoutes.php';    
 } else {
     http_response_code(404);
     echo json_encode(['erro' => 'Projeto não reconhecido']);
