@@ -108,7 +108,8 @@ class BitrixCompanyHelper
             'fields' => $fields
         ];
 
-        return BitrixHelper::chamarApi($webhook, 'crm.company.update', $payload);
+        return BitrixHelper::chamarApi('crm.company.update', $payload, ['webhook' => $webhook]);
+
     }
 
     

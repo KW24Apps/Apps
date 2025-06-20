@@ -60,6 +60,14 @@ class CompanyController
             echo json_encode(['erro' => 'Acesso negado para editar empresa.']);
             return;
         }
+        
+        file_put_contents(__DIR__ . '/../logs/company_editar.log', json_encode([
+            'cliente' => $cliente,
+            'webhook' => $webhook,
+            'GET' => $_GET,
+            'dados' => $dados
+        ]) . PHP_EOL, FILE_APPEND);
+        
 
         $dados['webhook'] = $webhook;
         $resultado = BitrixCompanyHelper::editarCamposEmpresa($dados);
