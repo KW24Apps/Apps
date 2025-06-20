@@ -30,16 +30,8 @@ class CompanyController
 
     public function consultar()
     {
-        $dados = $_GET;
-        $cliente = $dados['cliente'] ?? null;
-        $id = $dados['id'] ?? null;
-
-        if (!$id) {
-            http_response_code(400);
-            echo json_encode(['erro' => 'Parâmetro ID obrigatório.']);
-            return;
-        }
-
+        $filtros = $_GET;
+        $cliente = $filtros['cliente'] ?? null;
         $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'company');
         $webhook = $acesso['webhook_bitrix'] ?? null;
 
@@ -49,7 +41,8 @@ class CompanyController
             return;
         }
 
-        $resultado = BitrixCompanyHelper::consultarEmpresa($webhook, ['ID' => $id]);
+        $filtros['webhook'] = $webhook;
+        $resultado = BitrixCompanyHelper::consultarEmpresa($filtros);
 
         header('Content-Type: application/json');
         echo json_encode($resultado);
@@ -59,14 +52,6 @@ class CompanyController
     {
         $dados = $_GET;
         $cliente = $dados['cliente'] ?? null;
-        $id = $dados['id'] ?? null;
-
-        if (!$id) {
-            http_response_code(400);
-            echo json_encode(['erro' => 'Parâmetro ID obrigatório.']);
-            return;
-        }
-
         $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'company');
         $webhook = $acesso['webhook_bitrix'] ?? null;
 
