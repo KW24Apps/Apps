@@ -36,6 +36,7 @@ class MediaHoraController {
         $campoRetorno = $dados['retorno'];
         $dataInicio = $dados['inicio'];
         $dataFim = $dados['fim'];
+        $hruteis = $dados['hruteis'] ?? '09-18';
 
         // Conversão das datas para objeto DateTime
         $formatos = ['d/m/Y H:i:s', 'Y-m-d H:i:s'];
@@ -49,7 +50,7 @@ class MediaHoraController {
         }
 
         // Cálculo de horas úteis
-        $horasUteis = $this->calcularHorasUteis($inicio, $fim);
+        $horasUteis = $this->calcularHorasUteis($inicio, $fim, $hruteis);
 
         // Preparar os dados para o BitrixDealHelper seguindo o mesmo padrão do DealController
         $dados['webhook'] = $webhook;
@@ -70,29 +71,76 @@ class MediaHoraController {
         return null;
     }
 
-    private function calcularHorasUteis($inicio, $fim) {
+    private function parseHorarioUteis($hruteis) {
+        $inicioUtil = '09:00';
+        $fimUtil = '18:00';
+        $pausaInicio = null;
+        $pausaFim = null;
+
+        if (strpos($hruteis, '(') !== false) {
+            [$faixa, $pausa] = explode('(', $hruteis);
+            $pausa = rtrim($pausa, ')');
+        } else {
+            $faixa = $hruteis;
+            $pausa = null;
+        }
+
+        [$inicio, $fim] = explode('-', $faixa);
+
+        $inicioUtil = strpos($inicio, ':') !== false ? $inicio : $inicio . ':00';
+        $fimUtil = strpos($fim, ':') !== false ? $fim : $fim . ':00';
+
+        if ($pausa) {
+            [$pInicio, $pFim] = explode('-', $pausa);
+            $pausaInicio = strpos($pInicio, ':') !== false ? $pInicio : $pInicio . ':00';
+            $pausaFim = strpos($pFim, ':') !== false ? $pFim : $pFim . ':00';
+        }
+
+        return [
+            'inicioUtil' => $inicioUtil,
+            'fimUtil' => $fimUtil,
+            'pausaInicio' => $pausaInicio,
+            'pausaFim' => $pausaFim
+        ];
+    }
+
+    private function calcularHorasUteis($inicio, $fim, $hruteis) {
+        $config = $this->parseHorarioUteis($hruteis);
+
         $totalSegundos = 0;
-        $current = clone $inicio;
+        $currentDay = clone $inicio;
+        $currentDay->setTime(0, 0, 0);
 
-        while ($current < $fim) {
-            $diaSemana = (int) $current->format('N');
-            $hora = (int) $current->format('H');
-            $minuto = (int) $current->format('i');
+        while ($currentDay <= $fim) {
+            $diaSemana = (int) $currentDay->format('N');
+            if ($diaSemana >= 1 && $diaSemana <= 5) {
+                $inicioUtil = DateTime::createFromFormat('Y-m-d H:i', $currentDay->format('Y-m-d') . ' ' . $config['inicioUtil']);
+                $fimUtil = DateTime::createFromFormat('Y-m-d H:i', $currentDay->format('Y-m-d') . ' ' . $config['fimUtil']);
 
-            $horaMinuto = ($hora * 60) + $minuto;
-            $inicioUtil = (9 * 60);   // 09:00 em minutos
-            $fimUtil = (18 * 60);     // 18:00 em minutos
+                $periodoInicio = max($inicio, $inicioUtil);
+                $periodoFim = min($fim, $fimUtil);
 
-            if ($diaSemana >= 1 && $diaSemana <= 5 && $horaMinuto >= $inicioUtil && $horaMinuto < $fimUtil) {
-                $proximo = clone $current;
-                $proximo->modify('+1 minute');
+                if ($periodoInicio < $periodoFim) {
+                    $intervaloDia = ($periodoFim->getTimestamp() - $periodoInicio->getTimestamp());
 
-                if ($proximo <= $fim) {
-                    $totalSegundos += 60;
+                    // Descontar pausa se houver e se estiver dentro do intervalo
+                    if ($config['pausaInicio'] && $config['pausaFim']) {
+                        $pausaInicio = DateTime::createFromFormat('Y-m-d H:i', $currentDay->format('Y-m-d') . ' ' . $config['pausaInicio']);
+                        $pausaFim = DateTime::createFromFormat('Y-m-d H:i', $currentDay->format('Y-m-d') . ' ' . $config['pausaFim']);
+
+                        $sobreposicaoInicio = max($periodoInicio, $pausaInicio);
+                        $sobreposicaoFim = min($periodoFim, $pausaFim);
+
+                        if ($sobreposicaoInicio < $sobreposicaoFim) {
+                            $intervaloDia -= ($sobreposicaoFim->getTimestamp() - $sobreposicaoInicio->getTimestamp());
+                        }
+                    }
+
+                    $totalSegundos += $intervaloDia;
                 }
             }
 
-            $current->modify('+1 minute');
+            $currentDay->modify('+1 day');
         }
 
         return round($totalSegundos / 3600, 2);
