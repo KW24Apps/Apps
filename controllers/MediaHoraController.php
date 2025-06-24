@@ -123,16 +123,16 @@ class MediaHoraController {
                 if ($periodoInicio < $periodoFim) {
                     $intervaloDia = ($periodoFim->getTimestamp() - $periodoInicio->getTimestamp());
 
-                    // Descontar pausa se houver e se estiver dentro do intervalo
+                    // Descontar pausa se houver e se houver sobreposição real com o período
                     if ($config['pausaInicio'] && $config['pausaFim']) {
                         $pausaInicio = DateTime::createFromFormat('Y-m-d H:i', $currentDay->format('Y-m-d') . ' ' . $config['pausaInicio']);
                         $pausaFim = DateTime::createFromFormat('Y-m-d H:i', $currentDay->format('Y-m-d') . ' ' . $config['pausaFim']);
 
-                        $sobreposicaoInicio = max($periodoInicio, $pausaInicio);
-                        $sobreposicaoFim = min($periodoFim, $pausaFim);
+                        $inicioPausa = max($pausaInicio, $periodoInicio);
+                        $fimPausa = min($pausaFim, $periodoFim);
 
-                        if ($sobreposicaoInicio < $sobreposicaoFim) {
-                            $intervaloDia -= ($sobreposicaoFim->getTimestamp() - $sobreposicaoInicio->getTimestamp());
+                        if ($inicioPausa < $fimPausa) {
+                            $intervaloDia -= ($fimPausa->getTimestamp() - $inicioPausa->getTimestamp());
                         }
                     }
 
