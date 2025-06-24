@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/autoload.php';
+
 // Log de Erros
 ini_set('display_errors', 0);                          // Nunca mostra erros na tela
 error_reporting(E_ALL);                                // Captura todos os tipos de erro
@@ -20,7 +22,9 @@ if (strpos($uri, 'deal') === 0) {
 } elseif (strpos($uri, 'clicksign') === 0) {
     require_once __DIR__ . '/routers/clicksignRoutes.php';    
 } else if (strpos($uri, 'company') === 0) {
-    require_once __DIR__ . '/routers/companyRoutes.php';    
+    require_once __DIR__ . '/routers/companyRoutes.php';
+} else if (strpos($uri, 'mediahora') === 0) {
+require_once __DIR__ . '/routers/mediahora.php';    
 } else {
     http_response_code(404);
     echo json_encode(['erro' => 'Projeto não reconhecido']);
