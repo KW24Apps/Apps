@@ -36,7 +36,9 @@ class MediaHoraController {
         $campoRetorno = $dados['retorno'];
         $dataInicio = $dados['inicio'];
         $dataFim = $dados['fim'];
-        $hruteis = $dados['hruteis'] ?? '09-18';
+        // Padrão de horas úteis, pode ser personalizado
+        // Exemplo: '08-18(11:30-13:30)' significa
+        $hruteis = $dados['hruteis'] ?? '08-18(11:30-13:30)';
 
         // Conversão das datas para objeto DateTime
         $formatos = ['d/m/Y H:i:s', 'Y-m-d H:i:s'];
