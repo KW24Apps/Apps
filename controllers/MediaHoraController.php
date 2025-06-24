@@ -9,7 +9,7 @@ class MediaHoraController {
         // Validação da chave de cliente e acesso
         $filtros = $_GET;
         $cliente = $filtros['cliente'] ?? null;
-        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'mediahora');
+        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'deal');
         $webhook = $acesso['webhook_bitrix'] ?? null;
 
         if (!$webhook) {
