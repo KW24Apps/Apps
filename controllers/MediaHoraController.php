@@ -58,7 +58,13 @@ class MediaHoraController {
 
         $resultado = BitrixDealHelper::editarNegociacao($dados);
 
-        echo json_encode($resultado);
+        echo json_encode([
+            'success' => true,
+            'id' => $dealId,
+            'horas_uteis' => $horasUteis,
+            'bitrix_response' => $resultado
+        ]);
+
     }
 
     private function parseData($data, $formatos) {
