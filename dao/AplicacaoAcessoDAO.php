@@ -40,11 +40,14 @@ class AplicacaoAcessoDAO
             $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
 
             $log = [
+                'dataHora' => date('Y-m-d H:i:s'),
                 'chaveAcesso' => $chaveAcesso,
                 'slugAplicacao' => $slugAplicacao,
+                'sql' => trim($sql),
                 'resultado' => $resultado
             ];
-            file_put_contents(__DIR__ . '/../logs/aplicacao_acesso_debug.log', json_encode($log) . PHP_EOL, FILE_APPEND);
+            file_put_contents(__DIR__ . '/../logs/aplicacao_acesso_debug.log', json_encode($log, JSON_UNESCAPED_UNICODE) . PHP_EOL, FILE_APPEND);
+
 
             return $resultado ?: null;
         } catch (PDOException $e) {

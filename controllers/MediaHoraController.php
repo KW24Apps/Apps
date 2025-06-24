@@ -10,17 +10,16 @@ class MediaHoraController {
     public function executar() {
         header('Content-Type: application/json');
 
-        $dados = $_POST;
+        $dados = $_GET;
         $cliente = $dados['cliente'] ?? null;
-        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'deal');
+        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'mediahora');
         $webhook = $acesso['webhook_bitrix'] ?? null;
 
         if (!$webhook) {
             http_response_code(403);
-            echo json_encode(['erro' => 'Acesso negado para consultar negociação.']);
+            echo json_encode(['erro' => 'Acesso negado a Aplicação de Mídia Hora.']);
             return;
         }
-
         // Validação de parâmetros obrigatórios
         $parametrosObrigatorios = ['spa', 'deal', 'inicio', 'fim', 'retorno'];
         foreach ($parametrosObrigatorios as $param) {
@@ -53,7 +52,6 @@ class MediaHoraController {
 
         // Preparar os dados para o BitrixDealHelper seguindo o mesmo padrão do DealController
         $dados['webhook'] = $webhook;
-        $dados['ID'] = $dealId;
         $dados[$campoRetorno] = $horasUteis;
 
         $resultado = BitrixDealHelper::editarNegociacao($dados);
