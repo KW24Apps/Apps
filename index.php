@@ -1,6 +1,4 @@
 <?php
-require_once __DIR__ . '/autoload.php';
-
 // Log de Erros
 ini_set('display_errors', 0);                          // Nunca mostra erros na tela
 error_reporting(E_ALL);                                // Captura todos os tipos de erro
