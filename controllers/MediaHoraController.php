@@ -76,6 +76,7 @@ class MediaHoraController {
         }
         return null;
     }
+    
 
     private function calcularHorasUteis($inicio, $fim) {
         $totalSegundos = 0;
