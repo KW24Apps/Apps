@@ -1,6 +1,10 @@
 <?php
+
+require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
+
+use dao\AplicacaoAcessoDAO;
 
 class MediaHoraController {
     public function executar() {
@@ -48,10 +52,13 @@ class MediaHoraController {
         // Cálculo de horas úteis
         $horasUteis = $this->calcularHorasUteis($inicio, $fim);
 
-        // Atualizar o negócio no Bitrix24 usando o BitrixDealHelper
-        $resultado = BitrixDealHelper::editar($webhook, $dealId, [
-            $campoRetorno => $horasUteis
-        ]);
+        // Monta os dados no mesmo padrão da DealController
+        $dados = $_GET;
+        $dados['webhook'] = $webhook;
+        $dados['ID'] = $dealId;
+        $dados[$campoRetorno] = $horasUteis;
+
+        $resultado = BitrixDealHelper::editarNegociacao($dados);
 
         echo json_encode([
             'status' => 'sucesso',
