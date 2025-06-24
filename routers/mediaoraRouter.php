@@ -3,7 +3,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 require_once __DIR__ . '/../controllers/MediaHoraController.php';
 
-if ($method === 'GET') {
+if ($method === 'POST') {
     (new MediaHoraController())->executar();
 } else {
     http_response_code(405);

@@ -1,0 +1,22 @@
+==== CHAMADA API ====
+Endpoint: crm.item.update
+URL: https://gnapp.bitrix24.com.br/rest/21/32my76xfasvkj7ld//crm.item.update.json
+Dados: entityTypeId=1054&id=1864&fields%5Binicio%5D=17%2F06%2F2025+10%3A11%3A10&fields%5Bfim%5D=24%2F06%2F2025+10%3A11%3A00&fields%5Bretorno%5D=UF_CRM_41_1750729654&fields%5BID%5D=1864&fields%5BufCrm41_1750729654%5D=44.98
+HTTP: 400
+Erro: 
+Resposta: {"error":0,"error_description":"Setting value for Primary `ID` in `EO_crm_items_41` is not allowed, it is read-only field"}
+Campos enviados (params): Array
+(
+    [entityTypeId] => 1054
+    [id] => 1864
+    [fields] => Array
+        (
+            [inicio] => 17/06/2025 10:11:10
+            [fim] => 24/06/2025 10:11:00
+            [retorno] => UF_CRM_41_1750729654
+            [ID] => 1864
+            [ufCrm41_1750729654] => 44.98
+        )
+
+)
+

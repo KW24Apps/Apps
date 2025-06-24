@@ -10,9 +10,8 @@ class MediaHoraController {
     public function executar() {
         header('Content-Type: application/json');
 
-        // Validação da chave de cliente e acesso
-        $filtros = $_GET;
-        $cliente = $filtros['cliente'] ?? null;
+        $dados = $_POST;
+        $cliente = $dados['cliente'] ?? null;
         $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'deal');
         $webhook = $acesso['webhook_bitrix'] ?? null;
 
@@ -25,18 +24,18 @@ class MediaHoraController {
         // Validação de parâmetros obrigatórios
         $parametrosObrigatorios = ['spa', 'deal', 'inicio', 'fim', 'retorno'];
         foreach ($parametrosObrigatorios as $param) {
-            if (empty($_GET[$param])) {
+            if (empty($dados[$param])) {
                 http_response_code(400);
                 echo json_encode(['erro' => "Parâmetro obrigatório ausente: $param"]);
                 return;
             }
         }
 
-        $spa = intval($_GET['spa']);
-        $dealId = intval($_GET['deal']);
-        $campoRetorno = $_GET['retorno'];
-        $dataInicio = $_GET['inicio'];
-        $dataFim = $_GET['fim'];
+        $spa = intval($dados['spa']);
+        $dealId = intval($dados['deal']);
+        $campoRetorno = $dados['retorno'];
+        $dataInicio = $dados['inicio'];
+        $dataFim = $dados['fim'];
 
         // Conversão das datas para objeto DateTime
         $formatos = ['d/m/Y H:i:s', 'Y-m-d H:i:s'];
@@ -52,19 +51,14 @@ class MediaHoraController {
         // Cálculo de horas úteis
         $horasUteis = $this->calcularHorasUteis($inicio, $fim);
 
-        // Monta os dados no mesmo padrão da DealController
-        $dados = $_GET;
+        // Preparar os dados para o BitrixDealHelper seguindo o mesmo padrão do DealController
         $dados['webhook'] = $webhook;
         $dados['ID'] = $dealId;
         $dados[$campoRetorno] = $horasUteis;
 
         $resultado = BitrixDealHelper::editarNegociacao($dados);
 
-        echo json_encode([
-            'status' => 'sucesso',
-            'horas_uteis' => $horasUteis,
-            'bitrix_response' => $resultado
-        ]);
+        echo json_encode($resultado);
     }
 
     private function parseData($data, $formatos) {
@@ -76,7 +70,6 @@ class MediaHoraController {
         }
         return null;
     }
-    
 
     private function calcularHorasUteis($inicio, $fim) {
         $totalSegundos = 0;

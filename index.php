@@ -22,7 +22,7 @@ if (strpos($uri, 'deal') === 0) {
 } else if (strpos($uri, 'company') === 0) {
     require_once __DIR__ . '/routers/companyRoutes.php';
 } else if (strpos($uri, 'mediahora') === 0) {
-require_once __DIR__ . '/routers/mediahora.php';    
+require_once __DIR__ . '/routers/mediaoraRouter.php';    
 } else {
     http_response_code(404);
     echo json_encode(['erro' => 'Projeto não reconhecido']);
