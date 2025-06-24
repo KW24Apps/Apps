@@ -151,6 +151,6 @@ class MediaHoraController {
             $currentDay->modify('+1 day');
         }
 
-        return round($totalSegundos / 3600, 2);
+        return $totalSegundos;
     }
 }
