@@ -20,6 +20,7 @@ class MediaHoraController {
             echo json_encode(['erro' => 'Acesso negado a Aplicação de Mídia Hora.']);
             return;
         }
+
         // Validação de parâmetros obrigatórios
         $parametrosObrigatorios = ['spa', 'deal', 'inicio', 'fim', 'retorno'];
         foreach ($parametrosObrigatorios as $param) {
@@ -74,10 +75,15 @@ class MediaHoraController {
         $current = clone $inicio;
 
         while ($current < $fim) {
-            $diaSemana = (int) $current->format('N'); // 1 = segunda, 7 = domingo
-            $horaAtual = (int) $current->format('H');
+            $diaSemana = (int) $current->format('N');
+            $hora = (int) $current->format('H');
+            $minuto = (int) $current->format('i');
 
-            if ($diaSemana >= 1 && $diaSemana <= 5 && $horaAtual >= 9 && $horaAtual < 18) {
+            $horaMinuto = ($hora * 60) + $minuto;
+            $inicioUtil = (9 * 60);   // 09:00 em minutos
+            $fimUtil = (18 * 60);     // 18:00 em minutos
+
+            if ($diaSemana >= 1 && $diaSemana <= 5 && $horaMinuto >= $inicioUtil && $horaMinuto < $fimUtil) {
                 $proximo = clone $current;
                 $proximo->modify('+1 minute');
 
@@ -89,7 +95,6 @@ class MediaHoraController {
             $current->modify('+1 minute');
         }
 
-        // Converter segundos para horas com duas casas decimais
         return round($totalSegundos / 3600, 2);
     }
 }
