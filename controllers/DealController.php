@@ -4,6 +4,7 @@ require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
 
+
 use dao\AplicacaoAcessoDAO;
 
 class DealController
@@ -29,8 +30,12 @@ class DealController
 
     public function consultar()
     {
-        $filtros = $_GET;
-        $cliente = $filtros['cliente'] ?? null;
+        $params = $_GET;
+        $cliente = $params['cliente'] ?? null;
+        $entityId = $params['spa'] ?? $params['entityId'] ?? null;
+        $id = $params['deal'] ?? $params['id'] ?? null;
+        $fields = $params['campos'] ?? $params['fields'] ?? null;
+
         $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'deal');
         $webhook = $acesso['webhook_bitrix'] ?? null;
         if (!$webhook) {
@@ -39,8 +44,7 @@ class DealController
             return;
         }
 
-        $filtros['webhook'] = $webhook;
-        $resultado = BitrixDealHelper::consultarNegociacao($filtros);
+        $resultado = BitrixDealHelper::consultarDeal($entityId, $id, $fields, $webhook);
 
         header('Content-Type: application/json');
         echo json_encode($resultado);

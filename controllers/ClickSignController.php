@@ -10,18 +10,16 @@ use dao\AplicacaoAcessoDAO;
 
 class ClickSignController
 {
-    public function GerarAssinatura()
+    public static function GerarAssinatura()
     {
-        $dados = $_GET;
+        $params = $_GET;
+        $cliente = $params['cliente'] ?? null;
+        $entityId = $params['spa'] ?? $params['entityId'] ?? null;
+        $id = $params['deal'] ?? $params['id'] ?? null;
 
         LogHelper::logClickSign("Início do método GerarAssinatura", 'controller');
 
-
-        $cliente = $dados['cliente'] ?? null;
-        $dealId = $dados['deal'] ?? null;
-        $spa = $dados['spa'] ?? null;
-
-        if (empty($cliente) || empty($dealId) || empty($spa)) {
+        if (empty($cliente) || empty($id) || empty($entityId)) {
             LogHelper::logClickSign("Parâmetros obrigatórios ausentes.", 'controller');
             return ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes.'];
         }
@@ -38,78 +36,83 @@ class ClickSignController
         LogHelper::logClickSign("Webhook obtido: {$webhook}", 'controller');
         LogHelper::logClickSign("Token obtido.", 'controller');
 
-        // Monta filtro para consultar negócio via helper
-        $filtrosConsulta = [
-            'spa' => (int)$spa,
-            'deal' => (int)$dealId,
-            'webhook' => $webhook,
-            'campos' => $dados['arquivoaserassinado'] ?? ''
+        $camposConsulta = [
+            'contratante',
+            'contratada',
+            'testemunhas',
+            'data',
+            'arquivoaserassinado'
         ];
 
-        // Consulta o negócio pelo helper
-        $negociacao = BitrixDealHelper::consultarNegociacao($filtrosConsulta);
-
-        if (!isset($negociacao['result']['item'])) {
-            LogHelper::logClickSign("Negócio não encontrado ou erro na consulta.", 'controller');
-            return ['success' => false, 'mensagem' => 'Negócio não encontrado ou erro na consulta.'];
+        $fields = [];
+        foreach ($camposConsulta as $campo) {
+            if (!empty($params[$campo])) {
+                $fields[] = $params[$campo];
+            }
         }
 
-        $campos = $negociacao['result']['item'];
+    $registro = BitrixDealHelper::consultarDeal($entityId, $id, $fields, $webhook);
 
-        LogHelper::logClickSign("Campos personalizados extraídos: " . json_encode($campos), 'controller');
+    $dados = $registro['result']['item'] ?? [];
 
-
-        // Extrai o campo do arquivo formatado
-        $campoArquivoFormatado = BitrixHelper::formatarCampos([$dados['arquivoaserassinado'] ?? ''])[$dados['arquivoaserassinado'] ?? ''] ?? strtoupper($dados['arquivoaserassinado'] ?? '');
-
-        if (empty($campos[$campoArquivoFormatado])) {
-            LogHelper::logClickSign("Campo do arquivo não encontrado no negócio.", 'controller');
-            return ['success' => false, 'mensagem' => 'Campo do arquivo não encontrado no negócio.'];
+    // Extrai as chaves camelCase corretas para os campos
+    $mapCampos = [];
+    foreach ($camposConsulta as $campo) {
+        if (!empty($params[$campo])) {
+            $normalizado = BitrixHelper::formatarCampos([$params[$campo] => null]);
+            $mapCampos[$campo] = array_key_first($normalizado);
         }
+    }
 
-        $arquivoInfo = reset($campos[$campoArquivoFormatado]);
-        $urlArquivo = $arquivoInfo['url'] ?? null;
-        $nomeArquivo = $arquivoInfo['name'] ?? null;
+    $idContratante = $dados[$mapCampos['contratante'] ?? ''] ?? null;
+    $idContratada = $dados[$mapCampos['contratada'] ?? ''] ?? null;
+    $idsTestemunhas = $dados[$mapCampos['testemunhas'] ?? ''] ?? null;
+    $dataAssinatura = $dados[$mapCampos['data'] ?? ''] ?? null;
 
+    // Novo bloco para garantir pegar só o urlMachine
+    $campoArquivo = $dados[$mapCampos['arquivoaserassinado'] ?? ''] ?? null;
+    $urlMachine = null;
 
-        if (empty($urlArquivo) || empty($nomeArquivo)) {
-            LogHelper::logClickSign("URL ou nome do arquivo inválidos.", 'controller');
-            return ['success' => false, 'mensagem' => 'URL ou nome do arquivo inválidos.'];
+    if (is_array($campoArquivo)) {
+        // Se for múltiplo, pega o primeiro
+        if (isset($campoArquivo[0]['urlMachine'])) {
+            $urlMachine = $campoArquivo[0]['urlMachine'];
+        } elseif (isset($campoArquivo['urlMachine'])) {
+            $urlMachine = $campoArquivo['urlMachine'];
         }
+    }
 
-        LogHelper::logClickSign("URL do arquivo: {$urlArquivo}", 'controller');
-        LogHelper::logClickSign("Nome do arquivo: {$nomeArquivo}", 'controller');
+    // Monta array só com urlMachine
+    $arquivoInfo = ['urlMachine' => $urlMachine];
 
-        // Baixa e converte arquivo para base64
-        $conteudo = @file_get_contents($urlArquivo);
+   // Converte arquivo para base64
+    $arquivoConvertido = BitrixDealHelper::baixarArquivoBase64($arquivoInfo);
 
-        LogHelper::logClickSign("Tentando baixar arquivo da URL: " . $urlArquivo, 'controller');
+    LogHelper::logClickSign('[DEBUG] Conteúdo base64: ' . substr($arquivoConvertido['base64'], 0, 60), 'ClickSignController');
 
-        if ($conteudo === false) {
-            LogHelper::logClickSign("Falha ao baixar o arquivo da URL.", 'controller');
-            return ['success' => false, 'mensagem' => 'Falha ao baixar o arquivo da URL.'];
-        }
-        $base64Arquivo = base64_encode($conteudo);
+        
+    if (!$arquivoConvertido) {
+        LogHelper::logClickSign("Falha ao processar o arquivo para base64.", 'controller');
+        return ['success' => false, 'mensagem' => 'Erro ao converter o arquivo.'];
+    }
 
-        LogHelper::logClickSign("Arquivo convertido para base64 com sucesso.", 'controller');
-
-        // Monta payload para ClickSign
+    // Monta payload para ClickSign
+    
         $payloadClickSign = [
             'document' => [
-                'content_base64' => $base64Arquivo,
-                'filename'       => $nomeArquivo,
-                'path'           => '/',
-                'description'    => 'Documento gerado via integração'
+                'content_base64' => $arquivoConvertido['base64'],
+                'name'           => $arquivoConvertido['nome'],           // era 'filename'
+                'path'           => '/' . $arquivoConvertido['nome'],      // use o nome final com barra
+                'content_type'   => $arquivoConvertido['mime'],            // adicione isso
             ]
         ];
 
-        LogHelper::logClickSign("Payload montado para ClickSign.", 'controller');
+    // Cria documento na ClickSign
+    //LogHelper::logClickSign('[DEBUG] Payload enviado para ClickSign: ' . json_encode($payloadClickSign), 'ClickSignController');
+    $retornoClickSign = ClickSignHelper::criarDocumento($payloadClickSign, $tokenClicksign);
 
-        // Cria documento na ClickSign
-        $retornoClickSign = ClickSignHelper::criarDocumento($payloadClickSign, $tokenClicksign);
 
-        LogHelper::logClickSign("Resposta ClickSign: " . json_encode($retornoClickSign), 'controller');
+    return $retornoClickSign;
 
-        return $retornoClickSign;
     }
 }

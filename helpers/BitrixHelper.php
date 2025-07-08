@@ -45,8 +45,11 @@ class BitrixHelper
         $fields = [];
 
         foreach ($dados as $campo => $valor) {
-            if (strpos($campo, 'UF_CRM_') === 0) {
-                $chaveConvertida = 'ufCrm' . substr($campo, 7);
+            // Normaliza prefixos quebrados como ufcrm_ ou uf_crm_
+            $campoNormalizado = strtoupper(str_replace(['ufcrm_', 'uf_crm_'], 'UF_CRM_', $campo));
+
+            if (strpos($campoNormalizado, 'UF_CRM_') === 0) {
+                $chaveConvertida = 'ufCrm' . substr($campoNormalizado, 7);
                 $fields[$chaveConvertida] = $valor;
             } else {
                 $fields[$campo] = $valor;
@@ -55,5 +58,6 @@ class BitrixHelper
 
         return $fields;
     }
+
 
 }

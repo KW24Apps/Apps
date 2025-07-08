@@ -1,9 +1,15 @@
 <?php
 
+    // Requisições dos helpers e DAOs necessários
+    require_once __DIR__ . '/../helpers/LogHelper.php';
 class ClickSignHelper
 {
     private static function enviarRequisicao($metodo, $endpoint, $token, $dados = [])
     {
+        if (!is_string($endpoint)) {
+        LogHelper::logClickSign('[ERRO] Endpoint não é string: ' . json_encode($endpoint), 'ClickSignHelper');
+        return null;
+    }
         $url = 'https://app.clicksign.com/api/v1' . $endpoint . '?access_token=' . $token;
 
         $ch = curl_init($url);
@@ -13,6 +19,12 @@ class ClickSignHelper
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($dados));
 
         $resposta = curl_exec($ch);
+
+        if ($resposta === false) {
+            $curlError = curl_error($ch);
+            LogHelper::logClickSign('[ClickSignHelper] - Erro cURL: ' . $curlError, 'ClickSignHelper');
+        }
+
         file_put_contents(__DIR__ . '/../logs/clicksign_debug.log', "[RESPOSTA] " . $resposta . PHP_EOL, FILE_APPEND);
         curl_close($ch);
 
@@ -20,19 +32,45 @@ class ClickSignHelper
     }
 
     // Documentos
-    public static function criarDocumento($payload, $token)
+
+                public static function criarDocumento($payload, $token)
+        {
+            $respostaClickSign = self::enviarRequisicao('POST', '/documents', $token, $payload);
+            LogHelper::logClickSign('[controller] - Resposta ClickSign BRUTA: ' . var_export($respostaClickSign, true));
+            return $respostaClickSign;
+        }
+
+
+    public static function obterMimeDoArquivo(string $url): ?string
     {
-        $headers = [
-            "Authorization: Bearer $token",
-            "Content-Type: application/json"
-        ];
-
-        $url = 'https://api.clicksign.com/api/v1/documents';
-
-        // Chama a função utilitária de requisição para enviar o POST
-        return self::enviarRequisicao($url, 'POST', $payload, $headers);
+        $headers = get_headers($url, 1);
+        return $headers['Content-Type'] ?? null;
     }
 
+    public static function mimeParaExtensao(string $mime): ?string
+    {
+        $map = [
+            'application/pdf' => 'pdf',
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            // adiciona outros conforme necessidade
+        ];
+
+        return $map[strtolower($mime)] ?? null;
+    }
+
+    public static function extensaoParaMime(string $extensao): ?string
+    {
+        $map = [
+            'pdf' => 'application/pdf',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            // adiciona outros conforme necessidade
+        ];
+
+        return $map[strtolower($extensao)] ?? null;
+    }
 
 
 
