@@ -19,51 +19,22 @@ class ClickSignHelper
         return json_decode($resposta, true);
     }
 
-
-
     // Documentos
-        public static function criarDocumento($token, $nome, $urlArquivo)
-        {
-            // Baixar conteúdo
-            $conteudo = @file_get_contents($urlArquivo);
-            if (!$conteudo) {
-                file_put_contents(__DIR__ . '/../logs/clicksign_debug.log', "[ERRO] Erro ao acessar arquivo: $urlArquivo" . PHP_EOL, FILE_APPEND);
-                return ['erro' => 'Erro ao acessar o arquivo!'];
-            }
+    public static function criarDocumento($payload, $token)
+    {
+        $headers = [
+            "Authorization: Bearer $token",
+            "Content-Type: application/json"
+        ];
 
-            // Detectar MIME
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = finfo_buffer($finfo, $conteudo);
-            finfo_close($finfo);
+        $url = 'https://api.clicksign.com/api/v1/documents';
 
-            // Ajustar nome se estiver sem extensão
-            $extensao = pathinfo(parse_url($urlArquivo, PHP_URL_PATH), PATHINFO_EXTENSION);
-            if (!str_ends_with($nome, ".{$extensao}")) {
-                $nome .= ".{$extensao}";
-            }
+        // Chama a função utilitária de requisição para enviar o POST
+        return self::enviarRequisicao($url, 'POST', $payload, $headers);
+    }
 
-            // Montar content_base64 com prefixo "data:<mime>;base64,"
-            $dataBase64 = "data:$mime;base64," . base64_encode($conteudo);
-            $path = '/' . basename(parse_url($urlArquivo, PHP_URL_PATH));
 
-            $logData = [
-                'token' => $token,
-                'nome' => $nome,
-                'urlArquivo' => $urlArquivo,
-                'mime' => $mime,
-                'path' => $path
-            ];
-            file_put_contents(__DIR__ . '/../logs/clicksign_debug.log', "[ENVIO] " . json_encode($logData) . PHP_EOL, FILE_APPEND);
 
-            return self::enviarRequisicao('POST', '/documents', $token, [
-                'document' => [
-                    'path' => $path,
-                    'name' => $nome,
-                    'content_base64' => $dataBase64,
-                    'content_type' => $mime
-                ]
-            ]);
-        }
 
     public static function buscarDocumento($token, $documentKey)
     {

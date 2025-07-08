@@ -31,12 +31,11 @@ class BitrixHelper
         $respostaJson = json_decode($resposta, true);
 
         if ($logAtivo) {
-            $log = "==== CHAMADA API ====\n";
-            $log .= "Endpoint: $endpoint\nURL: $url\nDados: $postData\nHTTP: $httpCode\nErro: $curlErro\nResposta: $resposta\n";
-            $log .= "Campos enviados (params): " . print_r($params, true) . "\n";
-            file_put_contents(__DIR__ . '/../logs/editar_negocio.log', $log, FILE_APPEND);
+            $mensagem = "==== CHAMADA API ====\n";
+            $mensagem .= "Endpoint: $endpoint\nURL: $url\nDados: $postData\nHTTP: $httpCode\nErro: $curlErro\nResposta: $resposta\n";
+            $mensagem .= "Campos enviados (params): " . print_r($params, true) . "\n";
+            LogHelper::logBitrixHelpers($mensagem, "BitrixHelper::chamarApi");
         }
-
         return $respostaJson;
     }
     

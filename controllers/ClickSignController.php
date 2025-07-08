@@ -1,108 +1,115 @@
 <?php
-
 // Requisições dos helpers e DAOs necessários
-require_once __DIR__ . '/../helpers/BitrixHelper.php';
+
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
-require_once __DIR__ . '/../helpers/BitrixCompanyHelper.php';
-require_once __DIR__ . '/../helpers/BitrixDiskHelper.php';
 require_once __DIR__ . '/../helpers/ClickSignHelper.php';
+require_once __DIR__ . '/../helpers/LogHelper.php';
 require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
 
 use dao\AplicacaoAcessoDAO;
+
 class ClickSignController
 {
-    public function assinar()
+    public function GerarAssinatura()
     {
-        // Caminho para o log de depuração
-        $logFile = 'X:/VSCode/apis.kw24.com.br/Apps/logs/debug_clicksign.log';
+        $dados = $_GET;
 
-        // Log de entrada no controlador
-        error_log("Início da execução do ClickSignController - Função Assinar" . PHP_EOL, 3, $logFile);
+        LogHelper::logClickSign("Início do método GerarAssinatura", 'controller');
 
-        // Inicializar a variável $dadosFiltrados
-        $dadosFiltrados = [];
 
-        // Receber parâmetros da URL
-        $cliente = $_GET['cliente'] ?? null;
-        $spa = $_GET['spa'] ?? null;
-        $deal = $_GET['deal'] ?? null;
+        $cliente = $dados['cliente'] ?? null;
+        $dealId = $dados['deal'] ?? null;
+        $spa = $dados['spa'] ?? null;
 
-        error_log("Parâmetros recebidos - Cliente: $cliente, SPA: $spa, Deal: $deal" . PHP_EOL, 3, $logFile);
-
-        if (!$cliente || !$spa || !$deal) {
-            echo json_encode(['erro' => 'Parâmetros obrigatórios ausentes.']);
-            return;
+        if (empty($cliente) || empty($dealId) || empty($spa)) {
+            LogHelper::logClickSign("Parâmetros obrigatórios ausentes.", 'controller');
+            return ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes.'];
         }
 
-        // Consultar dados de acesso
         $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'clicksign');
         if (!$acesso || empty($acesso['webhook_bitrix']) || empty($acesso['clicksign_token'])) {
-            echo json_encode(['erro' => 'Acesso à aplicação ClickSign não autorizado ou incompleto.']);
-            return;
+            LogHelper::logClickSign("Acesso à aplicação ClickSign não autorizado ou incompleto.", 'controller');
+            return ['success' => false, 'mensagem' => 'Acesso não autorizado ou incompleto.'];
         }
 
-        // Definir o webhook
         $webhook = $acesso['webhook_bitrix'];
         $tokenClicksign = $acesso['clicksign_token'];
 
-        error_log("Webhook e Token ClickSign recebidos." . PHP_EOL, 3, $logFile);
+        LogHelper::logClickSign("Webhook obtido: {$webhook}", 'controller');
+        LogHelper::logClickSign("Token obtido.", 'controller');
 
-        // Consultar os dados do negócio (Deal)
-        $filtros['webhook'] = $webhook;
-        $filtros['deal'] = $deal;  // Deal ID (obtido da URL)
-        $filtros['spa'] = $spa;  // SPA (obtido da URL)
-        $resultado = BitrixDealHelper::consultarNegociacao($filtros);
+        // Monta filtro para consultar negócio via helper
+        $filtrosConsulta = [
+            'spa' => (int)$spa,
+            'deal' => (int)$dealId,
+            'webhook' => $webhook,
+            'campos' => $dados['arquivoaserassinado'] ?? ''
+        ];
 
-        // Log para verificar o resultado completo do Deal
-        error_log("Resultado completo do Deal: " . print_r($resultado, true) . PHP_EOL, 3, $logFile);
+        // Consulta o negócio pelo helper
+        $negociacao = BitrixDealHelper::consultarNegociacao($filtrosConsulta);
 
-        // Consultar a empresa com o companyId do Deal
-        $companyId = $resultado['result']['item']['companyId'] ?? null;
-        $empresa = BitrixCompanyHelper::consultarEmpresa(['empresa' => $companyId, 'webhook' => $webhook]);
-
-        // Log para o retorno completo da empresa
-        error_log("Resultado completo do CRM Company: " . print_r($empresa, true) . PHP_EOL, 3, $logFile);
-
-        // Adicionar a empresa ao array
-        $dadosFiltrados['nome_empresa'] = $empresa['TITLE'] ?? 'Nome da empresa não encontrado';
-
-        // Verificar o arquivo a ser assinado
-        $campoArquivo = $_GET['arquivoaserassinado'] ?? 'ufCrm41_1727802593'; // Exemplo do campo para o arquivo
-        $arquivos = $resultado['result']['item'][$campoArquivo] ?? [];
-
-        // Log para verificar os arquivos encontrados
-        error_log("Arquivos encontrados: " . print_r($arquivos, true) . PHP_EOL, 3, $logFile);
-
-        // Verificar se algum arquivo foi encontrado e processar
-        $urlArquivo = null;
-        foreach ($arquivos as $arquivo) {
-            if (isset($arquivo['urlMachine'])) {
-                $urlArquivo = $arquivo['urlMachine'];
-                break;
-            }
+        if (!isset($negociacao['result']['item'])) {
+            LogHelper::logClickSign("Negócio não encontrado ou erro na consulta.", 'controller');
+            return ['success' => false, 'mensagem' => 'Negócio não encontrado ou erro na consulta.'];
         }
 
-        // Log para verificar a URL do arquivo
-        error_log("URL do arquivo (urlMachine): " . print_r($urlArquivo, true) . PHP_EOL, 3, $logFile);
+        $campos = $negociacao['result']['item'];
 
-        if ($urlArquivo) {
-            // Renomear o arquivo com nome da empresa e ID do Deal
-            $nomeArquivo = $dadosFiltrados['nome_empresa'] . '-' . $deal . '.' . pathinfo($urlArquivo, PATHINFO_EXTENSION);
+        LogHelper::logClickSign("Campos personalizados extraídos: " . json_encode($campos), 'controller');
 
-            // Log para verificar o nome do arquivo
-            error_log("Nome do arquivo: " . $nomeArquivo . PHP_EOL, 3, $logFile);
 
-            // Chamar ClickSignHelper para criar o documento
-            $documento = ClickSignHelper::criarDocumento($tokenClicksign, $nomeArquivo, $urlArquivo);
+        // Extrai o campo do arquivo formatado
+        $campoArquivoFormatado = BitrixHelper::formatarCampos([$dados['arquivoaserassinado'] ?? ''])[$dados['arquivoaserassinado'] ?? ''] ?? strtoupper($dados['arquivoaserassinado'] ?? '');
 
-            // Log para confirmar que o documento foi enviado
-            error_log("Documento enviado para ClickSign: " . print_r($documento, true) . PHP_EOL, 3, $logFile);
-        } else {
-            echo json_encode(['erro' => 'URL do arquivo não encontrada ou inválida.']);
-            return;
+        if (empty($campos[$campoArquivoFormatado])) {
+            LogHelper::logClickSign("Campo do arquivo não encontrado no negócio.", 'controller');
+            return ['success' => false, 'mensagem' => 'Campo do arquivo não encontrado no negócio.'];
         }
 
-        // Retornar a resposta
-        echo json_encode($dadosFiltrados);
+        $arquivoInfo = reset($campos[$campoArquivoFormatado]);
+        $urlArquivo = $arquivoInfo['url'] ?? null;
+        $nomeArquivo = $arquivoInfo['name'] ?? null;
+
+
+        if (empty($urlArquivo) || empty($nomeArquivo)) {
+            LogHelper::logClickSign("URL ou nome do arquivo inválidos.", 'controller');
+            return ['success' => false, 'mensagem' => 'URL ou nome do arquivo inválidos.'];
+        }
+
+        LogHelper::logClickSign("URL do arquivo: {$urlArquivo}", 'controller');
+        LogHelper::logClickSign("Nome do arquivo: {$nomeArquivo}", 'controller');
+
+        // Baixa e converte arquivo para base64
+        $conteudo = @file_get_contents($urlArquivo);
+
+        LogHelper::logClickSign("Tentando baixar arquivo da URL: " . $urlArquivo, 'controller');
+
+        if ($conteudo === false) {
+            LogHelper::logClickSign("Falha ao baixar o arquivo da URL.", 'controller');
+            return ['success' => false, 'mensagem' => 'Falha ao baixar o arquivo da URL.'];
+        }
+        $base64Arquivo = base64_encode($conteudo);
+
+        LogHelper::logClickSign("Arquivo convertido para base64 com sucesso.", 'controller');
+
+        // Monta payload para ClickSign
+        $payloadClickSign = [
+            'document' => [
+                'content_base64' => $base64Arquivo,
+                'filename'       => $nomeArquivo,
+                'path'           => '/',
+                'description'    => 'Documento gerado via integração'
+            ]
+        ];
+
+        LogHelper::logClickSign("Payload montado para ClickSign.", 'controller');
+
+        // Cria documento na ClickSign
+        $retornoClickSign = ClickSignHelper::criarDocumento($payloadClickSign, $tokenClicksign);
+
+        LogHelper::logClickSign("Resposta ClickSign: " . json_encode($retornoClickSign), 'controller');
+
+        return $retornoClickSign;
     }
 }

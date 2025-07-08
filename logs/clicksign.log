@@ -1,0 +1,5 @@
+[2025-07-08 03:39:36] [controller] - Início do método GerarAssinatura
+[2025-07-08 03:39:36] [controller] - Webhook obtido: https://gnapp.bitrix24.com.br/rest/21/348n8xqhp06wp41c/
+[2025-07-08 03:39:36] [controller] - Token obtido.
+[2025-07-08 03:39:36] [controller] - Campos personalizados extraídos: {"id":2046}
+[2025-07-08 03:39:36] [controller] - Campo do arquivo não encontrado no negócio.

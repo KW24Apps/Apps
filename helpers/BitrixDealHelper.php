@@ -88,6 +88,8 @@ class BitrixDealHelper
     // Consulta uma Negócio específico no Bitrix24 via ID
     public static function consultarNegociacao($filtros): array
     {
+        LogHelper::logBitrixDealHelpers("Iniciando consultarNegociacao com filtros: " . json_encode($filtros), 'consultarNegociacao');
+
         $spa = $filtros['spa'] ?? 0;
         $dealId = $filtros['deal'] ?? null;
         $webhook = $filtros['webhook'] ?? null;
@@ -99,14 +101,12 @@ class BitrixDealHelper
         $select = ['id'];
 
         if (!empty($filtros['campos'])) {
-            $extras = explode(',', $filtros['campos']);
-            foreach ($extras as $campo) {
-                $campo = trim($campo);
-                if (strpos($campo, 'UF_CRM_') === 0) {
-                    $convertido = 'ufCrm' . substr($campo, 7);
-                    if (!in_array($convertido, $select)) {
-                        $select[] = $convertido;
-                    }
+            // Usa formatarCampos para converter os campos
+            $camposFormatados = BitrixHelper::formatarCampos(array_map('trim', explode(',', $filtros['campos'])));
+
+            foreach ($camposFormatados as $campoFormatado) {
+                if (!in_array($campoFormatado, $select)) {
+                    $select[] = $campoFormatado;
                 }
             }
         }
@@ -122,6 +122,8 @@ class BitrixDealHelper
             'log' => false
         ]);
 
+        LogHelper::logBitrixDealHelpers("Resposta da API Bitrix para consultarNegociacao: " . json_encode($resultado), 'consultarNegociacao');
+
         if (!isset($resultado['result']['item'])) {
             return $resultado;
         }
@@ -129,11 +131,10 @@ class BitrixDealHelper
         $item = $resultado['result']['item'];
 
         if (!empty($filtros['campos'])) {
-            $campos = explode(',', $filtros['campos']);
+            $campos = BitrixHelper::formatarCampos(array_map('trim', explode(',', $filtros['campos'])));
             $filtrado = ['id' => $item['id'] ?? null];
 
-            foreach ($campos as $campo) {
-                $campoConvertido = 'ufCrm' . substr($campo, 7);
+            foreach ($campos as $campoConvertido) {
                 if (isset($item[$campoConvertido])) {
                     $filtrado[$campoConvertido] = $item[$campoConvertido];
                 }
@@ -144,5 +145,59 @@ class BitrixDealHelper
 
         return $resultado;
     }
+    
+    // Baixa um arquivo associado a um negócio e retorna seu conteúdo em base64
+    public static function baixarArquivoBase64($dados = []): ?array
+{
+    $spa = $dados['spa'] ?? null;
+    $dealId = $dados['deal'] ?? null;
+    $webhook = $dados['webhook'] ?? null;
+    $campoArquivo = $dados['arquivoaserassinado'] ?? null;
+
+    if (empty($spa) || empty($dealId) || empty($webhook) || empty($campoArquivo)) {
+        return null;
+    }
+
+    // Converte o nome do campo do arquivo (ex: UF_CRM_...) para o padrão correto do Bitrix
+    $campoArquivoFormatado = BitrixHelper::formatarCampos(['campo' => $campoArquivo])['campo'] ?? null;
+
+    if (empty($campoArquivoFormatado)) {
+        return null;
+    }
+
+    // Consulta os dados do negócio
+    $negociacao = self::consultarNegociacao([
+        'spa'     => $spa,
+        'deal'    => $dealId,
+        'webhook' => $webhook
+    ]);
+
+    if (empty($negociacao[$campoArquivoFormatado]) || !is_array($negociacao[$campoArquivoFormatado])) {
+        return null;
+    }
+
+    // Pega o primeiro arquivo do campo (caso seja múltiplo)
+    $arquivoInfo = reset($negociacao[$campoArquivoFormatado]);
+    if (empty($arquivoInfo['url']) || empty($arquivoInfo['name'])) {
+        return null;
+    }
+
+    // Baixa o conteúdo do arquivo via URL pública
+    $conteudo = @file_get_contents($arquivoInfo['url']);
+    if ($conteudo === false) {
+        return null;
+    }
+
+    // Converte para base64
+    $base64 = base64_encode($conteudo);
+    // Extrai extensão do arquivo
+    $extensao = pathinfo($arquivoInfo['name'], PATHINFO_EXTENSION);
+
+    return [
+        'base64'   => $base64,
+        'nome'     => $arquivoInfo['name'],
+        'extensao' => $extensao
+    ];
+}
 
 }

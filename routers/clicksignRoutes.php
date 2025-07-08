@@ -7,7 +7,7 @@ file_put_contents(__DIR__ . '/../logs/debug_routes.log', "[ROTA] URI: $uri | MET
 require_once __DIR__ . '/../controllers/ClickSignController.php';
 
 if ($uri === 'clicksignnew' && $method === 'GET') {
-    (new ClickSignController())->assinar();
+    (new ClickSignController())->GerarAssinatura();
 } else {
     http_response_code(404);
     echo json_encode(['erro' => 'Rota ClickSign não encontrada']);
