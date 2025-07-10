@@ -316,9 +316,6 @@ class ClickSignController
         $cliente = $_GET['cliente'] ?? null; // Cliente vindo da URL
         $documentKey = $requestData['document']['key'] ?? null; // document.key do JSON da ClickSign
         $secret = null;  // Inicializa o secret como nulo, pois ele será recuperado do banco
-        $receivedSignature = $_SERVER['HTTP_X_SIGNATURE'] ?? null;
-        LogHelper::logClickSign("Cabeçalho x-signature recebido: " . ($receivedSignature ?? 'não recebido'), 'controller');
-
 
         LogHelper::logClickSign("Início ProcessarAssinaturas | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
 
@@ -337,14 +334,21 @@ class ClickSignController
 
         // Agora que temos o secret, vamos validar o HMAC
         $secret = $acesso['clicksign_secret'];  // Pega o secret configurado no banco
-        $receivedSignature = $_SERVER['HTTP_X_SIGNATURE'];  // Cabeçalho x-signature enviado pela ClickSign
+        $receivedSignatureHeader = $_SERVER['HTTP_CONTENT_HMAC'] ?? null; // Cabeçalho Content-Hmac
+        $receivedSignature = null;
+
+        if ($receivedSignatureHeader && strpos($receivedSignatureHeader, 'sha256=') === 0) {
+            $receivedSignature = substr($receivedSignatureHeader, strlen('sha256='));
+        }
+
+        LogHelper::logClickSign("Cabeçalho Content-Hmac recebido: " . ($receivedSignature ?? 'não recebido'), 'controller');
+
         $body = file_get_contents('php://input');  // Corpo da requisição
 
         // Gerar o HMAC usando o secret
         $calculatedSignature = hash_hmac('sha256', $body, $secret);
 
-        // Log para comparar a assinatura calculada com a recebida
-        LogHelper::logClickSign("Assinatura calculada: $calculatedSignature | Assinatura recebida: $receivedSignature", 'controller');
+        LogHelper::logClickSign("Assinatura calculada: $calculatedSignature | Assinatura recebida: " . ($receivedSignature ?? 'null'), 'controller');
 
         // Comparar o HMAC calculado com o HMAC recebido
         if ($receivedSignature !== $calculatedSignature) {
@@ -373,6 +377,7 @@ class ClickSignController
 
         return ['success' => true, 'mensagem' => 'Assinatura processada com sucesso.'];
     }
+
 
 
 
