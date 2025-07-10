@@ -316,12 +316,12 @@ class ClickSignController
     }
 
 
-    // Método para processar assinaturas recebidas via ClickSign
+    // Método para processar eventos via ClickSign
     public static function processarAssinaturas($requestData)
     {
         // Captura o cliente da URL
-        $cliente = $_GET['cliente'] ?? null; // Cliente vindo da URL
-        $documentKey = $requestData['document']['key'] ?? null; // document.key do JSON da ClickSign
+        $cliente = $_GET['cliente'] ?? null;
+        $documentKey = $requestData['document']['key'] ?? null;
 
         LogHelper::logClickSign("Início ProcessarAssinaturas | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
 
@@ -337,8 +337,7 @@ class ClickSignController
         }
 
         $secret = $acesso['clicksign_secret'];
-
-        $receivedSignatureHeader = $_SERVER['HTTP_CONTENT_HMAC'] ?? null; // Cabeçalho Content-Hmac
+        $receivedSignatureHeader = $_SERVER['HTTP_CONTENT_HMAC'] ?? null;
         $receivedSignature = null;
 
         if ($receivedSignatureHeader && strpos($receivedSignatureHeader, 'sha256=') === 0) {
@@ -348,7 +347,6 @@ class ClickSignController
         LogHelper::logClickSign("Cabeçalho Content-Hmac recebido: " . ($receivedSignature ?? 'não recebido'), 'controller');
 
         $body = file_get_contents('php://input');
-
         $calculatedSignature = hash_hmac('sha256', $body, $secret);
 
         LogHelper::logClickSign("Assinatura calculada: $calculatedSignature | Assinatura recebida: " . ($receivedSignature ?? 'null'), 'controller');
@@ -377,39 +375,62 @@ class ClickSignController
 
         $evento = $requestData['event']['name'] ?? null;
 
-        if ($evento === 'sign') {
-            $signer = $requestData['event']['data']['signer'] ?? null;
+        switch ($evento) {
+            case 'sign':
+                return self::tratarEventoSign($requestData, $acesso, $spa, $dealId, $campoRetorno);
+            case 'closed':
+                return self::tratarEventoClosed($requestData, $acesso, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey);
+            case 'date_limit': // Exemplo de evento para data limite, ajustar conforme necessário
+                return self::tratarEventoDataLimite($requestData, $acesso, $spa, $dealId, $campoRetorno);
+            default:
+                LogHelper::logClickSign("Evento não tratado: $evento", 'controller');
+                return ['success' => true, 'mensagem' => 'Evento recebido sem ação específica.'];
+        }
+    }
 
-            if ($signer) {
-                $nome = $signer['name'] ?? '';
-                $email = $signer['email'] ?? '';
+    // Métodos auxiliares para tratar eventos Sign
+    private static function tratarEventoSign($requestData, $acesso, $spa, $dealId, $campoRetorno)
+    {
+        $signer = $requestData['event']['data']['signer'] ?? null;
 
-                $mensagem = "Assinatura feita por $nome - $email";
+        if ($signer) {
+            $nome = $signer['name'] ?? '';
+            $email = $signer['email'] ?? '';
 
-                // Atualizar Bitrix só com a mensagem no campo retorno
-                self::atualizarRetornoBitrix(
-                    ['retorno' => $campoRetorno],
-                    $spa,
-                    $dealId,
-                    $acesso['webhook_bitrix'] ?? null,
-                    true,
-                    null, // Não envia documentKey aqui para não atualizar arquivo assinado
-                    $mensagem
-                );
+            $mensagem = "Assinatura feita por $nome - $email";
 
-                LogHelper::logClickSign("Mensagem atualizada no Bitrix: $mensagem", 'controller');
+            self::atualizarRetornoBitrix(
+                ['retorno' => $campoRetorno],
+                $spa,
+                $dealId,
+                $acesso['webhook_bitrix'] ?? null,
+                true,
+                null, // Não envia documentKey para evitar atualizar arquivo assinado
+                $mensagem
+            );
 
-                return ['success' => true, 'mensagem' => 'Assinatura processada e retorno atualizado.'];
-            }
+            LogHelper::logClickSign("Mensagem atualizada no Bitrix: $mensagem", 'controller');
+
+            return ['success' => true, 'mensagem' => 'Assinatura processada e retorno atualizado.'];
         }
 
-        // Evento de documento finalizado (exemplo: closed)
-        if ($evento === 'closed') {
-            // Aqui você implementaria pegar o arquivo assinado e atualizar o Bitrix com o arquivo e status final
-            // Essa parte fica para o próximo passo
-        }
+        return ['success' => false, 'mensagem' => 'Dados do signatário não encontrados.'];
+    }
 
-        return ['success' => true, 'mensagem' => 'Evento recebido sem ação específica.'];
+    // Método para tratar evento closed
+    private static function tratarEventoClosed($requestData, $acesso, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey)
+    {
+        // Função vazia por enquanto, será implementada depois
+        LogHelper::logClickSign("Evento closed recebido, mas função não implementada ainda.", 'controller');
+        return ['success' => true, 'mensagem' => 'Evento closed recebido. Função não implementada.'];
+    }
+
+    // Método para tratar evento date_limit (exemplo, ajustar conforme necessário)
+    private static function tratarEventoDataLimite($requestData, $acesso, $spa, $dealId, $campoRetorno)
+    {
+        // Função vazia por enquanto, será implementada depois
+        LogHelper::logClickSign("Evento date_limit recebido, mas função não implementada ainda.", 'controller');
+        return ['success' => true, 'mensagem' => 'Evento date_limit recebido. Função não implementada.'];
     }
 
 

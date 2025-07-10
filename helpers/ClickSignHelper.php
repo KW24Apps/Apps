@@ -4,6 +4,7 @@ require_once __DIR__ . '/../helpers/LogHelper.php';
 
 class ClickSignHelper
 {
+    // Método genérico para enviar requisições à API ClickSign
     private static function enviarRequisicao($metodo, $endpoint, $token, $dados = [])
     {
         if (!is_string($endpoint)) {
@@ -93,12 +94,14 @@ class ClickSignHelper
         return self::enviarRequisicao('POST', '/lists', $token, ['list' => $dados]);
     }
 
+    // DOCUMENTO — Assinatura (sempre V1/signatures)
     public static function obterMimeDoArquivo(string $url): ?string
     {
         $headers = get_headers($url, 1);
         return $headers['Content-Type'] ?? null;
     }
 
+    // DOCUMENTO — Assinatura (sempre V1/signatures)
     public static function mimeParaExtensao(string $mime): ?string
     {
         $map = [
@@ -111,6 +114,7 @@ class ClickSignHelper
         return $map[strtolower($mime)] ?? null;
     }
 
+    // DOCUMENTO — Assinatura (sempre V1/signatures)
     public static function extensaoParaMime(string $extensao): ?string
     {
         $map = [
@@ -124,5 +128,32 @@ class ClickSignHelper
         return $map[strtolower($extensao)] ?? null;
     }
 
+    // Validação HMAC
+        public static function validarHmac($body, $secret, $headerSignature)
+    {
+        if (!$headerSignature) {
+            LogHelper::logClickSign("Header HMAC não recebido", 'controller');
+            return false;
+        }
 
-} 
+        if (strpos($headerSignature, 'sha256=') === 0) {
+            $receivedSignature = substr($headerSignature, strlen('sha256='));
+        } else {
+            LogHelper::logClickSign("Header HMAC inválido: $headerSignature", 'controller');
+            return false;
+        }
+
+        $calculatedSignature = hash_hmac('sha256', $body, $secret);
+
+        if ($receivedSignature !== $calculatedSignature) {
+            LogHelper::logClickSign("Assinatura HMAC inválida | Recebida: $receivedSignature | Calculada: $calculatedSignature", 'controller');
+            return false;
+        }
+
+        return true;
+    }
+
+
+}
+
+
