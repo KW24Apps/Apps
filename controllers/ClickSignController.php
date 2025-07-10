@@ -241,7 +241,7 @@ class ClickSignController
             if ($sucessoVinculo) {
                 // --- GRAVAÇÃO NA TABELA DE ASSINATURAS ---
                 $clienteId = $acesso['cliente_id'] ?? null;
-                LogHelper::logClickSign("DEBUG: Indo salvar assinatura na tabela!", 'controller');
+                
                 AplicacaoAcessoDAO::registrarAssinaturaClicksign([
                     'document_key'               => $documentKey,
                     'cliente_id'                 => $clienteId,

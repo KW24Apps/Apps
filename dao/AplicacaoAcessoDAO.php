@@ -1,5 +1,6 @@
 <?php
 namespace dao;
+use LogHelper;
 use PDO;
 use PDOException;
 
@@ -57,36 +58,40 @@ class AplicacaoAcessoDAO
         }
     }
 
-public static function registrarAssinaturaClicksign($dados)
-{
-    try {
-        // Log antes de inserir no banco
-        LogHelper::logClickSign("DEBUG: Tentando salvar assinatura na tabela assinaturas_clicksign com os dados: " . json_encode($dados), 'dao');
-
-        $pdo = new PDO('mysql:host=localhost;dbname=kw24co49_api_kwconfig', 'usuario', 'senha'); // Ajuste suas configs!
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-        $sql = "INSERT INTO assinaturas_clicksign 
-                (document_key, cliente_id, cliente_token, deal_id, spa, campo_contratante, campo_contratada, campo_testemunhas, campo_data, campo_arquivoaserassinado, campo_arquivoassinado, campo_idclicksign, campo_retorno)
-                VALUES 
-                (:document_key, :cliente_id, :cliente_token, :deal_id, :spa, :campo_contratante, :campo_contratada, :campo_testemunhas, :campo_data, :campo_arquivoaserassinado, :campo_arquivoassinado, :campo_idclicksign, :campo_retorno)";
+    public static function registrarAssinaturaClicksign($dados)
+    {
+        $config = require __DIR__ . '/../config/config.php';
         
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($dados);
+        LogHelper::logClickSign("DEBUG: Iniciando salvar assinatura com os dados: " . json_encode($dados), 'dao');
 
-        // Log após inserção bem-sucedida
-        LogHelper::logClickSign("DEBUG: Inserção realizada com sucesso na tabela assinaturas_clicksign. Dados: " . json_encode($dados), 'dao');
-        
-    } catch (PDOException $e) {
-        // Log de erro ao tentar salvar no banco
-        LogHelper::logClickSign("ERRO PDO ao inserir em assinaturas_clicksign: " . $e->getMessage(), 'dao');
-    } catch (Exception $e) {
-        // Log de erro genérico
-        LogHelper::logClickSign("ERRO geral ao salvar assinatura: " . $e->getMessage(), 'dao');
+        try {
+            $pdo = new PDO(
+                "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+                $config['usuario'],
+                $config['senha']
+            );
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $sql = "INSERT INTO assinaturas_clicksign 
+                    (document_key, cliente_id, deal_id, spa, campo_contratante, campo_contratada, campo_testemunhas, campo_data, campo_arquivoaserassinado, campo_arquivoassinado, campo_idclicksign, campo_retorno)
+                    VALUES 
+                    (:document_key, :cliente_id, :deal_id, :spa, :campo_contratante, :campo_contratada, :campo_testemunhas, :campo_data, :campo_arquivoaserassinado, :campo_arquivoassinado, :campo_idclicksign, :campo_retorno)";
+            
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($dados);
+            
+            // Log após inserção bem-sucedida
+            LogHelper::logClickSign("DEBUG: Inserção realizada com sucesso na tabela assinaturas_clicksign. Dados: " . json_encode($dados), 'dao');
+            
+        } catch (PDOException $e) {
+            // Log de erro PDO
+            LogHelper::logClickSign("ERRO PDO ao inserir em assinaturas_clicksign: " . $e->getMessage(), 'dao');
+        } catch (\Exception $e) {
+            // Log de erro genérico
+            LogHelper::logClickSign("ERRO geral ao salvar assinatura: " . $e->getMessage(), 'dao');
+        }
     }
-}
 
 
- 
 
 }
