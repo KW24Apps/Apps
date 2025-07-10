@@ -255,6 +255,7 @@ class ClickSignController
                     'campo_idclicksign'          => $params['idclicksign'] ?? null,
                     'campo_retorno'              => $params['retorno'] ?? null
                 ]);
+                LogHelper::logClickSign("DEBUG: Salvou assinatura na tabela!", 'controller');
                 // --- FIM DA GRAVAÇÃO ---
                 return [
                     'success' => true,
