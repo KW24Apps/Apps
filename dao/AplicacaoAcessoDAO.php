@@ -61,9 +61,7 @@ class AplicacaoAcessoDAO
     public static function registrarAssinaturaClicksign($dados)
     {
         $config = require __DIR__ . '/../config/config.php';
-        
-        LogHelper::logClickSign("DEBUG: Iniciando salvar assinatura com os dados: " . json_encode($dados), 'dao');
-
+      
         try {
             $pdo = new PDO(
                 "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
@@ -79,10 +77,6 @@ class AplicacaoAcessoDAO
             
             $stmt = $pdo->prepare($sql);
             $stmt->execute($dados);
-            
-            // Log após inserção bem-sucedida
-            LogHelper::logClickSign("DEBUG: Inserção realizada com sucesso na tabela assinaturas_clicksign. Dados: " . json_encode($dados), 'dao');
-            
         } catch (PDOException $e) {
             // Log de erro PDO
             LogHelper::logClickSign("ERRO PDO ao inserir em assinaturas_clicksign: " . $e->getMessage(), 'dao');
@@ -91,7 +85,6 @@ class AplicacaoAcessoDAO
             LogHelper::logClickSign("ERRO geral ao salvar assinatura: " . $e->getMessage(), 'dao');
         }
     }
-
 
 
 }
