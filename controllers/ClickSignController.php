@@ -315,25 +315,22 @@ class ClickSignController
         // Captura o cliente da URL
         $cliente = $_GET['cliente'] ?? null; // Cliente vindo da URL
         $documentKey = $requestData['document']['key'] ?? null; // document.key do JSON da ClickSign
-        $secret = null;  // Inicializa o secret como nulo, pois ele será recuperado do banco
 
         LogHelper::logClickSign("Início ProcessarAssinaturas | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
 
-        // Valida o cliente e verifica se ele está ativo no banco
         if (empty($cliente) || empty($documentKey)) {
             LogHelper::logClickSign("Parâmetros obrigatórios ausentes | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
             return ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes.'];
         }
 
-        // Consultar no banco para obter o webhook e o secret
         $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'clicksign');
         if (!$acesso || empty($acesso['clicksign_secret'])) {
             LogHelper::logClickSign("Acesso não autorizado ou Secret não encontrado | Cliente: $cliente", 'controller');
             return ['success' => false, 'mensagem' => 'Acesso não autorizado ou Secret não encontrado.'];
         }
 
-        // Agora que temos o secret, vamos validar o HMAC
-        $secret = $acesso['clicksign_secret'];  // Pega o secret configurado no banco
+        $secret = $acesso['clicksign_secret'];
+
         $receivedSignatureHeader = $_SERVER['HTTP_CONTENT_HMAC'] ?? null; // Cabeçalho Content-Hmac
         $receivedSignature = null;
 
@@ -343,27 +340,24 @@ class ClickSignController
 
         LogHelper::logClickSign("Cabeçalho Content-Hmac recebido: " . ($receivedSignature ?? 'não recebido'), 'controller');
 
-        $body = file_get_contents('php://input');  // Corpo da requisição
+        $body = file_get_contents('php://input');
 
-        // Gerar o HMAC usando o secret
         $calculatedSignature = hash_hmac('sha256', $body, $secret);
 
         LogHelper::logClickSign("Assinatura calculada: $calculatedSignature | Assinatura recebida: " . ($receivedSignature ?? 'null'), 'controller');
 
-        // Comparar o HMAC calculado com o HMAC recebido
         if ($receivedSignature !== $calculatedSignature) {
             LogHelper::logClickSign("Assinatura HMAC inválida | Cliente: $cliente", 'controller');
             return ['success' => false, 'mensagem' => 'Assinatura HMAC inválida.'];
         }
 
-        // Consultar os dados de assinatura na tabela "assinaturas_clicksign"
+        // Buscar dados da assinatura para pegar campos do retorno
         $dadosAssinatura = AplicacaoAcessoDAO::obterCamposAssinatura($documentKey);
         if (!$dadosAssinatura) {
             LogHelper::logClickSign("Documento não encontrado | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
             return ['success' => false, 'mensagem' => 'Documento não encontrado.'];
         }
 
-        // Extraindo campos de retorno
         $campoArquivoAssinado = $dadosAssinatura['campo_arquivoassinado'] ?? null;
         $campoRetorno = $dadosAssinatura['campo_retorno'] ?? null;
 
@@ -372,11 +366,38 @@ class ClickSignController
             return ['success' => false, 'mensagem' => 'Campos necessários não encontrados na assinatura.'];
         }
 
-        // Atualizar o status no Bitrix
-        self::atualizarRetornoBitrix($requestData, $acesso['spa'], $requestData['deal'], $acesso['webhook_bitrix'], true, $documentKey);
+        // Verifica se o evento é "sign"
+        $evento = $requestData['event']['name'] ?? null;
+        if ($evento === 'sign') {
+            $signer = $requestData['event']['data']['signer'] ?? null;
 
-        return ['success' => true, 'mensagem' => 'Assinatura processada com sucesso.'];
+            if ($signer) {
+                $nome = $signer['name'] ?? '';
+                $email = $signer['email'] ?? '';
+
+                $mensagem = "Assinatura feita por $nome - $email";
+
+                // Atualizar Bitrix com essa mensagem
+                self::atualizarRetornoBitrix(
+                    ['retorno' => $campoRetorno, 'idclicksign' => $campoArquivoAssinado],
+                    $acesso['spa'] ?? null,
+                    $requestData['deal'] ?? null,
+                    $acesso['webhook_bitrix'] ?? null,
+                    true,
+                    $documentKey,
+                    $mensagem
+                );
+
+                LogHelper::logClickSign("Mensagem atualizada no Bitrix: $mensagem", 'controller');
+
+                return ['success' => true, 'mensagem' => 'Assinatura processada e retorno atualizado.'];
+            }
+        }
+
+        // Se não for evento "sign", apenas confirma recebimento
+        return ['success' => true, 'mensagem' => 'Evento recebido sem ação específica.'];
     }
+
 
 
 
