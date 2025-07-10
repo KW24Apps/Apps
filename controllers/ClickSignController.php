@@ -313,11 +313,13 @@ class ClickSignController
     public static function processarAssinaturas($requestData)
     {
         // Início do processamento
-        $cliente = $requestData['cliente'] ?? null;
-        $documentKey = $requestData['idclicksign'] ?? null;
-        $secret = $requestData['secret'] ?? null;
-        
         LogHelper::logClickSign("Retorno completo da ClickSign (sem filtro): " . json_encode($requestData), 'controller');  // Log completo dos dados recebidos
+
+        // Captura do cliente e documentKey (correspondente ao retorno real da ClickSign)
+        $cliente = $requestData['event']['data']['signer']['email'] ?? null;  // Supondo que o email do signatário seja o cliente
+        $documentKey = $requestData['document']['key'] ?? null;  // document.key
+
+        $secret = $requestData['secret_hmac'] ?? null;  // A informação de Secret vem em 'secret_hmac'
 
         LogHelper::logClickSign("Início ProcessarAssinaturas | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
 
@@ -350,14 +352,12 @@ class ClickSignController
             return ['success' => false, 'mensagem' => 'Campos necessários não encontrados na assinatura.'];
         }
 
-        // Log do retorno completo da ClickSign
-        LogHelper::logClickSign("Retorno completo da ClickSign: " . json_encode($requestData), 'controller');
-
         // Atualizar o status no Bitrix
         self::atualizarRetornoBitrix($requestData, $acesso['spa'], $requestData['deal'], $acesso['webhook_bitrix'], true, $documentKey);
 
         return ['success' => true, 'mensagem' => 'Assinatura processada com sucesso.'];
     }
+
 
 
 
