@@ -319,6 +319,9 @@ class ClickSignController
     // Método para processar eventos via ClickSign
     public static function processarAssinaturas($requestData)
     {
+        $rawBody = file_get_contents('php://input');
+        LogHelper::logClickSign("JSON bruto recebido no webhook: " . $rawBody, 'controller');
+        
         // Captura o cliente da URL
         $cliente = $_GET['cliente'] ?? null;
         $documentKey = $requestData['document']['key'] ?? null;
