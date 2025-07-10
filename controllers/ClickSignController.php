@@ -420,10 +420,74 @@ class ClickSignController
     // Método para tratar evento closed
     private static function tratarEventoClosed($requestData, $acesso, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey)
     {
-        // Função vazia por enquanto, será implementada depois
-        LogHelper::logClickSign("Evento closed recebido, mas função não implementada ainda.", 'controller');
-        return ['success' => true, 'mensagem' => 'Evento closed recebido. Função não implementada.'];
+        LogHelper::logClickSign("Início tratarEventoClosed | DocumentKey: $documentKey", 'controller');
+
+        $helper = new ClickSignHelper();
+
+        $tentativas = 10;
+        $esperaSegundos = 60;
+        $documentoVisualizar = null;
+        $baixouArquivo = false;
+
+        for ($i = 1; $i <= $tentativas; $i++) {
+            $documentoVisualizar = $helper->getDocumento($documentKey);
+
+            if (isset($documentoVisualizar->document->downloads->signed_file_url)) {
+                $baixouArquivo = true;
+                break;
+            }
+
+            LogHelper::logClickSign("Tentativa $i: Arquivo assinado não disponível ainda. Aguardando $esperaSegundos segundos.", 'controller');
+            sleep($esperaSegundos);
+        }
+
+        if (!$baixouArquivo) {
+            LogHelper::logClickSign("Falha ao obter arquivo assinado após $tentativas tentativas | DocumentKey: $documentKey", 'controller');
+            // Atualizar Bitrix com erro, sem arquivo
+            $mensagem = "Falha ao obter arquivo assinado após múltiplas tentativas.";
+            self::atualizarRetornoBitrix(
+                ['retorno' => $campoRetorno],
+                $spa,
+                $dealId,
+                $acesso['webhook_bitrix'] ?? null,
+                false,
+                null,
+                $mensagem
+            );
+            return ['success' => false, 'mensagem' => $mensagem];
+        }
+
+        // Download do arquivo assinado
+        $url = $documentoVisualizar->document->downloads->signed_file_url;
+
+        $infoArquivo = pathinfo($documentoVisualizar->document->filename);
+        $novoNomeArquivo = $infoArquivo['filename'] . '.pdf';
+
+        $ds = DIRECTORY_SEPARATOR;
+        $dir = dirname(__FILE__) . $ds . '..' . $ds . 'assinaturas' . $ds . "retorno" . $ds;
+
+        Utils::downloadFile($dir, $novoNomeArquivo, $url);
+
+        $fileContent = base64_encode(file_get_contents($dir . $novoNomeArquivo));
+
+        // Atualiza Bitrix com arquivo e mensagem de documento completo
+        $mensagem = "Documento assinado por todos os signatários.";
+
+        self::atualizarRetornoBitrix(
+            ['retorno' => $campoRetorno, 'idclicksign' => $campoArquivoAssinado],
+            $spa,
+            $dealId,
+            $acesso['webhook_bitrix'] ?? null,
+            true,
+            $documentKey,
+            $mensagem
+        );
+
+        LogHelper::logClickSign("Documento completo atualizado no Bitrix | DocumentKey: $documentKey", 'controller');
+
+        return ['success' => true, 'mensagem' => 'Documento finalizado e arquivo atualizado no Bitrix.'];
     }
+
 
     // Método para tratar evento date_limit (exemplo, ajustar conforme necessário)
     private static function tratarEventoDataLimite($requestData, $acesso, $spa, $dealId, $campoRetorno)
