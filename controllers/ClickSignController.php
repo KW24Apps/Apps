@@ -312,9 +312,6 @@ class ClickSignController
 
     public static function processarAssinaturas($requestData)
     {
-        // Início do processamento
-        LogHelper::logClickSign("Retorno completo da ClickSign (sem filtro): " . json_encode($requestData), 'controller');  // Log completo dos dados recebidos
-
         // Captura do cliente e documentKey (correspondente ao retorno real da ClickSign)
         $cliente = $requestData['event']['data']['signer']['email'] ?? null;  // Supondo que o email do signatário seja o cliente
         $documentKey = $requestData['document']['key'] ?? null;  // document.key
@@ -357,6 +354,7 @@ class ClickSignController
 
         return ['success' => true, 'mensagem' => 'Assinatura processada com sucesso.'];
     }
+
 
 
 
