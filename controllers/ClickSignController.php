@@ -312,12 +312,15 @@ class ClickSignController
 
     public static function processarAssinaturas($requestData)
     {
-        // Captura do cliente e documentKey (correspondente ao retorno real da ClickSign)
-        $cliente = $requestData['event']['data']['signer']['email'] ?? null;  // Supondo que o email do signatário seja o cliente
-        $documentKey = $requestData['document']['key'] ?? null;  // document.key
+        // Captura o cliente da URL
+        $cliente = $_GET['cliente'] ?? null; // Cliente vindo da URL
+        $documentKey = $requestData['document']['key'] ?? null; // document.key do JSON da ClickSign
+        $secret = $requestData['secret_hmac'] ?? null;  // Secret vindo do JSON da ClickSign
 
-        $secret = $requestData['secret_hmac'] ?? null;  // A informação de Secret vem em 'secret_hmac'
+        // Log para visualizar os valores antes de validar
+        LogHelper::logClickSign("Verificando parâmetros | Cliente: '$cliente' | DocumentKey: '$documentKey' | Secret: '$secret'", 'controller');
 
+        // Início do processamento
         LogHelper::logClickSign("Início ProcessarAssinaturas | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
 
         // Validação dos parâmetros
@@ -354,6 +357,7 @@ class ClickSignController
 
         return ['success' => true, 'mensagem' => 'Assinatura processada com sucesso.'];
     }
+
 
 
 
