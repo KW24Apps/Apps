@@ -31,3 +31,17 @@
 [2025-07-09 20:57:35] [controller] - DEBUG: Indo salvar assinatura na tabela!
 [2025-07-09 20:57:35] [dao] - DEBUG: Inserção feita com sucesso na tabela assinaturas_clicksign. Dados: {"document_key":"fefc448f-5d62-43ff-a6ff-20531d215fde","cliente_id":1,"cliente_token":"gnappC93fLq7RxKZVp28HswuAYMe1","deal_id":"2046","spa":"1054","campo_contratante":"UF_CRM_41_1727793339","campo_contratada":"UF_CRM_41_1747700402","campo_testemunhas":"UF_CRM_41_1747700459","campo_data":"UF_CRM_41_1727805215","campo_arquivoaserassinado":"UF_CRM_41_1727802593","campo_arquivoassinado":"UF_CRM_41_1727805331","campo_idclicksign":"UF_CRM_41_1727802471","campo_retorno":"UF_CRM_41_1727805418"}
 [2025-07-09 20:57:35] [controller] - DEBUG: Salvou assinatura na tabela!
+[2025-07-10 00:26:32] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
+[2025-07-10 00:26:33] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 3
+[2025-07-10 00:26:42] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: d3aec507-2320-45a3-a8af-98f9c504bd1e
+[2025-07-10 00:26:46] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: d3aec507-2320-45a3-a8af-98f9c504bd1e | Total vínculos: 3
+[2025-07-10 00:26:47] [controller] - DEBUG: Indo salvar assinatura na tabela!
+[2025-07-10 00:26:47] [dao] - ERRO PDO ao inserir em assinaturas_clicksign: SQLSTATE[HY093]: Invalid parameter number: number of bound variables does not match number of tokens
+[2025-07-10 00:26:47] [controller] - DEBUG: Salvou assinatura na tabela!
+[2025-07-10 00:28:06] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
+[2025-07-10 00:28:07] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 2
+[2025-07-10 00:28:12] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: 6768845f-a0a4-4879-8869-1b2fbfaa2990
+[2025-07-10 00:28:14] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: 6768845f-a0a4-4879-8869-1b2fbfaa2990 | Total vínculos: 2
+[2025-07-10 00:28:15] [controller] - DEBUG: Indo salvar assinatura na tabela!
+[2025-07-10 00:28:15] [dao] - ERRO PDO ao inserir em assinaturas_clicksign: SQLSTATE[HY093]: Invalid parameter number: number of bound variables does not match number of tokens
+[2025-07-10 00:28:15] [controller] - DEBUG: Salvou assinatura na tabela!
