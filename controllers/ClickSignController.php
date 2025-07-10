@@ -317,7 +317,7 @@ class ClickSignController
         $documentKey = $params['idclicksign'] ?? null;
         $secret = $params['secret'] ?? null;
 
-        LogHelper::logClickSign("Início ProcessarAssinaturas $params", 'controller');
+        LogHelper::logClickSign("Retorno completo da ClickSign: " . json_encode($params), 'controller');
         LogHelper::logClickSign("Início ProcessarAssinaturas | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
 
         // Validação de parâmetros
