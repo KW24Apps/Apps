@@ -23,5 +23,5 @@ class LogHelper
         $timestamp = date('Y-m-d H:i:s');
         $linha = "[$timestamp]" . ($contexto ? " [$contexto]" : "") . " - $mensagem" . PHP_EOL;
         file_put_contents($arquivoLog, $linha, FILE_APPEND);
-    }
+    } 
 }
