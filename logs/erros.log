@@ -1,9 +1,0 @@
-[09-Jul-2025 20:41:19 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[HY000] [1045] Access denied for user 'usuario'@'localhost' (using password: YES) in X:\VSCode\apis.kw24.com.br\Apps\dao\AplicacaoAcessoDAO.php:61
-Stack trace:
-#0 X:\VSCode\apis.kw24.com.br\Apps\dao\AplicacaoAcessoDAO.php(61): PDO->__construct('mysql:host=loca...', 'usuario', Object(SensitiveParameterValue))
-#1 X:\VSCode\apis.kw24.com.br\Apps\controllers\ClickSignController.php(231): dao\AplicacaoAcessoDAO::registrarAssinaturaClicksign(Array)
-#2 X:\VSCode\apis.kw24.com.br\Apps\routers\clicksignRoutes.php(10): ClickSignController::GerarAssinatura()
-#3 X:\VSCode\apis.kw24.com.br\Apps\index.php(21): require_once('X:\\VSCode\\apis....')
-#4 X:\VSCode\apis.kw24.com.br\index.php(8): require_once('X:\\VSCode\\apis....')
-#5 {main}
-  thrown in X:\VSCode\apis.kw24.com.br\Apps\dao\AplicacaoAcessoDAO.php on line 61

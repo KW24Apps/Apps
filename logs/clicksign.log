@@ -1,47 +1,11 @@
-[2025-07-09 19:54:33] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
-[2025-07-09 19:54:34] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 3
-[2025-07-09 19:54:40] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: 2167744e-7b21-40fb-9d57-c8d4eabf575d
-[2025-07-09 19:54:43] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: 2167744e-7b21-40fb-9d57-c8d4eabf575d | Total vínculos: 3
-[2025-07-09 19:56:03] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
-[2025-07-09 19:56:05] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 3
-[2025-07-09 19:56:15] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: e3d420f8-6aaa-462b-95dc-eb9328f7a3ea
-[2025-07-09 19:56:19] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: e3d420f8-6aaa-462b-95dc-eb9328f7a3ea | Total vínculos: 3
-[2025-07-09 20:41:07] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
-[2025-07-09 20:41:08] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 3
-[2025-07-09 20:41:14] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: 7b19c6fd-0124-45a9-95af-8e0855ea1615
-[2025-07-09 20:41:18] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: 7b19c6fd-0124-45a9-95af-8e0855ea1615 | Total vínculos: 3
-[2025-07-09 20:51:00] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
-[2025-07-09 20:51:01] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 3
-[2025-07-09 20:51:07] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: 3dc293e3-e95d-4176-946e-24208e1aea2c
-[2025-07-09 20:51:11] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: 3dc293e3-e95d-4176-946e-24208e1aea2c | Total vínculos: 3
-[2025-07-09 20:51:13] [controller] - DEBUG: Indo salvar assinatura na tabela!
-[2025-07-09 20:51:13] [dao] - ERRO PDO ao inserir em assinaturas_clicksign: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'apis_local.assinaturas_clicksign' doesn't exist
-[2025-07-09 20:51:13] [controller] - DEBUG: Salvou assinatura na tabela!
-[2025-07-09 20:52:29] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
-[2025-07-09 20:52:30] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 3
-[2025-07-09 20:52:36] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: 60e70134-afb1-4a21-8b63-c81e8cd34f31
-[2025-07-09 20:52:40] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: 60e70134-afb1-4a21-8b63-c81e8cd34f31 | Total vínculos: 3
-[2025-07-09 20:52:41] [controller] - DEBUG: Indo salvar assinatura na tabela!
-[2025-07-09 20:52:42] [dao] - ERRO PDO ao inserir em assinaturas_clicksign: SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'cliente_id' cannot be null
-[2025-07-09 20:52:42] [controller] - DEBUG: Salvou assinatura na tabela!
-[2025-07-09 20:57:24] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
-[2025-07-09 20:57:25] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 3
-[2025-07-09 20:57:30] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: fefc448f-5d62-43ff-a6ff-20531d215fde
-[2025-07-09 20:57:34] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: fefc448f-5d62-43ff-a6ff-20531d215fde | Total vínculos: 3
-[2025-07-09 20:57:35] [controller] - DEBUG: Indo salvar assinatura na tabela!
-[2025-07-09 20:57:35] [dao] - DEBUG: Inserção feita com sucesso na tabela assinaturas_clicksign. Dados: {"document_key":"fefc448f-5d62-43ff-a6ff-20531d215fde","cliente_id":1,"cliente_token":"gnappC93fLq7RxKZVp28HswuAYMe1","deal_id":"2046","spa":"1054","campo_contratante":"UF_CRM_41_1727793339","campo_contratada":"UF_CRM_41_1747700402","campo_testemunhas":"UF_CRM_41_1747700459","campo_data":"UF_CRM_41_1727805215","campo_arquivoaserassinado":"UF_CRM_41_1727802593","campo_arquivoassinado":"UF_CRM_41_1727805331","campo_idclicksign":"UF_CRM_41_1727802471","campo_retorno":"UF_CRM_41_1727805418"}
-[2025-07-09 20:57:35] [controller] - DEBUG: Salvou assinatura na tabela!
-[2025-07-10 00:26:32] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
-[2025-07-10 00:26:33] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 3
-[2025-07-10 00:26:42] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: d3aec507-2320-45a3-a8af-98f9c504bd1e
-[2025-07-10 00:26:46] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: d3aec507-2320-45a3-a8af-98f9c504bd1e | Total vínculos: 3
-[2025-07-10 00:26:47] [controller] - DEBUG: Indo salvar assinatura na tabela!
-[2025-07-10 00:26:47] [dao] - ERRO PDO ao inserir em assinaturas_clicksign: SQLSTATE[HY093]: Invalid parameter number: number of bound variables does not match number of tokens
-[2025-07-10 00:26:47] [controller] - DEBUG: Salvou assinatura na tabela!
-[2025-07-10 00:28:06] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
-[2025-07-10 00:28:07] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 2
-[2025-07-10 00:28:12] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: 6768845f-a0a4-4879-8869-1b2fbfaa2990
-[2025-07-10 00:28:14] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: 6768845f-a0a4-4879-8869-1b2fbfaa2990 | Total vínculos: 2
-[2025-07-10 00:28:15] [controller] - DEBUG: Indo salvar assinatura na tabela!
-[2025-07-10 00:28:15] [dao] - ERRO PDO ao inserir em assinaturas_clicksign: SQLSTATE[HY093]: Invalid parameter number: number of bound variables does not match number of tokens
-[2025-07-10 00:28:15] [controller] - DEBUG: Salvou assinatura na tabela!
+[2025-07-10 00:37:41] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
+[2025-07-10 00:37:42] [controller] - DEBUG: Data recebida do Bitrix: 2025-07-24T03:00:00+03:00
+[2025-07-10 00:37:42] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 2
+[2025-07-10 00:37:51] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: d93a6800-991f-49e4-a50b-b5325d9961cc
+[2025-07-10 00:37:54] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: d93a6800-991f-49e4-a50b-b5325d9961cc | Total vínculos: 2
+[2025-07-10 00:40:26] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
+[2025-07-10 00:40:26] [controller] - DEBUG: Data recebida do Bitrix: 2025-07-24T03:00:00+03:00
+[2025-07-10 00:40:26] [controller] - DEBUG: Data formatada para ClickSign: 2025-07-24
+[2025-07-10 00:40:27] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 2
+[2025-07-10 00:40:35] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: d0aee02a-9142-417d-968a-a17a7a69a6f7
+[2025-07-10 00:40:38] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: d0aee02a-9142-417d-968a-a17a7a69a6f7 | Total vínculos: 2

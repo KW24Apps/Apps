@@ -76,10 +76,7 @@ class AplicacaoAcessoDAO
             
             $stmt = $pdo->prepare($sql);
             $stmt->execute($dados);
-
-            \LogHelper::logClickSign("DEBUG: Inserção feita com sucesso na tabela assinaturas_clicksign. Dados: " . json_encode($dados), 'dao');
-        } catch (\Exception $e) {
-            \LogHelper::logClickSign("ERRO PDO ao inserir em assinaturas_clicksign: " . $e->getMessage(), 'dao');
+            } catch (\Exception $e) {
         }
     }
 

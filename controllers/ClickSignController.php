@@ -65,6 +65,11 @@ class ClickSignController
         $idsTestemunhas = $dados[$mapCampos['testemunhas'] ?? ''] ?? null;
         $dataAssinatura = $dados[$mapCampos['data'] ?? ''] ?? null;
 
+        if ($dataAssinatura) {
+        // Remover tudo após a data, inclusive a hora e o fuso horário
+        $dataAssinatura = substr($dataAssinatura, 0, 10); // "2025-07-24"
+        }
+
         // Se a data estiver no formato DD/MM/YYYY, converta para YYYY-MM-DD
         if ($dataAssinatura && strpos($dataAssinatura, '/') !== false) {
             $partes = explode('/', $dataAssinatura);
@@ -236,7 +241,6 @@ class ClickSignController
             if ($sucessoVinculo) {
                 // --- GRAVAÇÃO NA TABELA DE ASSINATURAS ---
                 $clienteId = $acesso['cliente_id'] ?? null;
-                LogHelper::logClickSign("DEBUG: Indo salvar assinatura na tabela!", 'controller');
                 AplicacaoAcessoDAO::registrarAssinaturaClicksign([
                     'document_key'               => $documentKey,
                     'cliente_id'                 => $clienteId,
@@ -251,7 +255,6 @@ class ClickSignController
                     'campo_idclicksign'          => $params['idclicksign'] ?? null,
                     'campo_retorno'              => $params['retorno'] ?? null
                 ]);
-                LogHelper::logClickSign("DEBUG: Salvou assinatura na tabela!", 'controller');
                 // --- FIM DA GRAVAÇÃO ---
                 return [
                     'success' => true,
