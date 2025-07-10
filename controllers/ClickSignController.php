@@ -365,8 +365,11 @@ class ClickSignController
             return ['success' => false, 'mensagem' => 'Documento não encontrado.'];
         }
 
+        $spa = $dadosAssinatura['spa'] ?? null;
+        $dealId = $dadosAssinatura['deal_id'] ?? null;
         $campoArquivoAssinado = $dadosAssinatura['campo_arquivoassinado'] ?? null;
         $campoRetorno = $dadosAssinatura['campo_retorno'] ?? null;
+
 
         if (!$campoArquivoAssinado || !$campoRetorno) {
             LogHelper::logClickSign("Campos necessários não encontrados | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
