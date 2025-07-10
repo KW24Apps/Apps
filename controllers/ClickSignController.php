@@ -370,14 +370,13 @@ class ClickSignController
         $campoArquivoAssinado = $dadosAssinatura['campo_arquivoassinado'] ?? null;
         $campoRetorno = $dadosAssinatura['campo_retorno'] ?? null;
 
-
-        if (!$campoArquivoAssinado || !$campoRetorno) {
-            LogHelper::logClickSign("Campos necessários não encontrados | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
-            return ['success' => false, 'mensagem' => 'Campos necessários não encontrados na assinatura.'];
+        if (!$campoRetorno) {
+            LogHelper::logClickSign("Campo retorno não encontrado | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
+            return ['success' => false, 'mensagem' => 'Campo retorno não encontrado na assinatura.'];
         }
 
-        // Verifica se o evento é "sign"
         $evento = $requestData['event']['name'] ?? null;
+
         if ($evento === 'sign') {
             $signer = $requestData['event']['data']['signer'] ?? null;
 
@@ -387,17 +386,16 @@ class ClickSignController
 
                 $mensagem = "Assinatura feita por $nome - $email";
 
-                // Atualizar Bitrix com essa mensagem
+                // Atualizar Bitrix só com a mensagem no campo retorno
                 self::atualizarRetornoBitrix(
-                    ['retorno' => $campoRetorno, 'idclicksign' => $campoArquivoAssinado],
+                    ['retorno' => $campoRetorno],
                     $spa,
                     $dealId,
                     $acesso['webhook_bitrix'] ?? null,
                     true,
-                    $documentKey,
+                    null, // Não envia documentKey aqui para não atualizar arquivo assinado
                     $mensagem
                 );
-
 
                 LogHelper::logClickSign("Mensagem atualizada no Bitrix: $mensagem", 'controller');
 
@@ -405,9 +403,15 @@ class ClickSignController
             }
         }
 
-        // Se não for evento "sign", apenas confirma recebimento
+        // Evento de documento finalizado (exemplo: closed)
+        if ($evento === 'closed') {
+            // Aqui você implementaria pegar o arquivo assinado e atualizar o Bitrix com o arquivo e status final
+            // Essa parte fica para o próximo passo
+        }
+
         return ['success' => true, 'mensagem' => 'Evento recebido sem ação específica.'];
     }
+
 
 
 
