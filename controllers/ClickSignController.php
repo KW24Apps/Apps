@@ -307,9 +307,16 @@ class ClickSignController
                 $campoRetorno => $mensagemErro
             ];
         }
-        BitrixDealHelper::editarNegociacao($dados);
+
+        LogHelper::logClickSign("Dados enviados para Bitrix: " . json_encode($dados), 'controller');
+
+        $response = BitrixDealHelper::editarNegociacao($dados);
+
+        LogHelper::logClickSign("Resposta da API Bitrix: " . json_encode($response), 'controller');
     }
 
+
+    // Método para processar assinaturas recebidas via ClickSign
     public static function processarAssinaturas($requestData)
     {
         // Captura o cliente da URL
