@@ -126,6 +126,74 @@ class AplicacaoAcessoDAO
         }
     }
 
+    // Método para salvar o status_closed de uma assinatura ClickSign
+
+    public static function salvarStatusClosed(string $documentKey, string $statusClosed): bool
+    {
+        $config = require __DIR__ . '/../config/config.php';
+
+        try {
+            $pdo = new PDO(
+                "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+                $config['usuario'],
+                $config['senha']
+            );
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $sql = "UPDATE assinaturas_clicksign
+                    SET status_closed = :statusClosed, updated_at = NOW()
+                    WHERE document_key = :documentKey";
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindParam(':statusClosed', $statusClosed);
+            $stmt->bindParam(':documentKey', $documentKey);
+
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            LogHelper::logClickSign("ERRO PDO ao atualizar status_closed: " . $e->getMessage(), 'dao');
+            return false;
+        } catch (\Exception $e) {
+            LogHelper::logClickSign("ERRO geral ao atualizar status_closed: " . $e->getMessage(), 'dao');
+            return false;
+        }
+    }
+
+    // Método para obter o status_closed de uma assinatura ClickSign
+    public static function obterStatusClosed(string $documentKey): ?string
+    {
+        $config = require __DIR__ . '/../config/config.php';
+
+        try {
+            $pdo = new PDO(
+                "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+                $config['usuario'],
+                $config['senha']
+            );
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $sql = "SELECT status_closed
+                    FROM assinaturas_clicksign
+                    WHERE document_key = :documentKey
+                    LIMIT 1";
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindParam(':documentKey', $documentKey);
+            $stmt->execute();
+
+            $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($resultado && isset($resultado['status_closed'])) {
+                return $resultado['status_closed'];
+            }
+            return null;
+        } catch (PDOException $e) {
+            LogHelper::logClickSign("ERRO PDO ao obter status_closed: " . $e->getMessage(), 'dao');
+            return null;
+        } catch (\Exception $e) {
+            LogHelper::logClickSign("ERRO geral ao obter status_closed: " . $e->getMessage(), 'dao');
+            return null;
+        }
+    }
 
 
 }

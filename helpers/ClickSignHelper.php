@@ -94,6 +94,19 @@ class ClickSignHelper
         return self::enviarRequisicao('POST', '/lists', $token, ['list' => $dados]);
     }
 
+    // Envia notificação ao signatário (com lembrete automático de 2 em 2 dias)
+    public static function enviarNotificacao($token, $listKey, $reminderInterval = 2)
+    {
+        $payload = [
+            'notification' => [
+                'list_key' => $listKey,
+                'reminder_interval' => $reminderInterval,
+                'delivery' => 'email'
+            ]
+        ];
+        return self::enviarRequisicao('POST', '/notifications', $token, $payload);
+    }
+
     // DOCUMENTO — Assinatura (sempre V1/signatures)
     public static function obterMimeDoArquivo(string $url): ?string
     {
