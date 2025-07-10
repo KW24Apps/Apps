@@ -100,6 +100,8 @@ class AplicacaoAcessoDAO
 
             $sql = "
                 SELECT 
+                    spa,
+                    deal_id,
                     campo_arquivoassinado,
                     campo_retorno
                 FROM assinaturas_clicksign
@@ -123,6 +125,7 @@ class AplicacaoAcessoDAO
             return null;
         }
     }
+
 
 
 }
