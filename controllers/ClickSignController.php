@@ -315,25 +315,35 @@ class ClickSignController
         // Captura o cliente da URL
         $cliente = $_GET['cliente'] ?? null; // Cliente vindo da URL
         $documentKey = $requestData['document']['key'] ?? null; // document.key do JSON da ClickSign
-        $secret = $requestData['secret_hmac'] ?? null;  // Secret vindo do JSON da ClickSign
+        $secret = null;  // Inicializa o secret como nulo, pois ele será recuperado do banco
 
-        // Log para visualizar os valores antes de validar
-        LogHelper::logClickSign("Verificando parâmetros | Cliente: '$cliente' | DocumentKey: '$documentKey' | Secret: '$secret'", 'controller');
-
-        // Início do processamento
         LogHelper::logClickSign("Início ProcessarAssinaturas | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
 
-        // Validação dos parâmetros
-        if (empty($cliente) || empty($documentKey) || empty($secret)) {
+        // Valida o cliente e verifica se ele está ativo no banco
+        if (empty($cliente) || empty($documentKey)) {
             LogHelper::logClickSign("Parâmetros obrigatórios ausentes | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
             return ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes.'];
         }
 
-        // Valida o cliente e o segredo (Secret)
+        // Consultar no banco para obter o webhook e o secret
         $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'clicksign');
-        if (!$acesso || empty($acesso['clicksign_secret']) || $acesso['clicksign_secret'] !== $secret) {
-            LogHelper::logClickSign("Secret inválido ou acesso não autorizado | Cliente: $cliente", 'controller');
-            return ['success' => false, 'mensagem' => 'Acesso não autorizado ou Secret inválido.'];
+        if (!$acesso || empty($acesso['clicksign_secret'])) {
+            LogHelper::logClickSign("Acesso não autorizado ou Secret não encontrado | Cliente: $cliente", 'controller');
+            return ['success' => false, 'mensagem' => 'Acesso não autorizado ou Secret não encontrado.'];
+        }
+
+        // Agora que temos o secret, vamos validar o HMAC
+        $secret = $acesso['clicksign_secret'];  // Pega o secret configurado no banco
+        $receivedSignature = $_SERVER['HTTP_X_SIGNATURE'];  // Cabeçalho x-signature enviado pela ClickSign
+        $body = file_get_contents('php://input');  // Corpo da requisição
+
+        // Gerar o HMAC usando o secret
+        $calculatedSignature = hash_hmac('sha256', $body, $secret);
+
+        // Comparar o HMAC calculado com o HMAC recebido
+        if ($receivedSignature !== $calculatedSignature) {
+            LogHelper::logClickSign("Assinatura HMAC inválida | Cliente: $cliente", 'controller');
+            return ['success' => false, 'mensagem' => 'Assinatura HMAC inválida.'];
         }
 
         // Consultar os dados de assinatura na tabela "assinaturas_clicksign"
@@ -357,6 +367,7 @@ class ClickSignController
 
         return ['success' => true, 'mensagem' => 'Assinatura processada com sucesso.'];
     }
+
 
 
 
