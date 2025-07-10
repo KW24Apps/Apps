@@ -1,9 +1,9 @@
 <?php
-
 namespace dao;
-
 use PDO;
 use PDOException;
+
+require_once __DIR__ . '/../helpers/LogHelper.php';
 
 class AplicacaoAcessoDAO
 {
@@ -23,7 +23,8 @@ class AplicacaoAcessoDAO
                 SELECT
                     ca.webhook_bitrix,
                     ca.clicksign_token,
-                    ca.clicksign_secret
+                    ca.clicksign_secret,
+                    ca.cliente_id
                 FROM clientes c
                 JOIN cliente_aplicacoes ca ON ca.cliente_id = c.id
                 JOIN aplicacoes a ON ca.aplicacao_id = a.id
@@ -55,4 +56,33 @@ class AplicacaoAcessoDAO
             return null;
         }
     }
+
+    public static function registrarAssinaturaClicksign($dados)
+    {
+        $config = require __DIR__ . '/../config/config.php';
+
+        try {
+            $pdo = new PDO(
+                "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+                $config['usuario'],
+                $config['senha']
+            );
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $sql = "INSERT INTO assinaturas_clicksign 
+                    (document_key, cliente_id, cliente_token, deal_id, spa, campo_contratante, campo_contratada, campo_testemunhas, campo_data, campo_arquivoaserassinado, campo_arquivoassinado, campo_idclicksign, campo_retorno)
+                    VALUES 
+                    (:document_key, :cliente_id, :cliente_token, :deal_id, :spa, :campo_contratante, :campo_contratada, :campo_testemunhas, :campo_data, :campo_arquivoaserassinado, :campo_arquivoassinado, :campo_idclicksign, :campo_retorno)";
+            
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($dados);
+
+            \LogHelper::logClickSign("DEBUG: Inserção feita com sucesso na tabela assinaturas_clicksign. Dados: " . json_encode($dados), 'dao');
+        } catch (\Exception $e) {
+            \LogHelper::logClickSign("ERRO PDO ao inserir em assinaturas_clicksign: " . $e->getMessage(), 'dao');
+        }
+    }
+
+
+
 }
