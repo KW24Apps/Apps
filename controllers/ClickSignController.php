@@ -390,13 +390,14 @@ class ClickSignController
                 // Atualizar Bitrix com essa mensagem
                 self::atualizarRetornoBitrix(
                     ['retorno' => $campoRetorno, 'idclicksign' => $campoArquivoAssinado],
-                    $acesso['spa'] ?? null,
-                    $requestData['deal'] ?? null,
+                    $spa,
+                    $dealId,
                     $acesso['webhook_bitrix'] ?? null,
                     true,
                     $documentKey,
                     $mensagem
                 );
+
 
                 LogHelper::logClickSign("Mensagem atualizada no Bitrix: $mensagem", 'controller');
 
