@@ -316,6 +316,9 @@ class ClickSignController
         $cliente = $_GET['cliente'] ?? null; // Cliente vindo da URL
         $documentKey = $requestData['document']['key'] ?? null; // document.key do JSON da ClickSign
         $secret = null;  // Inicializa o secret como nulo, pois ele será recuperado do banco
+        $receivedSignature = $_SERVER['HTTP_X_SIGNATURE'] ?? null;
+        LogHelper::logClickSign("Cabeçalho x-signature recebido: " . ($receivedSignature ?? 'não recebido'), 'controller');
+
 
         LogHelper::logClickSign("Início ProcessarAssinaturas | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
 
