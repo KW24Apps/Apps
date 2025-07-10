@@ -8,9 +8,10 @@ require_once __DIR__ . '/../controllers/ClickSignController.php';
 
 if ($uri === 'clicksignnew' && $method === 'POST') {
     (new ClickSignController())->GerarAssinatura();
+} elseif ($uri === 'clicksignretorno' && $method === 'POST') {
+    (new ClickSignController())->processarAssinaturas();
 } else {
     http_response_code(404);
     echo json_encode(['erro' => 'Rota ClickSign não encontrada']);
 }
 
-// Fim do arquivo clicksignRoutes.php

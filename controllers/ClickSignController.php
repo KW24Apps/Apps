@@ -310,4 +310,50 @@ class ClickSignController
         BitrixDealHelper::editarNegociacao($dados);
     }
 
+    public static function processarAssinaturas()
+    {
+        $params = $_GET;
+        $cliente = $params['cliente'] ?? null;
+        $documentKey = $params['idclicksign'] ?? null;
+        $secret = $params['secret'] ?? null;
+
+        LogHelper::logClickSign("Início ProcessarAssinaturas | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
+
+        // Validação de parâmetros
+        if (empty($cliente) || empty($documentKey) || empty($secret)) {
+            LogHelper::logClickSign("Parâmetros obrigatórios ausentes | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
+            return ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes.'];
+        }
+
+        // Valida o cliente e o segredo (Secret)
+        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'clicksign');
+        if (!$acesso || empty($acesso['clicksign_secret']) || $acesso['clicksign_secret'] !== $secret) {
+            LogHelper::logClickSign("Secret inválido ou acesso não autorizado | Cliente: $cliente", 'controller');
+            return ['success' => false, 'mensagem' => 'Acesso não autorizado ou Secret inválido.'];
+        }
+
+        // Consultar os dados de assinatura na tabela "assinaturas_clicksign"
+        $dadosAssinatura = AplicacaoAcessoDAO::obterCamposAssinatura($documentKey);
+        if (!$dadosAssinatura) {
+            LogHelper::logClickSign("Documento não encontrado | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
+            return ['success' => false, 'mensagem' => 'Documento não encontrado.'];
+        }
+
+        // Extraindo campos de retorno
+        $campoArquivoAssinado = $dadosAssinatura['campo_arquivoassinado'] ?? null;
+        $campoRetorno = $dadosAssinatura['campo_retorno'] ?? null;
+
+        if (!$campoArquivoAssinado || !$campoRetorno) {
+            LogHelper::logClickSign("Campos necessários não encontrados | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
+            return ['success' => false, 'mensagem' => 'Campos necessários não encontrados na assinatura.'];
+        }
+
+        // Atualizar o status no Bitrix, pode ser o status de conclusão ou erro
+        // Usamos a função já existente atualizarRetornoBitrix para atualizar o status
+        self::atualizarRetornoBitrix($params, $acesso['spa'], $params['deal'], $acesso['webhook_bitrix'], true, $documentKey);
+
+        return ['success' => true, 'mensagem' => 'Assinatura processada com sucesso.'];
+    }
+
+
 } 

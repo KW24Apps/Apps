@@ -86,5 +86,43 @@ class AplicacaoAcessoDAO
         }
     }
 
+    public static function obterCamposAssinatura($documentKey)
+    {
+        $config = require __DIR__ . '/../config/config.php';
+
+        try {
+            $pdo = new PDO(
+                "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+                $config['usuario'],
+                $config['senha']
+            );
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $sql = "
+                SELECT 
+                    campo_arquivoassinado,
+                    campo_retorno
+                FROM assinaturas_clicksign
+                WHERE document_key = :documentKey
+                LIMIT 1
+            ";
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindParam(':documentKey', $documentKey);
+            $stmt->execute();
+            $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($resultado) {
+                return $resultado;
+            } else {
+                return null;
+            }
+
+        } catch (PDOException $e) {
+            file_put_contents(__DIR__ . '/../logs/aplicacao_acesso_debug.log', 'Erro DB: ' . $e->getMessage() . PHP_EOL, FILE_APPEND);
+            return null;
+        }
+    }
+
 
 }
