@@ -310,17 +310,16 @@ class ClickSignController
         BitrixDealHelper::editarNegociacao($dados);
     }
 
-    public static function processarAssinaturas()
+    public static function processarAssinaturas($requestData)
     {
-        $params = $_GET;
-        $cliente = $params['cliente'] ?? null;
-        $documentKey = $params['idclicksign'] ?? null;
-        $secret = $params['secret'] ?? null;
+        // Início do processamento
+        $cliente = $requestData['cliente'] ?? null;
+        $documentKey = $requestData['idclicksign'] ?? null;
+        $secret = $requestData['secret'] ?? null;
 
-        LogHelper::logClickSign("Retorno completo da ClickSign: " . json_encode($params), 'controller');
         LogHelper::logClickSign("Início ProcessarAssinaturas | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
 
-        // Validação de parâmetros
+        // Validação dos parâmetros
         if (empty($cliente) || empty($documentKey) || empty($secret)) {
             LogHelper::logClickSign("Parâmetros obrigatórios ausentes | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
             return ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes.'];
@@ -349,12 +348,15 @@ class ClickSignController
             return ['success' => false, 'mensagem' => 'Campos necessários não encontrados na assinatura.'];
         }
 
-        // Atualizar o status no Bitrix, pode ser o status de conclusão ou erro
-        // Usamos a função já existente atualizarRetornoBitrix para atualizar o status
-        self::atualizarRetornoBitrix($params, $acesso['spa'], $params['deal'], $acesso['webhook_bitrix'], true, $documentKey);
+        // Log do retorno completo da ClickSign
+        LogHelper::logClickSign("Retorno completo da ClickSign: " . json_encode($requestData), 'controller');
+
+        // Atualizar o status no Bitrix
+        self::atualizarRetornoBitrix($requestData, $acesso['spa'], $requestData['deal'], $acesso['webhook_bitrix'], true, $documentKey);
 
         return ['success' => true, 'mensagem' => 'Assinatura processada com sucesso.'];
     }
+
 
 
 } 
