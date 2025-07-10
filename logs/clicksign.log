@@ -1,0 +1,27 @@
+[2025-07-10 21:34:32] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
+[2025-07-10 21:34:32] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 1
+[2025-07-10 21:34:37] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: 67db52b9-a1ba-4384-9fea-9cead024313e
+[2025-07-10 21:34:39] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: 67db52b9-a1ba-4384-9fea-9cead024313e | Total vínculos: 1
+[2025-07-10 21:34:39] [controller] - Dados enviados para Bitrix: {"spa":"1054","deal":"2168","webhook":"https:\/\/gnapp.bitrix24.com.br\/rest\/21\/348n8xqhp06wp41c\/","UF_CRM_41_1727805418":"Documento enviado para assinatura","UF_CRM_41_1727802471":"67db52b9-a1ba-4384-9fea-9cead024313e"}
+[2025-07-10 21:34:40] [controller] - Resposta da API Bitrix: {"success":true,"id":"2168"}
+[2025-07-10 21:54:44] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
+[2025-07-10 21:54:45] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 1
+[2025-07-10 21:54:51] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: b6292f90-a404-4bf0-9ab4-07ec5b0ae017
+[2025-07-10 21:54:53] [controller] - Retorno do vínculo: {"list":{"key":"de2f8e3d-de10-4490-8e57-d327aaa9050d","request_signature_key":"fe466a55-2dd4-4a17-bbaa-fd87ebb0e1e5","document_key":"b6292f90-a404-4bf0-9ab4-07ec5b0ae017","signer_key":"6ae35da2-1bca-4ce7-a160-ca0b37a58d9c","sign_as":"contractor","refusable":false,"created_at":"2025-07-10T18:54:33.649-03:00","updated_at":"2025-07-10T18:54:33.649-03:00","url":"https:\/\/app.clicksign.com\/sign\/fe466a55-2dd4-4a17-bbaa-fd87ebb0e1e5","message":"Prezado(a) contratante,\nPor favor assine o documento.\n\nAtenciosamente,\nKWCA"}}
+[2025-07-10 21:54:53] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: b6292f90-a404-4bf0-9ab4-07ec5b0ae017 | Total vínculos: 1
+[2025-07-10 21:54:53] [controller] - Dados enviados para Bitrix: {"spa":"1054","deal":"2168","webhook":"https:\/\/gnapp.bitrix24.com.br\/rest\/21\/348n8xqhp06wp41c\/","UF_CRM_41_1727805418":"Documento enviado para assinatura","UF_CRM_41_1727802471":"b6292f90-a404-4bf0-9ab4-07ec5b0ae017"}
+[2025-07-10 21:54:54] [controller] - Resposta da API Bitrix: {"success":true,"id":"2168"}
+[2025-07-10 22:00:28] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
+[2025-07-10 22:00:29] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 1
+[2025-07-10 22:00:36] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: 18dc8212-eaf4-4436-ac7c-936e31404570
+[2025-07-10 22:00:37] [controller] - Retorno do vínculo: {"list":{"key":"c1a3eca8-222d-40aa-a098-f85cb0f0128e","request_signature_key":"3d0f95a6-1c0a-4837-8227-1a43e3127ce5","document_key":"18dc8212-eaf4-4436-ac7c-936e31404570","signer_key":"185f89b4-022a-467f-9254-8848ec89a6a2","sign_as":"contractor","refusable":false,"created_at":"2025-07-10T19:00:18.437-03:00","updated_at":"2025-07-10T19:00:18.437-03:00","url":"https:\/\/app.clicksign.com\/sign\/3d0f95a6-1c0a-4837-8227-1a43e3127ce5","message":"Prezado(a) contratante,\nPor favor assine o documento.\n\nAtenciosamente,\nKWCA"}}
+[2025-07-10 22:00:38] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: 18dc8212-eaf4-4436-ac7c-936e31404570 | Total vínculos: 1
+[2025-07-10 22:00:38] [controller] - Dados enviados para Bitrix: {"spa":"1054","deal":"2168","webhook":"https:\/\/gnapp.bitrix24.com.br\/rest\/21\/348n8xqhp06wp41c\/","UF_CRM_41_1727805418":"Documento enviado para assinatura","UF_CRM_41_1727802471":"18dc8212-eaf4-4436-ac7c-936e31404570"}
+[2025-07-10 22:00:39] [controller] - Resposta da API Bitrix: {"success":true,"id":"2168"}
+[2025-07-10 22:13:46] [controller] - Início GerarAssinatura | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1
+[2025-07-10 22:13:46] [controller] - Signatários validados | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | Total: 1
+[2025-07-10 22:13:53] [controller] - Documento criado na ClickSign | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | ID: bb94945d-f222-436a-91d8-96bfd0a063a3
+[2025-07-10 22:13:54] [controller] - Retorno do vínculo: {"list":{"key":"d70a192c-cc90-47eb-8410-613b6c3cd8f4","request_signature_key":"797ae5bb-04b7-4c76-95a8-8902b82e37df","document_key":"bb94945d-f222-436a-91d8-96bfd0a063a3","signer_key":"2b7b0d79-f858-45ab-85c4-ed2e05e10533","sign_as":"contractor","refusable":false,"created_at":"2025-07-10T19:13:35.341-03:00","updated_at":"2025-07-10T19:13:35.341-03:00","url":"https:\/\/app.clicksign.com\/sign\/797ae5bb-04b7-4c76-95a8-8902b82e37df","message":"Prezado(a) contratante,\nPor favor assine o documento.\n\nAtenciosamente,\nKWCA"}}
+[2025-07-10 22:13:55] [controller] - Vínculo finalizado | Cliente: gnappC93fLq7RxKZVp28HswuAYMe1 | DocumentKey: bb94945d-f222-436a-91d8-96bfd0a063a3 | Total vínculos: 1
+[2025-07-10 22:13:55] [controller] - Dados enviados para Bitrix: {"spa":"1054","deal":"2168","webhook":"https:\/\/gnapp.bitrix24.com.br\/rest\/21\/348n8xqhp06wp41c\/","UF_CRM_41_1727805418":"Documento enviado para assinatura","UF_CRM_41_1727802471":"bb94945d-f222-436a-91d8-96bfd0a063a3"}
+[2025-07-10 22:13:56] [controller] - Resposta da API Bitrix: {"success":true,"id":"2168"}

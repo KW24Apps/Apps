@@ -167,6 +167,7 @@ class ClickSignController
                 'name'           => $arquivoConvertido['nome'],
                 'path'           => '/' . $arquivoConvertido['nome'],
                 'content_type'   => $arquivoConvertido['mime'],
+                'remind_interval'    => 2,
                 'deadline_at'    => $dataAssinatura 
             ]
         ];
@@ -216,8 +217,11 @@ class ClickSignController
                         'message'      => "Prezado(a) $papel,\nPor favor assine o documento.\n\nAtenciosamente,\nKWCA"
                     ]);
 
-                    if (!empty($vinculo['list']['key'])) {
-                        ClickSignHelper::enviarNotificacao($tokenClicksign, $vinculo['list']['key']);
+                    LogHelper::logClickSign('Retorno do vínculo: ' . json_encode($vinculo), 'controller');
+
+                    if (!empty($vinculo['list']['request_signature_key'])) {
+                        $mensagem = "Prezado(a), segue documento para assinatura.";
+                        ClickSignHelper::enviarNotificacao($tokenClicksign, $vinculo['list']['request_signature_key'], $mensagem);
                     }
 
                     if (empty($vinculo['list']['key'])) {

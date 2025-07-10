@@ -95,11 +95,11 @@ class ClickSignHelper
     }
 
     // Envia notificação ao signatário (com lembrete automático de 2 em 2 dias)
-    public static function enviarNotificacao($token, $requestSignatureKey)
+    public static function enviarNotificacao($token, $requestSignatureKey, $mensagem)
     {
         $payload = [
-            'request_signature_key' => $requestSignatureKey,
-            'message' => 'Prezado(a),\nPor favor assine o documento.\n\nAtenciosamente.'
+            "request_signature_key" => $requestSignatureKey,
+            "message" => $mensagem
         ];
         return self::enviarRequisicao('POST', '/notifications', $token, $payload);
     }
