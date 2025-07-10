@@ -316,6 +316,8 @@ class ClickSignController
         $cliente = $requestData['cliente'] ?? null;
         $documentKey = $requestData['idclicksign'] ?? null;
         $secret = $requestData['secret'] ?? null;
+        
+        LogHelper::logClickSign("Retorno completo da ClickSign (sem filtro): " . json_encode($requestData), 'controller');  // Log completo dos dados recebidos
 
         LogHelper::logClickSign("Início ProcessarAssinaturas | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
 
