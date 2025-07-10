@@ -41,7 +41,7 @@ class BitrixContactHelper
             file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', "[consultarContato] Parâmetros ausentes. Dados: " . json_encode($dados) . PHP_EOL, FILE_APPEND);
             return ['erro' => 'Parâmetros obrigatórios não informados.'];
         }
-
+ 
         $params = ['ID' => $contatoId];
 
         $resultado = BitrixHelper::chamarApi('crm.contact.get', $params, [

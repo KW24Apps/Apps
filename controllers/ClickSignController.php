@@ -309,5 +309,5 @@ class ClickSignController
         BitrixDealHelper::editarNegociacao($dados);
     }
 
-}
+} 
  

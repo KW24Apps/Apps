@@ -99,7 +99,7 @@ public static function consultarDeal($entityId, $id, $fields, $webhook)
     if (!in_array('id', $fields)) {
         array_unshift($fields, 'id');
     }
-
+ 
     $params = [
         'entityTypeId' => $entityId,
         'id' => $id,

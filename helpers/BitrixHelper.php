@@ -29,7 +29,7 @@ class BitrixHelper
         curl_close($ch);
 
         $respostaJson = json_decode($resposta, true);
-
+ 
         if ($logAtivo) {
             $mensagem = "==== CHAMADA API ====\n";
             $mensagem .= "Endpoint: $endpoint\nURL: $url\nDados: $postData\nHTTP: $httpCode\nErro: $curlErro\nResposta: $resposta\n";

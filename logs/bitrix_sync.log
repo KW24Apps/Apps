@@ -1,4 +1,0 @@
-[consultarContatos] Origem: contratante | ID: 8935 | Resultado: {"NAME":"Gabriel","LAST_NAME":"Acker","EMAIL":[{"ID":"52595","VALUE_TYPE":"WORK","VALUE":"gabriel.acker@kw24.com.br","TYPE_ID":"EMAIL"}]}
-[consultarContatos] Origem: contratada | ID: 27948 | Resultado: {"NAME":"Guilherme","LAST_NAME":"Santana","EMAIL":[{"ID":"404068","VALUE_TYPE":"WORK","VALUE":"guilherme.santana@kw24.com.br","TYPE_ID":"EMAIL"}]}
-[consultarContatos] Origem: contratante | ID: 8935 | Resultado: {"NAME":"Gabriel","LAST_NAME":"Acker","EMAIL":[{"ID":"52595","VALUE_TYPE":"WORK","VALUE":"gabriel.acker@kw24.com.br","TYPE_ID":"EMAIL"}]}
-[consultarContatos] Origem: contratada | ID: 27948 | Resultado: {"NAME":"Guilherme","LAST_NAME":"Santana","EMAIL":[{"ID":"404068","VALUE_TYPE":"WORK","VALUE":"guilherme.santana@kw24.com.br","TYPE_ID":"EMAIL"}]}
