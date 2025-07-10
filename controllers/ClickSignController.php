@@ -340,6 +340,9 @@ class ClickSignController
         // Gerar o HMAC usando o secret
         $calculatedSignature = hash_hmac('sha256', $body, $secret);
 
+        // Log para comparar a assinatura calculada com a recebida
+        LogHelper::logClickSign("Assinatura calculada: $calculatedSignature | Assinatura recebida: $receivedSignature", 'controller');
+
         // Comparar o HMAC calculado com o HMAC recebido
         if ($receivedSignature !== $calculatedSignature) {
             LogHelper::logClickSign("Assinatura HMAC inválida | Cliente: $cliente", 'controller');
@@ -367,6 +370,7 @@ class ClickSignController
 
         return ['success' => true, 'mensagem' => 'Assinatura processada com sucesso.'];
     }
+
 
 
 
