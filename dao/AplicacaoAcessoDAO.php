@@ -141,8 +141,9 @@ class AplicacaoAcessoDAO
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             $sql = "UPDATE assinaturas_clicksign
-                    SET status_closed = :statusClosed, updated_at = NOW()
+                    SET status_closed = :statusClosed
                     WHERE document_key = :documentKey";
+
 
             $stmt = $pdo->prepare($sql);
             $stmt->bindParam(':statusClosed', $statusClosed);
