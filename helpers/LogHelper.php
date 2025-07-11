@@ -24,4 +24,12 @@ class LogHelper
         $linha = "[$timestamp]" . ($contexto ? " [$contexto]" : "") . " - $mensagem" . PHP_EOL;
         file_put_contents($arquivoLog, $linha, FILE_APPEND);
     } 
+
+        public static function logRotas(string $uri, string $method, string $contexto = ''): void
+    {
+        $arquivoLog = __DIR__ . '/../logs/rotas.log';
+        $timestamp = date('Y-m-d H:i:s');
+        $linha = "[$timestamp]" . ($contexto ? " [$contexto]" : "") . " - URI: $uri | MÉTODO: $method" . PHP_EOL;
+        file_put_contents($arquivoLog, $linha, FILE_APPEND);
+    }
 }
