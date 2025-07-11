@@ -127,8 +127,7 @@ class AplicacaoAcessoDAO
     }
 
     // Método para salvar o status_closed de uma assinatura ClickSign
-
-    public static function salvarStatusClosed(string $documentKey, string $statusClosed): bool
+    public static function salvarStatusClosed(string $documentKey, ?string $statusClosed = null, ?string $assinaturaProcessada = null, ?bool $documentoFechadoProcessado = null, ?bool $documentoDisponivelProcessado = null): bool
     {
         $config = require __DIR__ . '/../config/config.php';
 
@@ -140,16 +139,39 @@ class AplicacaoAcessoDAO
             );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            $sql = "UPDATE assinaturas_clicksign
-                    SET status_closed = :statusClosed
-                    WHERE document_key = :documentKey";
+            $updates = [];
+            $params = [':documentKey' => $documentKey];
 
+            if ($statusClosed !== null) {
+                $updates[] = 'status_closed = :statusClosed';
+                $params[':statusClosed'] = $statusClosed;
+            }
+
+            if ($assinaturaProcessada !== null) {
+                $updates[] = 'assinatura_processada = :assinaturaProcessada';
+                $params[':assinaturaProcessada'] = $assinaturaProcessada;
+            }
+
+            if ($documentoFechadoProcessado !== null) {
+                $updates[] = 'documento_fechado_processado = :docFechadoProc';
+                $params[':docFechadoProc'] = $documentoFechadoProcessado;
+            }
+
+            if ($documentoDisponivelProcessado !== null) {
+                $updates[] = 'documento_disponivel_processado = :docDisponivelProc';
+                $params[':docDisponivelProc'] = $documentoDisponivelProcessado;
+            }
+
+            if (empty($updates)) {
+                LogHelper::logClickSign("Nenhum campo informado para atualizar", 'dao');
+                return false;
+            }
+
+            $sql = "UPDATE assinaturas_clicksign SET " . implode(', ', $updates) . " WHERE document_key = :documentKey";
 
             $stmt = $pdo->prepare($sql);
-            $stmt->bindParam(':statusClosed', $statusClosed);
-            $stmt->bindParam(':documentKey', $documentKey);
+            return $stmt->execute($params);
 
-            return $stmt->execute();
         } catch (PDOException $e) {
             LogHelper::logClickSign("ERRO PDO ao atualizar status_closed: " . $e->getMessage(), 'dao');
             return false;
@@ -159,8 +181,9 @@ class AplicacaoAcessoDAO
         }
     }
 
+
     // Método para obter o status_closed de uma assinatura ClickSign
-    public static function obterStatusClosed(string $documentKey): ?string
+    public static function obterStatusClosed(string $documentKey): ?array
     {
         $config = require __DIR__ . '/../config/config.php';
 
@@ -172,7 +195,7 @@ class AplicacaoAcessoDAO
             );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            $sql = "SELECT status_closed
+            $sql = "SELECT status_closed, assinatura_processada, documento_fechado_processado, documento_disponivel_processado
                     FROM assinaturas_clicksign
                     WHERE document_key = :documentKey
                     LIMIT 1";
@@ -183,10 +206,11 @@ class AplicacaoAcessoDAO
 
             $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($resultado && isset($resultado['status_closed'])) {
-                return $resultado['status_closed'];
+            if ($resultado) {
+                return $resultado;  // retorna o array completo com todos os campos
             }
             return null;
+
         } catch (PDOException $e) {
             LogHelper::logClickSign("ERRO PDO ao obter status_closed: " . $e->getMessage(), 'dao');
             return null;

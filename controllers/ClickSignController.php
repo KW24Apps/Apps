@@ -351,9 +351,8 @@ class ClickSignController
         // 5. Validação HMAC
         $secret = $acesso['clicksign_secret'];
         $headerSignature = $_SERVER['HTTP_CONTENT_HMAC'] ?? null;
-        $body = file_get_contents('php://input');
 
-        if (!ClickSignHelper::validarHmac($body, $secret, $headerSignature)) {
+        if (!ClickSignHelper::validarHmac($rawBody, $secret, $headerSignature)) {
             LogHelper::logClickSign("Assinatura HMAC inválida | Cliente: $cliente", 'controller');
             return ['success' => false, 'mensagem' => 'Assinatura HMAC inválida.'];
         }
@@ -378,17 +377,33 @@ class ClickSignController
         // 7. Identifica tipo de evento (ex: sign, deadline, cancel, auto_close, document_closed)
         $evento = $requestData['event']['name'] ?? null;
 
-        // 8. Direciona para função de tratamento correta
+        // 8. Consultar status já processados
+        $statusProcessados = AplicacaoAcessoDAO::obterStatusClosed($documentKey);
+
+        // 9. Validação se evento já foi processado
         switch ($evento) {
             case 'sign':
+                $assinante = $requestData['signer']['email'] ?? null;
+                if (strpos($statusProcessados['assinatura_processada'], $assinante) !== false) {
+                    return ['success' => true, 'mensagem' => 'Assinatura já processada.'];
+                }
+                AplicacaoAcessoDAO::salvarStatusClosed($documentKey, null, $statusProcessados['assinatura_processada'] . ";" . $assinante);
                 return self::assinaturaRealizada($requestData, $acesso, $spa, $dealId, $campoRetorno);
 
             case 'deadline':
             case 'cancel':
             case 'auto_close':
+                if ($statusProcessados['documento_fechado_processado']) {
+                    return ['success' => true, 'mensagem' => 'Evento de documento fechado já processado.'];
+                }
+                AplicacaoAcessoDAO::salvarStatusClosed($documentKey, $evento, null, true);
                 return self::documentoFechado($requestData, $acesso, $spa, $dealId, $documentKey, $campoRetorno);
 
             case 'document_closed':
+                if ($statusProcessados['documento_disponivel_processado']) {
+                    return ['success' => true, 'mensagem' => 'Documento já disponível e processado anteriormente.'];
+                }
+                AplicacaoAcessoDAO::salvarStatusClosed($documentKey, null, null, null, true);
                 return self::documentoDisponivel($requestData, $acesso, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey);
 
             default:
@@ -396,6 +411,7 @@ class ClickSignController
                 return ['success' => true, 'mensagem' => 'Evento recebido sem ação específica.'];
         }
     }
+
 
     // Método para tratar eventos assinatura de Signatario
     private static function assinaturaRealizada($requestData, $acesso, $spa, $dealId, $campoRetorno)
@@ -490,8 +506,8 @@ class ClickSignController
 
         // 2. Se for deadline ou cancel, ignora
         if (in_array($statusClosed, ['deadline', 'cancel'])) {
-            LogHelper::logClickSign("Evento $statusClosed para DocumentKey: $documentKey - nada a fazer.", 'controller');
-            return ['success' => true, 'mensagem' => "Evento $statusClosed ignorado."];
+            LogHelper::logClickSign("Evento {$statusClosed['status_closed']} para DocumentKey: $documentKey - nada a fazer.", 'controller');
+            return ['success' => true, 'mensagem' => "Evento {$statusClosed['status_closed']} ignorado."];
         }
 
         // 3. Se for auto_close, baixar e anexar
@@ -548,7 +564,8 @@ class ClickSignController
         }
 
         // 4. Status inesperado
-        LogHelper::logClickSign("StatusClosed inesperado: $statusClosed | DocumentKey: $documentKey", 'controller');
+        LogHelper::logClickSign("StatusClosed inesperado: {$statusClosed['status_closed']} | DocumentKey: $documentKey", 'controller');
+
         return ['success' => true, 'mensagem' => 'StatusClosed não tratado.'];
     }
 
