@@ -11,7 +11,7 @@ if ($uri === 'clicksignnew' && $method === 'POST') {
 }elseif ($uri === 'clicksignretorno' && $method === 'POST') {
     // Captura o corpo da requisição JSON
     $requestData = json_decode(file_get_contents('php://input'), true); 
-    (new ClickSignController())->processarAssinaturas($requestData); 
+    (new ClickSignController())->retornoClickSign($requestData); 
 } else {
     http_response_code(404);
     echo json_encode(['erro' => 'Rota ClickSign não encontrada']);

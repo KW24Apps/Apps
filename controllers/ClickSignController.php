@@ -323,50 +323,42 @@ class ClickSignController
         LogHelper::logClickSign("Resposta da API Bitrix: " . json_encode($response), 'controller');
     }
 
-    // Método para processar eventos via ClickSign
-    public static function processarAssinaturas($requestData)
+    // Novo nome e organização: retornoClickSign
+    public static function retornoClickSign($requestData)
     {
+        // 1. Log do JSON recebido
         $rawBody = file_get_contents('php://input');
         LogHelper::logClickSign("JSON bruto recebido no webhook: " . $rawBody, 'controller');
-        
-        // Captura o cliente da URL
+
+        // 2. Identifica cliente (GET) e documentKey (JSON)
         $cliente = $_GET['cliente'] ?? null;
         $documentKey = $requestData['document']['key'] ?? null;
+        LogHelper::logClickSign("Início retornoClickSign | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
 
-        LogHelper::logClickSign("Início ProcessarAssinaturas | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
-
+        // 3. Valida campos obrigatórios
         if (empty($cliente) || empty($documentKey)) {
             LogHelper::logClickSign("Parâmetros obrigatórios ausentes | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
             return ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes.'];
         }
 
+        // 4. Consulta permissões e secrets
         $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'clicksign');
         if (!$acesso || empty($acesso['clicksign_secret'])) {
             LogHelper::logClickSign("Acesso não autorizado ou Secret não encontrado | Cliente: $cliente", 'controller');
             return ['success' => false, 'mensagem' => 'Acesso não autorizado ou Secret não encontrado.'];
         }
 
+        // 5. Validação HMAC
         $secret = $acesso['clicksign_secret'];
-        $receivedSignatureHeader = $_SERVER['HTTP_CONTENT_HMAC'] ?? null;
-        $receivedSignature = null;
-
-        if ($receivedSignatureHeader && strpos($receivedSignatureHeader, 'sha256=') === 0) {
-            $receivedSignature = substr($receivedSignatureHeader, strlen('sha256='));
-        }
-
-        LogHelper::logClickSign("Cabeçalho Content-Hmac recebido: " . ($receivedSignature ?? 'não recebido'), 'controller');
-
+        $headerSignature = $_SERVER['HTTP_CONTENT_HMAC'] ?? null;
         $body = file_get_contents('php://input');
-        $calculatedSignature = hash_hmac('sha256', $body, $secret);
 
-        LogHelper::logClickSign("Assinatura calculada: $calculatedSignature | Assinatura recebida: " . ($receivedSignature ?? 'null'), 'controller');
-
-        if ($receivedSignature !== $calculatedSignature) {
+        if (!ClickSignHelper::validarHmac($body, $secret, $headerSignature)) {
             LogHelper::logClickSign("Assinatura HMAC inválida | Cliente: $cliente", 'controller');
             return ['success' => false, 'mensagem' => 'Assinatura HMAC inválida.'];
         }
 
-        // Buscar dados da assinatura para pegar campos do retorno
+        // 6. Consulta dados do documento (SPA, deal_id, campos)
         $dadosAssinatura = AplicacaoAcessoDAO::obterCamposAssinatura($documentKey);
         if (!$dadosAssinatura) {
             LogHelper::logClickSign("Documento não encontrado | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
@@ -383,39 +375,49 @@ class ClickSignController
             return ['success' => false, 'mensagem' => 'Campo retorno não encontrado na assinatura.'];
         }
 
+        // 7. Identifica tipo de evento (ex: sign, deadline, cancel, auto_close, document_closed)
         $evento = $requestData['event']['name'] ?? null;
 
+        // 8. Direciona para função de tratamento correta
         switch ($evento) {
             case 'sign':
-                return self::tratarEventoSign($requestData, $acesso, $spa, $dealId, $campoRetorno);
-            case 'closed':
-                return self::tratarEventoClosed($requestData, $acesso, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey);
-            case 'date_limit': // Exemplo de evento para data limite, ajustar conforme necessário
-                return self::tratarEventoDataLimite($requestData, $acesso, $spa, $dealId, $campoRetorno);
+                return self::assinaturaRealizada($requestData, $acesso, $spa, $dealId, $campoRetorno);
+
+            case 'deadline':
+            case 'cancel':
+            case 'auto_close':
+                return self::documentoFechado($requestData, $acesso, $spa, $dealId, $documentKey, $campoRetorno);
+
+            case 'document_closed':
+                return self::documentoDisponivel($requestData, $acesso, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey);
+
             default:
                 LogHelper::logClickSign("Evento não tratado: $evento", 'controller');
                 return ['success' => true, 'mensagem' => 'Evento recebido sem ação específica.'];
         }
     }
 
-    // Métodos auxiliares para tratar eventos Sign
-    private static function tratarEventoSign($requestData, $acesso, $spa, $dealId, $campoRetorno)
+    // Método para tratar eventos assinatura de Signatario
+    private static function assinaturaRealizada($requestData, $acesso, $spa, $dealId, $campoRetorno)
     {
+        // 1. Extrai signatário do evento
         $signer = $requestData['event']['data']['signer'] ?? null;
 
+        // 2. Se encontrou signatário, monta mensagem
         if ($signer) {
-            $nome = $signer['name'] ?? '';
+            $nome  = $signer['name']  ?? '';
             $email = $signer['email'] ?? '';
 
             $mensagem = "Assinatura feita por $nome - $email";
 
+            // 3. Atualiza status no Bitrix (NÃO retorna arquivo)
             self::atualizarRetornoBitrix(
                 ['retorno' => $campoRetorno],
                 $spa,
                 $dealId,
                 $acesso['webhook_bitrix'] ?? null,
                 true,
-                null, // Não envia documentKey para evitar atualizar arquivo assinado
+                null, // NUNCA envia documentKey ou arquivo aqui
                 $mensagem
             );
 
@@ -424,26 +426,60 @@ class ClickSignController
             return ['success' => true, 'mensagem' => 'Assinatura processada e retorno atualizado.'];
         }
 
+        // 4. Caso falte dados
         return ['success' => false, 'mensagem' => 'Dados do signatário não encontrados.'];
     }
 
-    // Método para tratar evento closed
-    private static function tratarEventoClosed($requestData, $acesso, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey)
+    // Método para tratar eventos de fechamento de documento
+    private static function documentoFechado($requestData, $acesso, $spa, $dealId, $documentKey, $campoRetorno)
     {
+        // 1. Salva status de fechamento no banco
+        try {
+            AplicacaoAcessoDAO::salvarStatusClosed($documentKey, $requestData['event']['name']);
+        } catch (\Exception $e) {
+            LogHelper::logClickSign("Erro ao salvar status_close: " . $e->getMessage(), 'controller');
+            return ['success' => false, 'mensagem' => 'Erro ao salvar status_close'];
+        }
+
+        // 2. Se deadline ou cancel: já atualiza status no Bitrix (SEM arquivo)
+        $evento = $requestData['event']['name'];
+        if (in_array($evento, ['deadline', 'cancel'])) {
+            $mensagem = $evento === 'deadline'
+                ? 'Assinatura cancelada por prazo finalizado.'
+                : 'Assinatura cancelada manualmente.';
+            self::atualizarRetornoBitrix(
+                ['retorno' => $campoRetorno],
+                $spa,
+                $dealId,
+                $acesso['webhook_bitrix'] ?? null,
+                true,
+                null,
+                $mensagem
+            );
+            return ['success' => true, 'mensagem' => "Evento $evento processado com atualização imediata no Bitrix."];
+        }
+
+        // 3. Se auto_close: só salva, aguarda document_closed para baixar o arquivo
+        if ($evento === 'auto_close') {
+            return ['success' => true, 'mensagem' => 'Evento auto_close salvo, aguardando document_closed.'];
+        }
+
+        // 4. Outros eventos (não esperado)
+        LogHelper::logClickSign("Evento de fechamento não tratado: $evento", 'controller');
+        return ['success' => true, 'mensagem' => "Evento de fechamento $evento ignorado."];
+    }
+
+    // Método para tratar eventos Documento disponível para download
+    private static function documentoDisponivel($requestData, $acesso, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey)
+    {
+        // 1. Buscar status fechado no banco (deadline, cancel, auto_close)
         $tentativasStatus = 15;
         $esperaStatus = 10; // segundos
 
-        $tentativasDownload = 15;
-        $esperaDownload = 30; // segundos
-
-        // Loop para garantir que o status foi salvo na tabela
+        $statusClosed = null;
         for ($i = 0; $i < $tentativasStatus; $i++) {
             $statusClosed = AplicacaoAcessoDAO::obterStatusClosed($documentKey);
-
-            if ($statusClosed !== null) {
-                break;
-            }
-
+            if ($statusClosed !== null) break;
             sleep($esperaStatus);
         }
 
@@ -452,125 +488,69 @@ class ClickSignController
             return ['success' => false, 'mensagem' => 'StatusClosed não encontrado.'];
         }
 
-        // Se for deadline ou cancel, só ignora (já avisado)
+        // 2. Se foi deadline ou cancel, ignora (nada para baixar nem devolver)
         if (in_array($statusClosed, ['deadline', 'cancel'])) {
-            LogHelper::logClickSign("Evento $statusClosed recebido para DocumentKey: $documentKey - ignorando download", 'controller');
-            return ['success' => true, 'mensagem' => "Evento $statusClosed ignorado no download."];
+            LogHelper::logClickSign("Evento $statusClosed para DocumentKey: $documentKey - nada a fazer.", 'controller');
+            return ['success' => true, 'mensagem' => "Evento $statusClosed ignorado."];
         }
 
-        // Se for auto_close, tentar baixar o arquivo
+        // 3. Se foi auto_close, agora sim é hora de baixar o arquivo e devolver para o Bitrix
         if ($statusClosed === 'auto_close') {
-            $helper = new ClicksignHelper();
+            // Tenta baixar arquivo assinado na ClickSign (laço até X tentativas)
+            $tentativasDownload = 15;
+            $esperaDownload = 30; // segundos
 
             for ($j = 0; $j < $tentativasDownload; $j++) {
-                $documentoVisualizar = $helper->getDocumento($documentKey);
+                // Consultar documento na ClickSign para pegar o link do arquivo assinado
+                $retDoc = ClickSignHelper::buscarDocumento($acesso['clicksign_token'], $documentKey);
+                $url = $retDoc['document']['downloads']['signed_file_url'] ?? null;
+                $nomeArquivo = $retDoc['document']['filename'] ?? "documento_assinado.pdf";
 
-                if (!empty($documentoVisualizar->document->downloads->signed_file_url)) {
-                    $url = $documentoVisualizar->document->downloads->signed_file_url;
+                if ($url) {
+                    // Baixar arquivo, converter para base64
+                    $conteudoArquivo = @file_get_contents($url);
+                    if ($conteudoArquivo !== false) {
+                        $base64 = base64_encode($conteudoArquivo);
+                        // Montar estrutura para Bitrix (conforme esperado pelo campo customizado)
+                        $arquivoParaBitrix = [
+                            'base64'   => 'data:application/pdf;base64,' . $base64,
+                            'nome'     => $nomeArquivo,
+                            'extensao' => 'pdf',
+                            'mime'     => 'application/pdf'
+                        ];
 
-                    $info_arquivo = pathinfo($documentoVisualizar->document->filename);
-                    $novo_nome_arquivo = $info_arquivo['filename'] . '.pdf';
-
-                    $ds = DIRECTORY_SEPARATOR;
-                    $dir = dirname(__FILE__) . $ds . '..' . $ds . 'assinaturas' . $ds . "retorno" . $ds;
-
-                    try {
-                        Utils::downloadFile($dir, $novo_nome_arquivo, $url);
-                        $fileContent = base64_encode(file_get_contents($dir . $novo_nome_arquivo));
-
-                        // Enviar ambos os campos de uma vez só pelo atualizarRetornoBitrix
+                        // Atualiza o negócio no Bitrix: campo de arquivo assinado + mensagem de retorno
                         self::atualizarRetornoBitrix(
                             [
-                                'retorno' => $campoRetorno,
-                                'idclicksign' => $campoArquivoAssinado
+                                'retorno'      => $campoRetorno,
+                                'arquivoassinado' => $campoArquivoAssinado
                             ],
                             $spa,
                             $dealId,
                             $acesso['webhook_bitrix'] ?? null,
                             true,
-                            $documentKey,
-                            'Documento assinado e arquivo atualizado.'
+                            $arquivoParaBitrix,
+                            'Documento assinado e arquivo enviado para o Bitrix.'
                         );
 
-                        // Aqui você precisa garantir que o BitrixDealHelper::editarNegociacao está preparado para receber o arquivo.
-                        // Se não estiver, adapte ali para enviar o arquivo via API do Bitrix, conforme necessidade.
-
-                        LogHelper::logClickSign("Arquivo baixado e enviado para Bitrix com sucesso para DocumentKey: $documentKey", 'controller');
+                        LogHelper::logClickSign("Arquivo assinado enviado para Bitrix | DocumentKey: $documentKey", 'controller');
                         return ['success' => true, 'mensagem' => 'Arquivo baixado e enviado para Bitrix.'];
-                    } catch (\Exception $e) {
-                        LogHelper::logClickSign("Erro ao baixar ou enviar arquivo para DocumentKey: $documentKey - Tentativa: " . ($j + 1) . " - Erro: " . $e->getMessage(), 'controller');
+                    } else {
+                        LogHelper::logClickSign("Falha ao baixar arquivo em $url - tentativa " . ($j + 1), 'controller');
                     }
-
                 } else {
-                    LogHelper::logClickSign("Arquivo não disponível ainda para DocumentKey: $documentKey - Tentativa: " . ($j + 1), 'controller');
+                    LogHelper::logClickSign("Arquivo ainda não disponível para download - tentativa " . ($j + 1), 'controller');
                 }
-
                 sleep($esperaDownload);
             }
 
-            LogHelper::logClickSign("Falha ao baixar arquivo após $tentativasDownload tentativas para DocumentKey: $documentKey", 'controller');
-            return ['success' => false, 'mensagem' => 'Falha ao baixar arquivo após várias tentativas.'];
+            LogHelper::logClickSign("Arquivo não pôde ser baixado após $tentativasDownload tentativas | DocumentKey: $documentKey", 'controller');
+            return ['success' => false, 'mensagem' => 'Não foi possível baixar o arquivo assinado.'];
         }
 
-        return ['success' => true, 'mensagem' => 'Evento fechado não tratado para status: ' . $statusClosed];
+        // 4. Caso venha status inesperado
+        LogHelper::logClickSign("StatusClosed inesperado: $statusClosed | DocumentKey: $documentKey", 'controller');
+        return ['success' => true, 'mensagem' => 'StatusClosed não tratado.'];
     }
-
-    // Método para tratar evento date_limit (exemplo, ajustar conforme necessário)
-    private static function tratarEventoDataLimite($requestData, $acesso, $spa, $dealId, $campoRetorno)
-    {
-        // Função vazia por enquanto, será implementada depois
-        LogHelper::logClickSign("Evento date_limit recebido, mas função não implementada ainda.", 'controller');
-        return ['success' => true, 'mensagem' => 'Evento date_limit recebido. Função não implementada.'];
-    }
-
-    // Método para tratar eventos de fechamento (close) como deadline, cancel, auto_close
-    private static function tratarEventoCloser(array $requestData, array $acesso, string $documentKey, string $evento): array
-    {
-        $cliente = $_GET['cliente'] ?? null;
-        $spa = $acesso['spa'] ?? null;
-        $dealId = $acesso['deal_id'] ?? null;
-        $webhook = $acesso['webhook_bitrix'] ?? null;
-
-        // Salvar status na tabela (usar a função nova)
-        try {
-            AplicacaoAcessoDAO::salvarStatusClosed($documentKey, $evento);
-        } catch (\Exception $e) {
-            LogHelper::logClickSign("Erro ao salvar status_close: " . $e->getMessage(), 'controller');
-            return ['success' => false, 'mensagem' => 'Erro ao salvar status_close'];
-        }
-
-        if (in_array($evento, ['deadline', 'cancel'])) {
-            // Atualiza Bitrix avisando que foi cancelado ou prazo finalizado (sem arquivo)
-            $mensagem = $evento === 'deadline' ? 'Assinatura cancelada por prazo finalizado.' : 'Assinatura cancelada manualmente.';
-            self::atualizarRetornoBitrix(
-                ['retorno' => $acesso['campo_retorno'] ?? null],
-                $spa,
-                $dealId,
-                $webhook,
-                true,
-                null,
-                $mensagem
-            );
-            return ['success' => true, 'mensagem' => "Evento $evento processado com atualização imediata no Bitrix."];
-        }
-
-        if ($evento === 'auto_close') {
-            // Só salva e aguarda document_closed para baixar o arquivo
-            return ['success' => true, 'mensagem' => 'Evento auto_close salvo, aguardando document_closed.'];
-        }
-
-        // Para outros eventos close (se algum vier), ignorar por enquanto
-        LogHelper::logClickSign("Evento close ignorado: $evento", 'controller');
-        return ['success' => true, 'mensagem' => "Evento close $evento ignorado."];
-    }
-
-
-
-
-
-
-
-
-
 
 } 
