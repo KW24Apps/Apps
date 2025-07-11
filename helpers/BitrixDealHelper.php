@@ -224,6 +224,45 @@ public static function consultarDeal($entityId, $id, $fields, $webhook)
         return $filename;
     }
 
+    // Anexa um arquivo a um negócio no Bitrix24
+    public static function anexarArquivoNegocio($spa, $dealId, $campoArquivo, $urlArquivo, $nomeArquivo = null)
+    {
+        // Usa a função já existente para baixar e preparar o arquivo em base64
+        $arquivoInfo = [
+            'urlMachine' => $urlArquivo,
+            'name' => $nomeArquivo
+        ];
+        $arquivoBase64 = self::baixarArquivoBase64($arquivoInfo);
+
+        if (!$arquivoBase64) {
+            LogHelper::logClickSign("Erro ao baixar/converter arquivo para anexo no negócio", 'BitrixDealHelper');
+            return false;
+        }
+
+        // Monta o array conforme Bitrix espera
+        $arquivoParaBitrix = [
+            [
+                'filename' => $arquivoBase64['nome'],
+                'data'     => str_replace('data:' . $arquivoBase64['mime'] . ';base64,', '', $arquivoBase64['base64']) // Só o base64 puro!
+            ]
+        ];
+
+        // Monta e dispara o update usando BitrixHelper
+        $params = [
+            'entityTypeId' => $spa,
+            'id'           => $dealId,
+            'fields'       => [
+                $campoArquivo => $arquivoParaBitrix
+            ]
+        ];
+
+        $resultado = BitrixHelper::chamarApi('crm.item.update', $params, [
+            'log' => true // ou 'webhook' => $webhook se quiser personalizar
+        ]);
+
+        return $resultado;
+    }
+
 
 
 }

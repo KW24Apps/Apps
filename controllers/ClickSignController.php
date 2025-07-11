@@ -472,9 +472,9 @@ class ClickSignController
     // Método para tratar eventos Documento disponível para download
     private static function documentoDisponivel($requestData, $acesso, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey)
     {
-        // 1. Buscar status fechado no banco (deadline, cancel, auto_close)
+        // 1. Buscar status fechado no banco
         $tentativasStatus = 15;
-        $esperaStatus = 10; // segundos
+        $esperaStatus = 10;
 
         $statusClosed = null;
         for ($i = 0; $i < $tentativasStatus; $i++) {
@@ -488,55 +488,48 @@ class ClickSignController
             return ['success' => false, 'mensagem' => 'StatusClosed não encontrado.'];
         }
 
-        // 2. Se foi deadline ou cancel, ignora (nada para baixar nem devolver)
+        // 2. Se for deadline ou cancel, ignora
         if (in_array($statusClosed, ['deadline', 'cancel'])) {
             LogHelper::logClickSign("Evento $statusClosed para DocumentKey: $documentKey - nada a fazer.", 'controller');
             return ['success' => true, 'mensagem' => "Evento $statusClosed ignorado."];
         }
 
-        // 3. Se foi auto_close, agora sim é hora de baixar o arquivo e devolver para o Bitrix
+        // 3. Se for auto_close, baixar e anexar
         if ($statusClosed === 'auto_close') {
-            // Tenta baixar arquivo assinado na ClickSign (laço até X tentativas)
             $tentativasDownload = 15;
-            $esperaDownload = 30; // segundos
+            $esperaDownload = 30;
 
             for ($j = 0; $j < $tentativasDownload; $j++) {
-                // Consultar documento na ClickSign para pegar o link do arquivo assinado
                 $retDoc = ClickSignHelper::buscarDocumento($acesso['clicksign_token'], $documentKey);
                 $url = $retDoc['document']['downloads']['signed_file_url'] ?? null;
                 $nomeArquivo = $retDoc['document']['filename'] ?? "documento_assinado.pdf";
 
                 if ($url) {
-                    // Baixar arquivo, converter para base64
-                    $conteudoArquivo = @file_get_contents($url);
-                    if ($conteudoArquivo !== false) {
-                        $base64 = base64_encode($conteudoArquivo);
-                        // Montar estrutura para Bitrix (conforme esperado pelo campo customizado)
-                        $arquivoParaBitrix = [
-                            'base64'   => 'data:application/pdf;base64,' . $base64,
-                            'nome'     => $nomeArquivo,
-                            'extensao' => 'pdf',
-                            'mime'     => 'application/pdf'
-                        ];
+                    // Chama função genérica para anexar o arquivo ao negócio
+                    $resultadoAnexo = BitrixDealHelper::anexarArquivoNegocio(
+                        $spa,
+                        $dealId,
+                        $campoArquivoAssinado,
+                        $url,
+                        $nomeArquivo
+                    );
 
-                        // Atualiza o negócio no Bitrix: campo de arquivo assinado + mensagem de retorno
+                    if (isset($resultadoAnexo['success']) && $resultadoAnexo['success']) {
+                        // Só agora atualiza a mensagem no Bitrix
                         self::atualizarRetornoBitrix(
-                            [
-                                'retorno'      => $campoRetorno,
-                                'arquivoassinado' => $campoArquivoAssinado
-                            ],
+                            ['retorno' => $campoRetorno],
                             $spa,
                             $dealId,
                             $acesso['webhook_bitrix'] ?? null,
                             true,
-                            $arquivoParaBitrix,
+                            null,
                             'Documento assinado e arquivo enviado para o Bitrix.'
                         );
 
-                        LogHelper::logClickSign("Arquivo assinado enviado para Bitrix | DocumentKey: $documentKey", 'controller');
-                        return ['success' => true, 'mensagem' => 'Arquivo baixado e enviado para Bitrix.'];
+                        LogHelper::logClickSign("Arquivo assinado ANEXADO e mensagem ATUALIZADA no Bitrix | DocumentKey: $documentKey", 'controller');
+                        return ['success' => true, 'mensagem' => 'Arquivo baixado, anexado e mensagem atualizada no Bitrix.'];
                     } else {
-                        LogHelper::logClickSign("Falha ao baixar arquivo em $url - tentativa " . ($j + 1), 'controller');
+                        LogHelper::logClickSign("Falha ao anexar arquivo no Bitrix | DocumentKey: $documentKey", 'controller');
                     }
                 } else {
                     LogHelper::logClickSign("Arquivo ainda não disponível para download - tentativa " . ($j + 1), 'controller');
@@ -544,13 +537,14 @@ class ClickSignController
                 sleep($esperaDownload);
             }
 
-            LogHelper::logClickSign("Arquivo não pôde ser baixado após $tentativasDownload tentativas | DocumentKey: $documentKey", 'controller');
-            return ['success' => false, 'mensagem' => 'Não foi possível baixar o arquivo assinado.'];
+            LogHelper::logClickSign("Arquivo não pôde ser baixado/anexado após $tentativasDownload tentativas | DocumentKey: $documentKey", 'controller');
+            return ['success' => false, 'mensagem' => 'Não foi possível baixar/anexar o arquivo assinado.'];
         }
 
-        // 4. Caso venha status inesperado
+        // 4. Status inesperado
         LogHelper::logClickSign("StatusClosed inesperado: $statusClosed | DocumentKey: $documentKey", 'controller');
         return ['success' => true, 'mensagem' => 'StatusClosed não tratado.'];
     }
+
 
 } 
