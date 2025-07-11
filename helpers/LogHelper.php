@@ -25,7 +25,7 @@ class LogHelper
         file_put_contents($arquivoLog, $linha, FILE_APPEND);
     } 
 
-        public static function logRotas(string $uri, string $method, string $contexto = ''): void
+        public static function logRotas(string $uri, string $method, string $contexto = '', string $mensagemExtra = '')
     {
         $arquivoLog = __DIR__ . '/../logs/rotas.log';
         $timestamp = date('Y-m-d H:i:s');
