@@ -507,7 +507,7 @@ class ClickSignController
                 if ($url) {
 
                     LogHelper::logClickSign(
-                        "Preparando para anexar | spa: $spa | dealId: $dealId | campoArquivoAssinado: $campoArquivoAssinado | url: $url | nomeArquivo: $nomeArquivo",
+                        "Preparando para anexar teste de garantia | spa: $spa | dealId: $dealId | campoArquivoAssinado: $campoArquivoAssinado | url: $url | nomeArquivo: $nomeArquivo",
                         'controller'
                     );
 
