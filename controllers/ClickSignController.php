@@ -505,6 +505,12 @@ class ClickSignController
                 $nomeArquivo = $retDoc['document']['filename'] ?? "documento_assinado.pdf";
 
                 if ($url) {
+
+                    LogHelper::logClickSign(
+                        "Preparando para anexar | spa: $spa | dealId: $dealId | campoArquivoAssinado: $campoArquivoAssinado | url: $url | nomeArquivo: $nomeArquivo",
+                        'controller'
+                    );
+
                     // Chama função genérica para anexar o arquivo ao negócio
                     $resultadoAnexo = BitrixDealHelper::anexarArquivoNegocio(
                         $spa,
