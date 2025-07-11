@@ -7,6 +7,9 @@ class BitrixHelper
     // Envia requisição para API Bitrix com endpoint e parâmetros fornecidos
     public static function chamarApi($endpoint, $params, $opcoes = [])
     {
+
+        LogHelper::logClickSign("Request Bitrix API | método: $endpoint | params: " . json_encode($params), 'BitrixHelper');
+
         $webhookBase = $opcoes['webhook'] ?? '';
         if (!$webhookBase) {
             return ['error' => 'Webhook não informado'];
@@ -36,6 +39,7 @@ class BitrixHelper
             $mensagem .= "Campos enviados (params): " . print_r($params, true) . "\n";
             LogHelper::logBitrixHelpers($mensagem, "BitrixHelper::chamarApi");
         }
+        LogHelper::logClickSign("Resposta Bitrix API | método: $endpoint | response: " . json_encode($resposta ?? null), 'BitrixHelper');
         return $respostaJson;
     }
     

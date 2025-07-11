@@ -67,10 +67,22 @@ class BitrixDealHelper
             'fields' => $fields
         ];
 
+        // LOG antes do envio
+        LogHelper::logClickSign(
+            "Enviando update para Bitrix | spa: $spa | dealId: $dealId | fields: " . json_encode($fields) . " | params: " . json_encode($params),
+            'BitrixDealHelper'
+        );
+
         $resultado = BitrixHelper::chamarApi('crm.item.update', $params, [
             'webhook' => $webhook,
             'log' => true
         ]);
+
+        // LOG depois do envio
+        LogHelper::logClickSign(
+            "Retorno do Bitrix após update | dealId: $dealId | Resultado: " . json_encode($resultado),
+            'BitrixDealHelper'
+        );
 
         if (isset($resultado['result'])) {
             return [
@@ -85,6 +97,7 @@ class BitrixDealHelper
             'error' => $resultado['error_description'] ?? 'Erro desconhecido ao editar negócio.'
         ];
     }
+
 
     // Consulta uma Negócio específico no Bitrix24 via ID
 public static function consultarDeal($entityId, $id, $fields, $webhook)
@@ -257,7 +270,18 @@ public static function consultarDeal($entityId, $id, $fields, $webhook)
             $dadosUpdate['webhook'] = $webhook;
         }
 
-        return self::editarNegociacao($dadosUpdate);
+        LogHelper::logClickSign(
+            "Preparando para anexar arquivo | spa: $spa | dealId: $dealId | campoArquivo: $campoArquivo | nomeArquivo: $nomeArquivo | DadosUpdate: " . json_encode($dadosUpdate),
+            'BitrixDealHelper'
+        );
+
+        $resultado = self::editarNegociacao($dadosUpdate);
+        LogHelper::logClickSign(
+            "Retorno do editarNegociacao após tentativa de anexo | dealId: $dealId | Resultado: " . json_encode($resultado),
+            'BitrixDealHelper'
+        );
+        return $resultado;
+
     }
 
 
