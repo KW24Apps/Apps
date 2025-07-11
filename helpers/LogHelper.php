@@ -32,4 +32,4 @@ class LogHelper
         $linha = "[$timestamp]" . ($contexto ? " [$contexto]" : "") . " - URI: $uri | MÉTODO: $method" . PHP_EOL;
         file_put_contents($arquivoLog, $linha, FILE_APPEND);
     }
-}
+} 
