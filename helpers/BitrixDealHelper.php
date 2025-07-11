@@ -225,7 +225,7 @@ public static function consultarDeal($entityId, $id, $fields, $webhook)
     }
 
     // Anexa um arquivo a um negócio no Bitrix24
-    public static function anexarArquivoNegocio($spa, $dealId, $campoArquivo, $urlArquivo, $nomeArquivo = null)
+    public static function anexarArquivoNegocio($spa, $dealId, $campoArquivo, $urlArquivo, $nomeArquivo = null, $webhook = null)
     {
         // Usa a função já existente para baixar e preparar o arquivo em base64
         $arquivoInfo = [
@@ -247,22 +247,18 @@ public static function consultarDeal($entityId, $id, $fields, $webhook)
             ]
         ];
 
-        // Monta e dispara o update usando BitrixHelper
-        $params = [
-            'entityTypeId' => $spa,
-            'id'           => $dealId,
-            'fields'       => [
-                $campoArquivo => $arquivoParaBitrix
-            ]
+        // Usa o editarNegociacao para reaproveitar toda a lógica de campos e logs
+        $dadosUpdate = [
+            'spa' => $spa,
+            'deal' => $dealId,
+            $campoArquivo => $arquivoParaBitrix
         ];
+        if ($webhook) {
+            $dadosUpdate['webhook'] = $webhook;
+        }
 
-        $resultado = BitrixHelper::chamarApi('crm.item.update', $params, [
-            'log' => true // ou 'webhook' => $webhook se quiser personalizar
-        ]);
-
-        return $resultado;
+        return self::editarNegociacao($dadosUpdate);
     }
-
 
 
 }
