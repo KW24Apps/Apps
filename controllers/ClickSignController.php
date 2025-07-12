@@ -494,8 +494,8 @@ class ClickSignController
         // 1. Buscar status fechado no banco
         $tentativasStatus = 15;
         $esperaStatus = 10;
-
         $statusClosed = null;
+
         for ($i = 0; $i < $tentativasStatus; $i++) {
             $statusClosed = AplicacaoAcessoDAO::obterAssinaturaClickSign($documentKey);
             if ($statusClosed !== null) break;
@@ -514,7 +514,7 @@ class ClickSignController
             return ['success' => true, 'mensagem' => "Evento {$statusClosed['status_closed']} ignorado."];
         }
 
-        // 3. Se for auto_close, baixar e anexar
+        // 3. Se for auto_close, baixar e anexar o arquivo assinado
         if (($statusClosed['status_closed'] ?? '') === 'auto_close') {
             $tentativasDownload = 15;
             $esperaDownload = 30;
@@ -529,26 +529,49 @@ class ClickSignController
                 if ($url) {
                     LogHelper::logDocumentoAssinado("Arquivo disponível para download | url=$url | nomeArquivo=$nomeArquivo", 'documentoDisponivel');
 
-                    // Anexar arquivo ao negócio
-                    $resultadoAnexo = BitrixDealHelper::anexarArquivoNegocio(
-                        $spa,
-                        $dealId,
-                        $campoArquivoAssinado,
-                        $url,
-                        $nomeArquivo,
-                        $webhook
-                    );
+                    // 3.1. Baixa e converte o arquivo para base64
+                    $arquivoInfo = [
+                        'urlMachine' => $url,
+                        'name' => $nomeArquivo
+                    ];
+                    LogHelper::logDocumentoAssinado("Pré-download | url=$url | nome=$nomeArquivo", 'documentoDisponivel');
+                    $arquivoBase64 = BitrixDealHelper::baixarArquivoBase64($arquivoInfo);
+                    LogHelper::logDocumentoAssinado("Arquivo convertido | nome={$arquivoBase64['nome']} | mime={$arquivoBase64['mime']} | extensao={$arquivoBase64['extensao']}", 'documentoDisponivel');
 
-                    if (isset($resultadoAnexo['success']) && $resultadoAnexo['success']) {
-                        self::atualizarRetornoBitrix(
-                            ['retorno' => $campoRetorno],
-                            $spa,
-                            $dealId,
-                            $acesso['webhook_bitrix'] ?? null,
-                            true,
-                            null,
-                            'Documento assinado e arquivo enviado para o Bitrix.'
-                        );
+                    if (!$arquivoBase64) {
+                        LogHelper::logClickSign("Erro ao baixar/converter arquivo para anexo no negócio", 'documentoDisponivel');
+                        return ['success' => false, 'mensagem' => 'Falha ao converter o arquivo.'];
+                    }
+
+                    // 3.2. Prepara estrutura do campo para o Bitrix
+                    $arquivoParaBitrix = [[
+                        'filename' => $arquivoBase64['nome'],
+                        'data'     => str_replace('data:' . $arquivoBase64['mime'] . ';base64,', '', $arquivoBase64['base64'])
+                    ]];
+
+                    // 3.3. Monta estrutura de update e envia para o Bitrix
+                    $dadosUpdate = [
+                        'spa' => $spa,
+                        'deal' => $dealId,
+                        $campoArquivoAssinado => $arquivoParaBitrix
+                    ];
+                    if ($webhook) {
+                        $dadosUpdate['webhook'] = $webhook;
+                    }
+
+                    LogHelper::logClickSign("Preparando para anexar arquivo | spa: $spa | dealId: $dealId | campoArquivo: $campoArquivoAssinado | nomeArquivo: $nomeArquivo | DadosUpdate: " . json_encode($dadosUpdate), 'documentoDisponivel');
+                    LogHelper::logDocumentoAssinado("Enviando para editarNegociacao | dealId=$dealId | campo=$campoArquivoAssinado | arquivo=" . json_encode($arquivoParaBitrix), 'documentoDisponivel');
+
+                    $resultado = BitrixDealHelper::editarNegociacao($dadosUpdate);
+
+                    LogHelper::logDocumentoAssinado("Resposta do editarNegociacao | dealId=$dealId | resultado=" . json_encode($resultado), 'documentoDisponivel');
+                    LogHelper::logClickSign("Retorno do editarNegociacao após tentativa de anexo | dealId: $dealId | Resultado: " . json_encode($resultado), 'documentoDisponivel');
+
+                    if (isset($resultado['success']) && $resultado['success']) {
+                        // 3.4. Atualiza campo de retorno com mensagem de sucesso
+                        self::atualizarRetornoBitrix([
+                            'retorno' => $campoRetorno
+                        ], $spa, $dealId, $acesso['webhook_bitrix'] ?? null, true, null, 'Documento assinado e arquivo enviado para o Bitrix.');
 
                         LogHelper::logDocumentoAssinado("Arquivo anexado e retorno atualizado no Bitrix para documentKey=$documentKey", 'documentoDisponivel');
                         return ['success' => true, 'mensagem' => 'Arquivo baixado, anexado e mensagem atualizada no Bitrix.'];
@@ -570,6 +593,7 @@ class ClickSignController
 
         return ['success' => true, 'mensagem' => 'StatusClosed não tratado.'];
     }
+
 
 
 } 
