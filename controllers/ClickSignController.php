@@ -380,7 +380,7 @@ class ClickSignController
         // 8. Valida e executa conforme o evento, usando apenas $dadosAssinatura já carregado
         switch ($evento) {
             case 'sign':
-                $assinante = $requestData['signer']['email'] ?? null;
+                $assinante = $requestData['event']['data']['signer']['email'] ?? null;
                 if (!empty($dadosAssinatura['assinatura_processada']) && strpos($dadosAssinatura['assinatura_processada'], $assinante) !== false) {
                     LogHelper::logClickSign("Assinatura duplicada ignorada para $assinante | Documento: $documentKey", 'controller');
                     return ['success' => true, 'mensagem' => 'Assinatura já processada.'];
