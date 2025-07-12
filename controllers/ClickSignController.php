@@ -535,8 +535,7 @@ class ClickSignController
                         $dealId,
                         $campoArquivoAssinado,
                         $url,
-                        $nomeArquivo,
-                        $webhook
+                        $nomeArquivo
                     );
 
                     if (isset($resultadoAnexo['success']) && $resultadoAnexo['success']) {
