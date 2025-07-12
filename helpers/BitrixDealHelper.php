@@ -154,10 +154,8 @@ public static function consultarDeal($entityId, $id, $fields, $webhook)
 
         if ($conteudo === false) {
             $erro = error_get_last(); // Captura o warning real do PHP
-            LogHelper::logClickSign(
-                "Falha ao baixar o arquivo da URL: {$url} | Erro: " . json_encode($erro),
-                'baixarArquivoBase64ComDados'
-            );
+            LogHelper::logClickSign("Falha ao baixar o arquivo da URL: {$url} | Erro: " . json_encode($erro),'baixarArquivoBase64ComDados');
+            LogHelper::logDocumentoAssinado("Falha ao baixar arquivo | URL: $url | Erro: " . json_encode($erro), 'baixarArquivoBase64');
             return null;
         }
 
