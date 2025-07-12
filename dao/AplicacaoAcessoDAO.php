@@ -58,6 +58,7 @@ class AplicacaoAcessoDAO
         }
     }
 
+    // Método para registrar uma assinatura ClickSign no banco de dados
     public static function registrarAssinaturaClicksign($dados)
     {
         $config = require __DIR__ . '/../config/config.php';
@@ -86,48 +87,8 @@ class AplicacaoAcessoDAO
         }
     }
 
-    public static function obterCamposAssinatura($documentKey)
-    {
-        $config = require __DIR__ . '/../config/config.php';
-
-        try {
-            $pdo = new PDO(
-                "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
-                $config['usuario'],
-                $config['senha']
-            );
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-            $sql = "
-                SELECT 
-                    spa,
-                    deal_id,
-                    campo_arquivoassinado,
-                    campo_retorno
-                FROM assinaturas_clicksign
-                WHERE document_key = :documentKey
-                LIMIT 1
-            ";
-
-            $stmt = $pdo->prepare($sql);
-            $stmt->bindParam(':documentKey', $documentKey);
-            $stmt->execute();
-            $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($resultado) {
-                return $resultado;
-            } else {
-                return null;
-            }
-
-        } catch (PDOException $e) {
-            file_put_contents(__DIR__ . '/../logs/aplicacao_acesso_debug.log', 'Erro DB: ' . $e->getMessage() . PHP_EOL, FILE_APPEND);
-            return null;
-        }
-    }
-
     // Método para salvar o status_closed de uma assinatura ClickSign
-    public static function salvarStatusClosed(string $documentKey, ?string $statusClosed = null, ?string $assinaturaProcessada = null, ?bool $documentoFechadoProcessado = null, ?bool $documentoDisponivelProcessado = null): bool
+    public static function salvarStatus(string $documentKey, ?string $statusClosed = null, ?string $assinaturaProcessada = null, ?bool $documentoFechadoProcessado = null, ?bool $documentoDisponivelProcessado = null): bool
     {
         $config = require __DIR__ . '/../config/config.php';
 
@@ -181,9 +142,8 @@ class AplicacaoAcessoDAO
         }
     }
 
-
-    // Método para obter o status_closed de uma assinatura ClickSign
-    public static function obterStatusClosed(string $documentKey): ?array
+    // Método para obter uma assinatura ClickSign completa pelo documentKey
+    public static function obterAssinaturaClickSign(string $documentKey): ?array
     {
         $config = require __DIR__ . '/../config/config.php';
 
@@ -195,30 +155,21 @@ class AplicacaoAcessoDAO
             );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            $sql = "SELECT status_closed, assinatura_processada, documento_fechado_processado, documento_disponivel_processado
-                    FROM assinaturas_clicksign
-                    WHERE document_key = :documentKey
-                    LIMIT 1";
-
+            $sql = "SELECT * FROM assinaturas_clicksign WHERE document_key = :documentKey LIMIT 1";
             $stmt = $pdo->prepare($sql);
             $stmt->bindParam(':documentKey', $documentKey);
             $stmt->execute();
 
             $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($resultado) {
-                return $resultado;  // retorna o array completo com todos os campos
-            }
-            return null;
+            return $resultado ?: null;
 
         } catch (PDOException $e) {
-            LogHelper::logClickSign("ERRO PDO ao obter status_closed: " . $e->getMessage(), 'dao');
+            LogHelper::logClickSign("ERRO PDO ao obter assinatura completa: " . $e->getMessage(), 'dao');
             return null;
         } catch (\Exception $e) {
-            LogHelper::logClickSign("ERRO geral ao obter status_closed: " . $e->getMessage(), 'dao');
+            LogHelper::logClickSign("ERRO geral ao obter assinatura completa: " . $e->getMessage(), 'dao');
             return null;
         }
     }
-
 
 }

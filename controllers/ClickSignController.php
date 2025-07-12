@@ -357,8 +357,8 @@ class ClickSignController
             return ['success' => false, 'mensagem' => 'Assinatura HMAC inválida.'];
         }
 
-        // 6. Consulta dados do documento (SPA, deal_id, campos)
-        $dadosAssinatura = AplicacaoAcessoDAO::obterCamposAssinatura($documentKey);
+        // 6. Consulta todos os dados e status do documento (tudo em uma vez só)
+        $dadosAssinatura = AplicacaoAcessoDAO::obterAssinaturaClickSign($documentKey);
         if (!$dadosAssinatura) {
             LogHelper::logClickSign("Documento não encontrado | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
             return ['success' => false, 'mensagem' => 'Documento não encontrado.'];
@@ -377,33 +377,36 @@ class ClickSignController
         // 7. Identifica tipo de evento (ex: sign, deadline, cancel, auto_close, document_closed)
         $evento = $requestData['event']['name'] ?? null;
 
-        // 8. Consultar status já processados
-        $statusProcessados = AplicacaoAcessoDAO::obterStatusClosed($documentKey);
-
-        // 9. Validação se evento já foi processado
+        // 8. Valida e executa conforme o evento, usando apenas $dadosAssinatura já carregado
         switch ($evento) {
             case 'sign':
                 $assinante = $requestData['signer']['email'] ?? null;
-                if (strpos($statusProcessados['assinatura_processada'], $assinante) !== false) {
+                if (!empty($dadosAssinatura['assinatura_processada']) && strpos($dadosAssinatura['assinatura_processada'], $assinante) !== false) {
+                    LogHelper::logClickSign("Assinatura duplicada ignorada para $assinante | Documento: $documentKey", 'controller');
                     return ['success' => true, 'mensagem' => 'Assinatura já processada.'];
                 }
-                AplicacaoAcessoDAO::salvarStatusClosed($documentKey, null, $statusProcessados['assinatura_processada'] . ";" . $assinante);
+                AplicacaoAcessoDAO::salvarStatus($documentKey, null, ($dadosAssinatura['assinatura_processada'] ?? '') . ";" . $assinante);
+                LogHelper::logClickSign("Processada nova assinatura: $assinante | Documento: $documentKey", 'controller');
                 return self::assinaturaRealizada($requestData, $acesso, $spa, $dealId, $campoRetorno);
 
             case 'deadline':
             case 'cancel':
             case 'auto_close':
-                if ($statusProcessados['documento_fechado_processado']) {
+                if (!empty($dadosAssinatura['documento_fechado_processado'])) {
+                    LogHelper::logClickSign("Evento duplicado ignorado ($evento) | Documento: $documentKey", 'controller');
                     return ['success' => true, 'mensagem' => 'Evento de documento fechado já processado.'];
                 }
-                AplicacaoAcessoDAO::salvarStatusClosed($documentKey, $evento, null, true);
+                AplicacaoAcessoDAO::salvarStatus($documentKey, $evento, null, true);
+                LogHelper::logClickSign("Processado evento $evento e marcado como fechado | Documento: $documentKey", 'controller');
                 return self::documentoFechado($requestData, $acesso, $spa, $dealId, $documentKey, $campoRetorno);
 
             case 'document_closed':
-                if ($statusProcessados['documento_disponivel_processado']) {
+                if (!empty($dadosAssinatura['documento_disponivel_processado'])) {
+                    LogHelper::logClickSign("Documento já disponível, evento duplicado ignorado | Documento: $documentKey", 'controller');
                     return ['success' => true, 'mensagem' => 'Documento já disponível e processado anteriormente.'];
                 }
-                AplicacaoAcessoDAO::salvarStatusClosed($documentKey, null, null, null, true);
+                AplicacaoAcessoDAO::salvarStatus($documentKey, null, null, null, true);
+                LogHelper::logClickSign("Processado evento document_closed e documento marcado como disponível | Documento: $documentKey", 'controller');
                 return self::documentoDisponivel($requestData, $acesso, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey);
 
             default:
@@ -411,7 +414,6 @@ class ClickSignController
                 return ['success' => true, 'mensagem' => 'Evento recebido sem ação específica.'];
         }
     }
-
 
     // Método para tratar eventos assinatura de Signatario
     private static function assinaturaRealizada($requestData, $acesso, $spa, $dealId, $campoRetorno)
@@ -451,7 +453,7 @@ class ClickSignController
     {
         // 1. Salva status de fechamento no banco
         try {
-            AplicacaoAcessoDAO::salvarStatusClosed($documentKey, $requestData['event']['name']);
+            AplicacaoAcessoDAO::salvarStatus($documentKey, $requestData['event']['name']);
         } catch (\Exception $e) {
             LogHelper::logClickSign("Erro ao salvar status_close: " . $e->getMessage(), 'controller');
             return ['success' => false, 'mensagem' => 'Erro ao salvar status_close'];
@@ -494,7 +496,7 @@ class ClickSignController
 
         $statusClosed = null;
         for ($i = 0; $i < $tentativasStatus; $i++) {
-            $statusClosed = AplicacaoAcessoDAO::obterStatusClosed($documentKey);
+            $statusClosed = AplicacaoAcessoDAO::obterAssinaturaClickSign($documentKey);
             if ($statusClosed !== null) break;
             sleep($esperaStatus);
         }
@@ -568,6 +570,5 @@ class ClickSignController
 
         return ['success' => true, 'mensagem' => 'StatusClosed não tratado.'];
     }
-
 
 } 
