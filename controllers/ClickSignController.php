@@ -343,7 +343,7 @@ class ClickSignController
             LogHelper::logClickSign("Acesso não autorizado ou Secret não encontrado | Cliente: $cliente", 'controller');
             return ['success' => false, 'mensagem' => 'Acesso não autorizado ou Secret não encontrado.'];
         }
-
+        $webhook = $acesso['webhook_bitrix'];
         // 5. Validação HMAC
         $secret = $acesso['clicksign_secret'];
         $headerSignature = $_SERVER['HTTP_CONTENT_HMAC'] ?? null;
@@ -406,7 +406,7 @@ class ClickSignController
                 }
                 AplicacaoAcessoDAO::salvarStatus($documentKey, null, null, null, true);
                 LogHelper::logClickSign("Processado evento document_closed e documento marcado como disponível | Documento: $documentKey", 'controller');
-                return self::documentoDisponivel($requestData, $acesso, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey);
+                return self::documentoDisponivel($requestData, $acesso, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey, $webhook);
 
             default:
                 LogHelper::logClickSign("Evento não tratado: $evento", 'controller');
@@ -487,7 +487,7 @@ class ClickSignController
     }
 
     // Método para tratar eventos Documento disponível para download
-    private static function documentoDisponivel($requestData, $acesso, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey)
+    private static function documentoDisponivel($requestData, $acesso, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey, $webhook)
     {
         LogHelper::logDocumentoAssinado("Início documentoDisponivel | documentKey=$documentKey | spa=$spa | dealId=$dealId | campoArquivoAssinado=$campoArquivoAssinado | campoRetorno=$campoRetorno", 'documentoDisponivel');
 
@@ -535,7 +535,8 @@ class ClickSignController
                         $dealId,
                         $campoArquivoAssinado,
                         $url,
-                        $nomeArquivo
+                        $nomeArquivo,
+                        $webhook
                     );
 
                     if (isset($resultadoAnexo['success']) && $resultadoAnexo['success']) {
@@ -546,7 +547,7 @@ class ClickSignController
                             $acesso['webhook_bitrix'] ?? null,
                             true,
                             null,
-                            'Documento assinado e arquivo enviado para o Bitrix.'
+                            mensagemCustomizada: 'Documento assinado e arquivo enviado para o Bitrix.'
                         );
 
                         LogHelper::logDocumentoAssinado("Arquivo anexado e retorno atualizado no Bitrix para documentKey=$documentKey", 'documentoDisponivel');
