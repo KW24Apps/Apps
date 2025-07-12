@@ -217,8 +217,7 @@ class ClickSignController
                         'message'      => "Prezado(a) $papel,\nPor favor assine o documento.\n\nAtenciosamente,\nKWCA"
                     ]);
 
-                    LogHelper::logClickSign('Retorno do vínculo: ' . json_encode($vinculo), 'controller');
-
+                    
                     if (!empty($vinculo['list']['request_signature_key'])) {
                         $mensagem = "Prezado(a), segue documento para assinatura.";
                         ClickSignHelper::enviarNotificacao($tokenClicksign, $vinculo['list']['request_signature_key'], $mensagem);
@@ -240,8 +239,7 @@ class ClickSignController
                 }
             }
 
-            LogHelper::logClickSign("Vínculo finalizado | Cliente: $cliente | DocumentKey: $documentKey | Total vínculos: $qtdVinculos", 'controller');
-
+           
             // Atualiza Bitrix com sucesso ou erro nos vínculos
             self::atualizarRetornoBitrix($params, $entityId, $id, $webhook, $sucessoVinculo, $documentKey);
 
@@ -328,13 +326,11 @@ class ClickSignController
     {
         // 1. Log do JSON recebido
         $rawBody = file_get_contents('php://input');
-        LogHelper::logClickSign("JSON bruto recebido no webhook: " . $rawBody, 'controller');
-
+        
         // 2. Identifica cliente (GET) e documentKey (JSON)
         $cliente = $_GET['cliente'] ?? null;
         $documentKey = $requestData['document']['key'] ?? null;
-        LogHelper::logClickSign("Início retornoClickSign | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
-
+        
         // 3. Valida campos obrigatórios
         if (empty($cliente) || empty($documentKey)) {
             LogHelper::logClickSign("Parâmetros obrigatórios ausentes | Cliente: $cliente | DocumentKey: $documentKey", 'controller');
@@ -386,7 +382,6 @@ class ClickSignController
                     return ['success' => true, 'mensagem' => 'Assinatura já processada.'];
                 }
                 AplicacaoAcessoDAO::salvarStatus($documentKey, null, ($dadosAssinatura['assinatura_processada'] ?? '') . ";" . $assinante);
-                LogHelper::logClickSign("Processada nova assinatura: $assinante | Documento: $documentKey", 'controller');
                 return self::assinaturaRealizada($requestData, $acesso, $spa, $dealId, $campoRetorno);
 
             case 'deadline':
