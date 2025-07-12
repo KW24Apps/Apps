@@ -594,6 +594,4 @@ class ClickSignController
         return ['success' => true, 'mensagem' => 'StatusClosed não tratado.'];
     }
 
-
-
-} 
+}
