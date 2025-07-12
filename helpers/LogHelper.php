@@ -2,11 +2,21 @@
 class LogHelper
 {
     // Registra uma entrada global no log
-        public static function registrarEntradaGlobal(string $uri, string $method, string $destino = ''): void
+    public static function registrarEntradaGlobal(string $uri, string $method): void
     {
-        $arquivoLog = __DIR__ . '/../logs/logEntradasGlobais.log';
+        $evento = null;
+
+        if ($uri === 'clicksignretorno' && $method === 'POST') {
+            $body = file_get_contents('php://input');
+            $json = json_decode($body, true);
+            $evento = $json['event']['name'] ?? null;
+        }
+
+        $arquivoLog = __DIR__ . '/../logs/entradas.log';
         $timestamp = date('Y-m-d H:i:s');
-        $linha = "[$timestamp] - URI: $uri | MÉTODO: $method" . ($destino ? " | DESTINO: $destino" : "") . PHP_EOL;
+        $linha = "[$timestamp] - URI: $uri | MÉTODO: $method";
+        if ($evento) $linha .= " | EVENTO: $evento";
+        $linha .= PHP_EOL;
         file_put_contents($arquivoLog, $linha, FILE_APPEND);
     }
 
