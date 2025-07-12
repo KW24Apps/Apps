@@ -155,9 +155,10 @@ public static function consultarDeal($entityId, $id, $fields, $webhook)
         if ($conteudo === false) {
             $erro = error_get_last(); // Captura o warning real do PHP
             LogHelper::logClickSign("Falha ao baixar o arquivo da URL: {$url} | Erro: " . json_encode($erro),'baixarArquivoBase64ComDados');
-            LogHelper::logDocumentoAssinado("Falha ao baixar arquivo | URL: $url | Erro: " . json_encode($erro), 'baixarArquivoBase64');
             return null;
         }
+        $hashArquivo = md5($conteudo);
+        LogHelper::logDocumentoAssinado("Hash do conteúdo baixado: $hashArquivo | URL: $url", 'baixarArquivoBase64');
 
         $base64 = base64_encode($conteudo);
         $mime = ClickSignHelper::obterMimeDoArquivo($url);
@@ -243,7 +244,9 @@ public static function consultarDeal($entityId, $id, $fields, $webhook)
             'urlMachine' => $urlArquivo,
             'name' => $nomeArquivo
         ];
+        LogHelper::logDocumentoAssinado("Pré-download | url=$urlArquivo | nome=$nomeArquivo", 'anexarArquivoNegocio');
         $arquivoBase64 = self::baixarArquivoBase64($arquivoInfo);
+        LogHelper::logDocumentoAssinado("Arquivo convertido | nome={$arquivoBase64['nome']} | mime={$arquivoBase64['mime']} | extensao={$arquivoBase64['extensao']}", 'anexarArquivoNegocio');
 
         if (!$arquivoBase64) {
             LogHelper::logClickSign("Erro ao baixar/converter arquivo para anexo no negócio", 'BitrixDealHelper');
