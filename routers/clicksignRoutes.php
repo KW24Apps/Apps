@@ -11,7 +11,8 @@ if ($uri === 'clicksignnew' && $method === 'POST') {
     (new ClickSignController())->GerarAssinatura();
 } elseif ($uri === 'clicksignretorno' && $method === 'POST') {
     $requestData = json_decode(file_get_contents('php://input'), true); 
-    LogHelper::logRotas($uri, $method, 'ClickSignRetorno', json_encode($requestData));
+    $evento = $requestData['event']['name'] ?? 'evento_desconhecido';
+    LogHelper::logRotas($uri, $method, "ClickSignRetorno ($evento)", json_encode($requestData));
     (new ClickSignController())->retornoClickSign($requestData); 
 } else {
     LogHelper::logRotas($uri, $method, 'ClickSignErro', 'Rota não encontrada');
