@@ -30,6 +30,8 @@ class BitrixHelper
         curl_close($ch);
 
         $respostaJson = json_decode($resposta, true);
+        LogHelper::logDocumentoAssinado("Resposta da chamada API Bitrix | endpoint=$endpoint | httpCode=$httpCode | erro=$curlErro | resposta=" . json_encode($respostaJson), 'chamarApi');
+
  
         if ($logAtivo) {
             $mensagem = "==== CHAMADA API ====\n";

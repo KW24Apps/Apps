@@ -73,6 +73,7 @@ class BitrixDealHelper
             'BitrixDealHelper'
         );
 
+        LogHelper::logDocumentoAssinado("Preparando chamada API | spa=$spa | dealId=$dealId | params=" . json_encode($params), 'editarNegociacao');
         $resultado = BitrixHelper::chamarApi('crm.item.update', $params, [
             'webhook' => $webhook,
             'log' => true
@@ -91,6 +92,7 @@ class BitrixDealHelper
             ];
         }
 
+        
         return [
             'success' => false,
             'debug' => $resultado,
@@ -100,39 +102,39 @@ class BitrixDealHelper
 
 
     // Consulta uma Negócio específico no Bitrix24 via ID
-public static function consultarDeal($entityId, $id, $fields, $webhook)
-{
-    // Normaliza campos para array e remove espaços
-    if (is_string($fields)) {
-        $fields = array_map('trim', explode(',', $fields));
-    } else {
-        $fields = array_map('trim', $fields);
-    }
+    public static function consultarDeal($entityId, $id, $fields, $webhook)
+    {
+        // Normaliza campos para array e remove espaços
+        if (is_string($fields)) {
+            $fields = array_map('trim', explode(',', $fields));
+        } else {
+            $fields = array_map('trim', $fields);
+        }
 
-    if (!in_array('id', $fields)) {
-        array_unshift($fields, 'id');
-    }
- 
-    $params = [
-        'entityTypeId' => $entityId,
-        'id' => $id,
-    ];
-
-    $respostaApi = BitrixHelper::chamarApi('crm.item.get', $params, [
-        'webhook' => $webhook
-    ]);
-
-    $dadosBrutos = $respostaApi['result']['item'] ?? [];
-
-    $camposFormatados = BitrixHelper::formatarCampos(array_fill_keys($fields, null));
-    $resultadoFinal = [];
-
-    foreach (array_keys($camposFormatados) as $campoConvertido) {
-        $resultadoFinal[$campoConvertido] = $dadosBrutos[$campoConvertido] ?? null;
-    }
+        if (!in_array('id', $fields)) {
+            array_unshift($fields, 'id');
+        }
     
-    return ['result' => ['item' => $resultadoFinal]];
-    }
+        $params = [
+            'entityTypeId' => $entityId,
+            'id' => $id,
+        ];
+
+        $respostaApi = BitrixHelper::chamarApi('crm.item.get', $params, [
+            'webhook' => $webhook
+        ]);
+
+        $dadosBrutos = $respostaApi['result']['item'] ?? [];
+
+        $camposFormatados = BitrixHelper::formatarCampos(array_fill_keys($fields, null));
+        $resultadoFinal = [];
+
+        foreach (array_keys($camposFormatados) as $campoConvertido) {
+            $resultadoFinal[$campoConvertido] = $dadosBrutos[$campoConvertido] ?? null;
+        }
+        
+        return ['result' => ['item' => $resultadoFinal]];
+        }
 
     // Baixa um arquivo de uma URL e retorna seus dados em base64
     public static function baixarArquivoBase64(array $arquivoInfo): ?array
@@ -276,7 +278,9 @@ public static function consultarDeal($entityId, $id, $fields, $webhook)
             'BitrixDealHelper'
         );
 
+        LogHelper::logDocumentoAssinado("Enviando para editarNegociacao | dealId=$dealId | campo=$campoArquivo | arquivo=" . json_encode($arquivoParaBitrix), 'anexarArquivoNegocio');
         $resultado = self::editarNegociacao($dadosUpdate);
+        LogHelper::logDocumentoAssinado("Resposta do editarNegociacao | dealId=$dealId | resultado=" . json_encode($resultado), 'anexarArquivoNegocio');
         LogHelper::logClickSign(
             "Retorno do editarNegociacao após tentativa de anexo | dealId: $dealId | Resultado: " . json_encode($resultado),
             'BitrixDealHelper'
