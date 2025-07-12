@@ -535,7 +535,8 @@ class ClickSignController
                         $dealId,
                         $campoArquivoAssinado,
                         $url,
-                        $nomeArquivo
+                        $nomeArquivo,
+                        $webhook
                     );
 
                     if (isset($resultadoAnexo['success']) && $resultadoAnexo['success']) {
@@ -546,7 +547,7 @@ class ClickSignController
                             $acesso['webhook_bitrix'] ?? null,
                             true,
                             null,
-                            mensagemCustomizada: 'Documento assinado e arquivo enviado para o Bitrix.'
+                            'Documento assinado e arquivo enviado para o Bitrix.'
                         );
 
                         LogHelper::logDocumentoAssinado("Arquivo anexado e retorno atualizado no Bitrix para documentKey=$documentKey", 'documentoDisponivel');
