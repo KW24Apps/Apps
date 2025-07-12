@@ -32,4 +32,13 @@ class LogHelper
         $linha = "[$timestamp]" . ($contexto ? " [$contexto]" : "") . " - URI: $uri | MÉTODO: $method" . PHP_EOL;
         file_put_contents($arquivoLog, $linha, FILE_APPEND);
     }
+
+    public static function logDocumentoAssinado(string $mensagem, string $contexto = '')
+    {
+        $arquivoLog = __DIR__ . '/../logs/documentoassinado.log';
+        $timestamp = date('Y-m-d H:i:s');
+        $linha = "[$timestamp]" . ($contexto ? " [$contexto]" : "") . " - $mensagem" . PHP_EOL;
+        file_put_contents($arquivoLog, $linha, FILE_APPEND);
+    }
+    
 }

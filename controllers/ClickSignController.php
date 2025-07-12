@@ -373,6 +373,10 @@ class ClickSignController
         // 7. Identifica tipo de evento (ex: sign, deadline, cancel, auto_close, document_closed)
         $evento = $requestData['event']['name'] ?? null;
 
+        if (in_array($evento, ['auto_close', 'document_closed'])) {
+            LogHelper::logDocumentoAssinado("evento=$evento | spa=$spa | dealId=$dealId | campoArquivoAssinado=$campoArquivoAssinado | campoRetorno=$campoRetorno | documentKey=$documentKey", 'retornoClickSign');
+        }
+
         // 8. Valida e executa conforme o evento, usando apenas $dadosAssinatura já carregado
         switch ($evento) {
             case 'sign':
@@ -485,6 +489,8 @@ class ClickSignController
     // Método para tratar eventos Documento disponível para download
     private static function documentoDisponivel($requestData, $acesso, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey)
     {
+        LogHelper::logDocumentoAssinado("Início documentoDisponivel | documentKey=$documentKey | spa=$spa | dealId=$dealId | campoArquivoAssinado=$campoArquivoAssinado | campoRetorno=$campoRetorno", 'documentoDisponivel');
+
         // 1. Buscar status fechado no banco
         $tentativasStatus = 15;
         $esperaStatus = 10;
@@ -493,38 +499,37 @@ class ClickSignController
         for ($i = 0; $i < $tentativasStatus; $i++) {
             $statusClosed = AplicacaoAcessoDAO::obterAssinaturaClickSign($documentKey);
             if ($statusClosed !== null) break;
+            LogHelper::logDocumentoAssinado("Tentativa $i: statusClosed ainda não encontrado para documentKey=$documentKey", 'documentoDisponivel');
             sleep($esperaStatus);
         }
 
         if ($statusClosed === null) {
-            LogHelper::logClickSign("StatusClosed não encontrado após $tentativasStatus tentativas para DocumentKey: $documentKey", 'controller');
+            LogHelper::logDocumentoAssinado("StatusClosed não encontrado após $tentativasStatus tentativas para documentKey=$documentKey", 'documentoDisponivel');
             return ['success' => false, 'mensagem' => 'StatusClosed não encontrado.'];
         }
 
         // 2. Se for deadline ou cancel, ignora
-        if (in_array($statusClosed, ['deadline', 'cancel'])) {
-            LogHelper::logClickSign("Evento {$statusClosed['status_closed']} para DocumentKey: $documentKey - nada a fazer.", 'controller');
+        if (in_array($statusClosed['status_closed'] ?? '', ['deadline', 'cancel'])) {
+            LogHelper::logDocumentoAssinado("Evento {$statusClosed['status_closed']} para documentKey=$documentKey - nada a fazer.", 'documentoDisponivel');
             return ['success' => true, 'mensagem' => "Evento {$statusClosed['status_closed']} ignorado."];
         }
 
         // 3. Se for auto_close, baixar e anexar
-        if ($statusClosed === 'auto_close') {
+        if (($statusClosed['status_closed'] ?? '') === 'auto_close') {
             $tentativasDownload = 15;
             $esperaDownload = 30;
 
             for ($j = 0; $j < $tentativasDownload; $j++) {
+                LogHelper::logDocumentoAssinado("Tentativa $j para baixar arquivo assinado documentKey=$documentKey", 'documentoDisponivel');
+
                 $retDoc = ClickSignHelper::buscarDocumento($acesso['clicksign_token'], $documentKey);
                 $url = $retDoc['document']['downloads']['signed_file_url'] ?? null;
                 $nomeArquivo = $retDoc['document']['filename'] ?? "documento_assinado.pdf";
 
                 if ($url) {
+                    LogHelper::logDocumentoAssinado("Arquivo disponível para download | url=$url | nomeArquivo=$nomeArquivo", 'documentoDisponivel');
 
-                    LogHelper::logClickSign(
-                        "Preparando para anexar teste de garantia | spa: $spa | dealId: $dealId | campoArquivoAssinado: $campoArquivoAssinado | url: $url | nomeArquivo: $nomeArquivo",
-                        'controller'
-                    );
-
-                    // Chama função genérica para anexar o arquivo ao negócio
+                    // Anexar arquivo ao negócio
                     $resultadoAnexo = BitrixDealHelper::anexarArquivoNegocio(
                         $spa,
                         $dealId,
@@ -534,7 +539,6 @@ class ClickSignController
                     );
 
                     if (isset($resultadoAnexo['success']) && $resultadoAnexo['success']) {
-                        // Só agora atualiza a mensagem no Bitrix
                         self::atualizarRetornoBitrix(
                             ['retorno' => $campoRetorno],
                             $spa,
@@ -545,25 +549,26 @@ class ClickSignController
                             'Documento assinado e arquivo enviado para o Bitrix.'
                         );
 
-                        LogHelper::logClickSign("Arquivo assinado ANEXADO e mensagem ATUALIZADA no Bitrix | DocumentKey: $documentKey", 'controller');
+                        LogHelper::logDocumentoAssinado("Arquivo anexado e retorno atualizado no Bitrix para documentKey=$documentKey", 'documentoDisponivel');
                         return ['success' => true, 'mensagem' => 'Arquivo baixado, anexado e mensagem atualizada no Bitrix.'];
                     } else {
-                        LogHelper::logClickSign("Falha ao anexar arquivo no Bitrix | DocumentKey: $documentKey", 'controller');
+                        LogHelper::logDocumentoAssinado("Falha ao anexar arquivo no Bitrix para documentKey=$documentKey", 'documentoDisponivel');
                     }
                 } else {
-                    LogHelper::logClickSign("Arquivo ainda não disponível para download - tentativa " . ($j + 1), 'controller');
+                    LogHelper::logDocumentoAssinado("Arquivo ainda não disponível para download - tentativa " . ($j + 1) . " para documentKey=$documentKey", 'documentoDisponivel');
                 }
                 sleep($esperaDownload);
             }
 
-            LogHelper::logClickSign("Arquivo não pôde ser baixado/anexado após $tentativasDownload tentativas | DocumentKey: $documentKey", 'controller');
+            LogHelper::logDocumentoAssinado("Não foi possível baixar/anexar o arquivo após $tentativasDownload tentativas para documentKey=$documentKey", 'documentoDisponivel');
             return ['success' => false, 'mensagem' => 'Não foi possível baixar/anexar o arquivo assinado.'];
         }
 
         // 4. Status inesperado
-        LogHelper::logClickSign("StatusClosed inesperado: {$statusClosed['status_closed']} | DocumentKey: $documentKey", 'controller');
+        LogHelper::logDocumentoAssinado("StatusClosed inesperado: {$statusClosed['status_closed']} para documentKey=$documentKey", 'documentoDisponivel');
 
         return ['success' => true, 'mensagem' => 'StatusClosed não tratado.'];
     }
+
 
 } 
