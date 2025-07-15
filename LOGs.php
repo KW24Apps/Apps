@@ -1,15 +1,24 @@
 <?php
 // viewer_logs.php - Coloque este arquivo na raiz do seu projeto ou em uma pasta admin/logs
 
-// Verificação de autenticação - IMPORTANTE: implemente sua própria lógica de autenticação!
-// Esta é apenas uma proteção básica com senha codificada
+// Verificação de autenticação com usuário e senha
 session_start();
-$senha = "159753132"; // Substitua por uma senha forte
+$usuario_correto = "KW24";
+$senha_correta = "159Qwaszx753";
+
+// Processar logout
+if (isset($_GET['logout'])) {
+    session_unset();
+    session_destroy();
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit;
+}
 
 // Verificar login ou processar tentativa de login
-if (isset($_POST['senha'])) {
-    if ($_POST['senha'] === $senha) {
+if (isset($_POST['usuario']) && isset($_POST['senha'])) {
+    if ($_POST['usuario'] === $usuario_correto && $_POST['senha'] === $senha_correta) {
         $_SESSION['logviewer_auth'] = true;
+        $_SESSION['logviewer_user'] = $_POST['usuario'];
     }
 }
 
@@ -39,17 +48,24 @@ if (!isset($_SESSION['logviewer_auth']) || $_SESSION['logviewer_auth'] !== true)
                 font-family: 'Inter', sans-serif; 
                 margin: 0; 
                 padding: 0; 
-                background: var(--gray-light);
+                height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
                 color: #333;
+                overflow: hidden;
             }
             
             .login-container { 
-                max-width: 400px; 
-                margin: 100px auto; 
-                background: white; 
-                padding: 30px; 
-                border-radius: 8px; 
-                box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+                width: 360px;
+                background: rgba(255, 255, 255, 0.9);
+                padding: 40px 30px;
+                border-radius: 12px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
             }
             
             .login-header {
@@ -58,30 +74,48 @@ if (!isset($_SESSION['logviewer_auth']) || $_SESSION['logviewer_auth'] !== true)
             }
             
             .login-header img {
-                max-width: 180px;
+                max-width: 140px;
                 margin-bottom: 20px;
             }
             
             h1 { 
                 font-family: 'Rubik', sans-serif;
-                margin-top: 0; 
+                margin-top: 0;
+                margin-bottom: 30px;
                 color: var(--primary-dark); 
                 font-weight: 600;
+                font-size: 1.6rem;
+                text-align: center;
             }
             
+            .input-group {
+                position: relative;
+                margin-bottom: 20px;
+            }
+            
+            .input-icon {
+                position: absolute;
+                left: 12px;
+                top: 12px;
+                color: #777;
+                width: 20px;
+                text-align: center;
+            }
+            
+            input[type="text"],
             input[type="password"] { 
                 width: 100%; 
-                padding: 12px; 
-                margin: 15px 0; 
+                padding: 12px 12px 12px 40px; 
                 box-sizing: border-box; 
                 border: 1px solid #ddd; 
                 border-radius: 6px;
                 font-family: 'Inter', sans-serif;
                 font-size: 15px;
+                background-color: rgba(255, 255, 255, 0.8);
             }
             
             button { 
-                background: var(--primary); 
+                background: var(--primary-dark); 
                 color: white; 
                 padding: 12px 18px; 
                 border: none; 
@@ -89,13 +123,29 @@ if (!isset($_SESSION['logviewer_auth']) || $_SESSION['logviewer_auth'] !== true)
                 cursor: pointer; 
                 width: 100%;
                 font-family: 'Inter', sans-serif;
-                font-size: 15px;
+                font-size: 16px;
                 font-weight: 500;
-                transition: all 0.2s ease;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                transition: all 0.3s ease;
+                margin-top: 10px;
             }
             
             button:hover { 
-                background: var(--primary-light); 
+                background: var(--primary); 
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+            
+            .remember-me {
+                display: flex;
+                align-items: center;
+                margin-bottom: 20px;
+                font-size: 14px;
+                color: #555;
+            }
+            
+            .remember-me input {
+                margin-right: 8px;
             }
         </style>
     </head>
@@ -103,11 +153,22 @@ if (!isset($_SESSION['logviewer_auth']) || $_SESSION['logviewer_auth'] !== true)
         <div class="login-container">
             <div class="login-header">
                 <img src="https://gabriel.kw24.com.br/6_LOGO%20KW24.png" alt="KW24 Logo">
-                <h1>Log Viewer</h1>
             </div>
+            <h1>Log Viewer</h1>
             <form method="post">
-                <input type="password" name="senha" placeholder="Digite a senha" required>
-                <button type="submit">Acessar</button>
+                <div class="input-group">
+                    <span class="input-icon">👤</span>
+                    <input type="text" name="usuario" placeholder="Email ID" required>
+                </div>
+                <div class="input-group">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" name="senha" placeholder="Password" required>
+                </div>
+                <div class="remember-me">
+                    <input type="checkbox" id="remember" name="remember">
+                    <label for="remember">Remember me</label>
+                </div>
+                <button type="submit">LOGIN</button>
             </form>
         </div>
     </body>
@@ -384,6 +445,38 @@ function formatLogTableRow($entry) {
             flex-grow: 1;
         }
         
+        .user-panel {
+            padding: 15px 20px;
+            background: rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+        
+        .user-info {
+            color: rgba(255,255,255,0.8);
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .logout-btn {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
         .sidebar-menu a {
             display: block;
             color: rgba(255,255,255,0.8);
@@ -440,13 +533,14 @@ function formatLogTableRow($entry) {
         
         .filters {
             background: white;
-            padding: 20px;
+            padding: 16px 20px;
             margin-bottom: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
+            border: 1px solid var(--gray-border);
         }
         
         .filter-group {
@@ -456,10 +550,12 @@ function formatLogTableRow($entry) {
         }
         
         .filter-group label {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: 500;
-            color: #666;
-            margin-bottom: 5px;
+            color: #777;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .stats {
@@ -473,12 +569,19 @@ function formatLogTableRow($entry) {
         }
         
         select, input {
-            padding: 10px;
+            padding: 10px 12px;
             border: 1px solid var(--gray-border);
-            border-radius: 6px;
+            border-radius: 4px;
             font-family: 'Inter', sans-serif;
             font-size: 0.9rem;
             width: 100%;
+            background-color: white;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 30px;
         }
         
         button {
@@ -517,23 +620,26 @@ function formatLogTableRow($entry) {
         table.logs-table {
             width: 100%;
             border-collapse: collapse;
+            border: none;
         }
         
         table.logs-table th {
-            background: var(--primary);
+            background: var(--primary-dark);
             color: white;
             text-align: left;
             padding: 12px 15px;
-            font-weight: 500;
+            font-weight: 600;
             font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         table.logs-table th:first-child {
-            border-top-left-radius: 8px;
+            border-top-left-radius: 4px;
         }
         
         table.logs-table th:last-child {
-            border-top-right-radius: 8px;
+            border-top-right-radius: 4px;
         }
         
         table.logs-table td {
@@ -543,8 +649,12 @@ function formatLogTableRow($entry) {
             vertical-align: top;
         }
         
+        table.logs-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
         table.logs-table tr:hover {
-            background: #f9f9f9;
+            background: #f0f7fa;
         }
         
         table.logs-table .error-row {
@@ -557,20 +667,18 @@ function formatLogTableRow($entry) {
         
         .file-tag {
             display: inline-block;
-            padding: 3px 8px;
+            padding: 4px 8px;
             border-radius: 4px;
             font-size: 0.75rem;
             color: white;
-            font-weight: 500;
+            font-weight: 600;
+            text-transform: lowercase;
         }
         
         .trace-id {
-            background: rgba(13, 194, 255, 0.1);
             color: var(--primary);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 500;
+            font-size: 0.9rem;
+            font-weight: 600;
         }
         
         .empty {
@@ -749,6 +857,12 @@ function formatLogTableRow($entry) {
                 <i class="fas fa-download"></i> Download
             </a>
         </div>
+        <div class="user-panel">
+            <div class="user-info"><?= htmlspecialchars($_SESSION['logviewer_user'] ?? 'Usuário') ?></div>
+            <form method="post" action="?logout=1">
+                <button type="submit" class="logout-btn">Sair</button>
+            </form>
+        </div>
     </div>
     
     <!-- Conteúdo Principal -->
@@ -815,8 +929,8 @@ function formatLogTableRow($entry) {
                         <?= $fileCount ?> arquivo(s) de log processado(s). 
                         <?php 
                         echo count($allLogEntries) . ' registros encontrados';
-                        if ($date) echo ' para a data ' . $date;
-                        if ($traceId) echo ' com TRACE ID ' . $traceId;
+                        if ($date) echo ' para a data <strong>' . $date . '</strong>';
+                        if ($traceId) echo ' com TRACE ID <strong>' . $traceId . '</strong>';
                         ?>
                     </p>
                 </div>
@@ -832,7 +946,7 @@ function formatLogTableRow($entry) {
                                 <tr>
                                     <th width="15%">Origem</th>
                                     <th width="15%">Data</th>
-                                    <th width="15%">Trace</th>
+                                    <th width="10%">Trace</th>
                                     <th>Log</th>
                                 </tr>
                             </thead>
