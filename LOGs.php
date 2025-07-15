@@ -458,6 +458,7 @@ function formatLogTableRow($entry) {
             display: flex;
             min-height: 100vh;
             overflow-x: hidden; /* Previne rolagem horizontal */
+            position: relative;
         }
         
         .sidebar {
@@ -468,20 +469,32 @@ function formatLogTableRow($entry) {
             flex-direction: column;
             overflow: hidden;
             transition: width 0.3s ease;
-            position: relative;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.2);
         }
         
         .sidebar.collapsed {
             width: 60px;
         }
         
+        .sidebar-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        
         .toggle-btn {
             position: absolute;
             top: 15px;
-            right: -15px;
-            width: 30px;
-            height: 30px;
-            background-color: var(--primary-color);
+            right: -20px;
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary);
             color: white;
             border-radius: 50%;
             border: none;
@@ -489,9 +502,11 @@ function formatLogTableRow($entry) {
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             z-index: 100;
             transition: transform 0.3s ease;
+            font-size: 16px;
+            border: 2px solid white;
         }
         
         .sidebar.collapsed .toggle-btn i {
@@ -507,6 +522,7 @@ function formatLogTableRow($entry) {
             text-align: center;
             background: rgba(0,0,0,0.2);
             overflow: hidden;
+            transition: height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
         }
         
         .logo-container img {
@@ -515,9 +531,15 @@ function formatLogTableRow($entry) {
             transition: max-width 0.3s ease, opacity 0.3s ease;
         }
         
+        .sidebar.collapsed .logo-container {
+            height: 0;
+            padding: 0;
+            opacity: 0;
+        }
+        
         .sidebar.collapsed .logo-container img {
-            max-width: 40px;
-            opacity: 0.8;
+            max-width: 0;
+            opacity: 0;
         }
         
         .sidebar-menu {
@@ -552,12 +574,14 @@ function formatLogTableRow($entry) {
             justify-content: space-between;
             font-size: 0.9rem;
             overflow: hidden;
-            transition: padding 0.3s ease;
+            transition: padding 0.3s ease, height 0.3s ease;
+            margin-top: auto;
         }
         
         .sidebar.collapsed .user-panel {
-            padding: 15px 5px;
+            padding: 10px 5px;
             justify-content: center;
+            height: auto;
         }
         
         .user-info {
@@ -590,12 +614,15 @@ function formatLogTableRow($entry) {
         }
         
         .sidebar.collapsed .logout-btn {
-            width: 30px;
-            height: 30px;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 0;
+            margin: 10px auto;
+            font-size: 16px;
+            border-radius: 50%;
         }
         
         .logout-btn span {
@@ -645,11 +672,14 @@ function formatLogTableRow($entry) {
             width: 20px;
             text-align: center;
             font-size: 16px;
-            transition: margin 0.3s ease;
+            transition: margin 0.3s ease, font-size 0.3s ease;
         }
         
         .sidebar.collapsed .sidebar-menu a i {
             margin-right: 0;
+            font-size: 18px;
+            width: 100%;
+            text-align: center;
         }
         
         .sidebar.collapsed .sidebar-menu a span {
@@ -702,6 +732,7 @@ function formatLogTableRow($entry) {
             overflow: hidden;
             margin-left: 220px;
             transition: margin-left 0.3s ease;
+            padding: 0;
         }
         
         .main-content.expanded {
@@ -1076,21 +1107,23 @@ function formatLogTableRow($entry) {
 <body>
     <!-- Menu Lateral -->
     <div class="sidebar">
-        <button id="sidebarToggle" class="toggle-btn">
+        <button id="sidebarToggle" class="toggle-btn" title="Expandir/Recolher Menu">
             <i class="fas fa-chevron-left"></i>
         </button>
         <div class="logo-container">
             <img src="https://gabriel.kw24.com.br/6_LOGO%20KW24.png" alt="KW24 Logo">
         </div>
-        <div class="sidebar-menu">
-            <a href="?mode=filter" class="<?= (!$downloadMode) ? 'active' : '' ?>">
-                <i class="fas fa-filter"></i> <span>Filtro</span>
-                <div class="menu-tooltip">Filtro</div>
-            </a>
-            <a href="?mode=download" class="<?= ($downloadMode) ? 'active' : '' ?>">
-                <i class="fas fa-download"></i> <span>Download</span>
-                <div class="menu-tooltip">Download</div>
-            </a>
+        <div class="sidebar-content">
+            <div class="sidebar-menu">
+                <a href="?mode=filter" class="<?= (!$downloadMode) ? 'active' : '' ?>">
+                    <i class="fas fa-filter"></i> <span>Filtro</span>
+                    <div class="menu-tooltip">Filtro</div>
+                </a>
+                <a href="?mode=download" class="<?= ($downloadMode) ? 'active' : '' ?>">
+                    <i class="fas fa-download"></i> <span>Download</span>
+                    <div class="menu-tooltip">Download</div>
+                </a>
+            </div>
         </div>
         <div class="user-panel">
             <div class="user-info"><?= htmlspecialchars($_SESSION['logviewer_user'] ?? 'Usuário') ?></div>
@@ -1221,11 +1254,21 @@ function formatLogTableRow($entry) {
         const toggleBtn = document.getElementById('sidebarToggle');
         const mainContent = document.querySelector('.main-content');
         
+        // Função para aplicar o estado correto da barra lateral
+        function applySidebarState(state) {
+            if (state === 'collapsed') {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('expanded');
+            } else {
+                sidebar.classList.remove('collapsed');
+                mainContent.classList.remove('expanded');
+            }
+        }
+        
         // Verificar se há uma preferência salva no localStorage
         const sidebarState = localStorage.getItem('sidebarState');
-        if (sidebarState === 'collapsed') {
-            sidebar.classList.add('collapsed');
-            mainContent.classList.add('expanded');
+        if (sidebarState) {
+            applySidebarState(sidebarState);
         }
         
         // Adicionar evento de clique ao botão de toggle
