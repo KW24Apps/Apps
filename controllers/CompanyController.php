@@ -1,10 +1,13 @@
 <?php
+namespace Controllers;
 
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
 require_once __DIR__ . '/../helpers/BitrixCompanyHelper.php';
 
+use Helpers\BitrixHelper;
 use dao\AplicacaoAcessoDAO;
+use Helpers\BitrixCompanyHelper;
 
 class CompanyController
 {

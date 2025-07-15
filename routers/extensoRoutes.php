@@ -1,4 +1,7 @@
 <?php
+namespace routers;
+
+use Controllers\ExtensoController;
 
 $uri = $_SERVER['REQUEST_URI'];
 

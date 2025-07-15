@@ -1,6 +1,11 @@
 <?php
-require_once __DIR__ . '/../helpers/FormataHelper.php';
+namespace Controllers;
+
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
+require_once __DIR__ . '/../helpers/utils.php';
+
+use Helpers\BitrixDealHelper;
+use Helpers\UtilHelpers;
 
 class ExtensoController
 {
@@ -28,7 +33,7 @@ class ExtensoController
         $item = $resultado['result']['item'] ?? null;
 
         // Padroniza acesso ao campo
-        $campoBitrix = BitrixHelper::formatarCampos([$campoValor => null]);
+        $campoBitrix = UtilHelpers::formatarCampos([$campoValor => null]);
         $campoBitrixKey = array_key_first($campoBitrix);
 
         if (!$item || !isset($item[$campoBitrixKey])) {
@@ -37,8 +42,8 @@ class ExtensoController
             return;
         }
 
-        $valor = FormataHelper::normalizarValor($item[$campoBitrixKey]);
-        $extenso = FormataHelper::valorPorExtenso($valor);
+        $valor = UtilHelpers::normalizarValor($item[$campoBitrixKey]);
+        $extenso = UtilHelpers::valorPorExtenso($valor);
 
         BitrixDealHelper::editarDeal($entityId, $dealId, [$campoRetorno => $extenso]);
 

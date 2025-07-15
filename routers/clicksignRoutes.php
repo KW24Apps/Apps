@@ -1,9 +1,15 @@
 <?php
-$uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
-$method = $_SERVER['REQUEST_METHOD'];
+namespace routers;
 
 require_once __DIR__ . '/../controllers/ClickSignController.php';
 require_once __DIR__ . '/../helpers/LogHelper.php';
+
+use Helpers\LogHelper;
+use Controllers\ClickSignController;    
+
+$uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+$method = $_SERVER['REQUEST_METHOD'];
+
 
 if ($uri === 'clicksignnew' && $method === 'POST') {
     (new ClickSignController())->GerarAssinatura();

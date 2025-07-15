@@ -1,8 +1,11 @@
 <?php
-require_once __DIR__ . '/../helpers/BitrixHelper.php';
-require_once __DIR__ . '/../helpers/LogHelper.php';
-class BitrixCompanyHelper
+namespace Helpers;
 
+require_once __DIR__ . '/../helpers/BitrixHelper.php';
+
+use Helpers\BitrixHelper;
+
+class BitrixCompanyHelper
 {
     // Consulta múltiplas empresas organizadas por campo de origem
     public static function consultarEmpresas(array $campos, array $camposDesejados = [])

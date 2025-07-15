@@ -1,4 +1,5 @@
 <?php
+namespace Helpers;
 
 class UtilHelpers
 {
@@ -101,6 +102,63 @@ class UtilHelpers
         // file_put_contents($dir . $filename, $body);
 
         return $filename;
+    }
+
+    // Normaliza valores monetários para float
+    public static function normalizarValor($entrada)
+    {
+        $valor = trim($entrada);
+
+        if (preg_match('/^\d+\.\d{1,2}$/', $valor)) {
+            return floatval($valor);
+        }
+
+        if (preg_match('/^\d+,\d{1,2}$/', $valor)) {
+            return floatval(str_replace(',', '.', $valor));
+        }
+
+        if (strpos($valor, '.') !== false && strpos($valor, ',') !== false) {
+            $valor = str_replace('.', '', $valor);
+            $valor = str_replace(',', '.', $valor);
+            return floatval($valor);
+        }
+
+        return floatval(str_replace(',', '.', preg_replace('/[^\d.,]/', '', $valor)));
+    }
+
+    // Formata um valor monetário por extenso
+    public static function valorPorExtenso($valor)
+    {
+        $fmt = new \NumberFormatter('pt_BR', \NumberFormatter::SPELLOUT);
+        $inteiro = floor($valor);
+        $centavos = round(($valor - $inteiro) * 100);
+
+        $texto = $fmt->format($inteiro) . ' reais';
+        if ($centavos > 0) {
+            $texto .= ' e ' . $fmt->format($centavos) . ' centavos';
+        }
+
+        return $texto;
+    }
+
+    // Formata Compos do Bitrix
+    public static function formatarCampos($dados)
+    {
+        $fields = [];
+
+        foreach ($dados as $campo => $valor) {
+            // Normaliza prefixos quebrados como ufcrm_ ou uf_crm_
+            $campoNormalizado = strtoupper(str_replace(['ufcrm_', 'uf_crm_'], 'UF_CRM_', $campo));
+
+            if (strpos($campoNormalizado, 'UF_CRM_') === 0) {
+                $chaveConvertida = 'ufCrm' . substr($campoNormalizado, 7);
+                $fields[$chaveConvertida] = $valor;
+            } else {
+                $fields[$campo] = $valor;
+            }
+        }
+
+        return $fields;
     }
 
 }

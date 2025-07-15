@@ -1,9 +1,12 @@
 <?php
+namespace Controllers;
+
 require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
 require_once __DIR__ . '/../helpers/LogHelper.php';
 
 use dao\AplicacaoAcessoDAO;
+use Helpers\BitrixDealHelper;
 
 class DealController
     {

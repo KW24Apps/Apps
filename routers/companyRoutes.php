@@ -1,4 +1,10 @@
 <?php
+namespace routers;
+
+require_once __DIR__ . '/../controllers/CompanyController.php';
+
+use Controllers\CompanyController;
+
 $uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 $method = $_SERVER['REQUEST_METHOD'];
 

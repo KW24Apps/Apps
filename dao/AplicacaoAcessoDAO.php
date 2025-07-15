@@ -1,10 +1,13 @@
 <?php
 namespace dao;
-use LogHelper;
+
+require_once __DIR__ . '/../helpers/LogHelper.php';
+
+use Helpers\LogHelper;
 use PDO;
 use PDOException;
 
-require_once __DIR__ . '/../helpers/LogHelper.php';
+
 
 class AplicacaoAcessoDAO
 {

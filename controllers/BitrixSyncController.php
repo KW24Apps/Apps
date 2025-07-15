@@ -1,8 +1,16 @@
 <?php
+namespace Controllers;
+
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../dao/BitrixSincDao.php';
 require_once __DIR__ . '/../helpers/BitrixCompanyHelper.php';
 require_once __DIR__ . '/../helpers/BitrixContactHelper.php';
+
+use Helpers\BitrixHelper;
+use dao\BitrixSincDAO;
+use Helpers\BitrixCompanyHelper;
+use Helpers\BitrixContactHelper;
+use Throwable;
 
 
 class BitrixSyncController

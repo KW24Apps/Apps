@@ -1,4 +1,6 @@
 <?php
+namespace Helpers;
+
 class LogHelper
 {
 

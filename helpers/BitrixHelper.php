@@ -1,8 +1,11 @@
 <?php
+namespace Helpers;
+
 require_once __DIR__ . '/../helpers/LogHelper.php';
+
+use Helpers\LogHelper;
+
 class BitrixHelper
-
-
 {
     // Envia requisição para API Bitrix com endpoint e parâmetros fornecidos
     public static function chamarApi($endpoint, $params, $opcoes = [])

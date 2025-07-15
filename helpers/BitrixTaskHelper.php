@@ -1,8 +1,11 @@
 <?php
+namespace Helpers;
+
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
+
+use Helpers\BitrixHelper;
+
 class BitrixTaskHelper
-
-
 {
     //Criar tarefa automatica 
     public static function criarTarefaAutomatica(array $dados)

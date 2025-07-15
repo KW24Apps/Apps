@@ -1,7 +1,11 @@
 <?php
-require_once __DIR__ . '/../helpers/BitrixHelper.php';
-class BitrixDealHelper
+namespace Helpers;
 
+require_once __DIR__ . '/../helpers/BitrixHelper.php';
+
+use Helpers\BitrixHelper;
+
+class BitrixDealHelper
 {
     // Cria um negócio no Bitrix24 via API
     public static function criarDeal($entityId, $categoryId, $fields): array

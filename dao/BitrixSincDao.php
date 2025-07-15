@@ -1,4 +1,8 @@
 <?php
+namespace dao;
+
+use PDO;
+use PDOException;
 
 class BitrixSincDAO
 {

@@ -1,8 +1,11 @@
 <?php
-require_once __DIR__ . '/../helpers/BitrixHelper.php';
-require_once __DIR__ . '/../helpers/LogHelper.php';
-class BitrixContactHelper
+namespace Helpers;
 
+require_once __DIR__ . '/../helpers/BitrixHelper.php';
+
+use Helpers\BitrixHelper;
+
+class BitrixContactHelper
 {
     // Consulta múltiplos contatos organizados por campo de origem
     public static function consultarContatos(array $campos, array $camposDesejados = [])

@@ -1,8 +1,11 @@
 <?php
+namespace Controllers;
 
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
 
 use dao\AplicacaoAcessoDAO;
+use Helpers\BitrixDealHelper;
+use DateTime;
 
 class MediaHoraController {
     public function executar() {
