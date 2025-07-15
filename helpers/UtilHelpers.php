@@ -1,13 +1,14 @@
 <?php
 namespace Helpers;
 
+use DateTime;
+
 class UtilHelpers
 {
     // Baixa um arquivo de uma URL e retorna seus dados em base64
     public static function baixarArquivoBase64(array $arquivoInfo): ?array
     {
         if (empty($arquivoInfo['urlMachine'])) {
-            LogHelper::logClickSign("URL do arquivo não informada.", 'baixarArquivoBase64ComDados');
             return null;
         }
 
@@ -15,7 +16,6 @@ class UtilHelpers
         $nome = $arquivoInfo['name'] ?? self::extrairNomeArquivoDaUrl($url);
 
         if (empty($nome)) {
-            LogHelper::logClickSign("Nome do arquivo não identificado.", 'baixarArquivoBase64ComDados');
             return null;
         }
 
@@ -23,12 +23,9 @@ class UtilHelpers
 
         if ($conteudo === false) {
             $erro = error_get_last(); // Captura o warning real do PHP
-            LogHelper::logClickSign("Falha ao baixar o arquivo da URL: {$url} | Erro: " . json_encode($erro),'baixarArquivoBase64ComDados');
             return null;
         }
         $hashArquivo = md5($conteudo);
-        LogHelper::logDocumentoAssinado("Hash do conteúdo baixado: $hashArquivo | URL: $url", 'baixarArquivoBase64');
-
         $base64 = base64_encode($conteudo);
         $mime = ClickSignHelper::obterMimeDoArquivo($url);
         $extensao = ClickSignHelper::mimeParaExtensao($mime) ?? pathinfo($nome, PATHINFO_EXTENSION);
@@ -159,6 +156,22 @@ class UtilHelpers
         }
 
         return $fields;
+    }
+
+    // Calcula uma data útil adicionando X dias úteis
+    public static function calcularDataUtil(int $dias): DateTime
+    {
+        $data = new DateTime();
+        $adicionados = 0;
+
+        while ($adicionados < $dias) {
+            $data->modify('+1 day');
+            $diaSemana = $data->format('N');
+            if ($diaSemana < 6) {
+                $adicionados++;
+            }
+        }
+        return $data;
     }
 
 }
