@@ -15,10 +15,13 @@ if (isset($_GET['logout'])) {
 }
 
 // Verificar login ou processar tentativa de login
+$loginError = false;
 if (isset($_POST['usuario']) && isset($_POST['senha'])) {
-    if ($_POST['usuario'] === $usuario_correto && $_POST['senha'] === $senha_correta) {
+    if (strtolower($_POST['usuario']) === strtolower($usuario_correto) && $_POST['senha'] === $senha_correta) {
         $_SESSION['logviewer_auth'] = true;
-        $_SESSION['logviewer_user'] = $_POST['usuario'];
+        $_SESSION['logviewer_user'] = $usuario_correto; // Sempre usar a versão correta do nome
+    } else {
+        $loginError = true;
     }
 }
 
@@ -59,13 +62,44 @@ if (!isset($_SESSION['logviewer_auth']) || $_SESSION['logviewer_auth'] !== true)
             
             .login-container { 
                 width: 360px;
-                background: rgba(255, 255, 255, 0.9);
+                background: rgba(255, 255, 255, 0.75);
                 padding: 40px 30px;
                 border-radius: 12px;
                 box-shadow: 0 8px 32px rgba(0,0,0,0.2);
                 backdrop-filter: blur(10px);
                 -webkit-backdrop-filter: blur(10px);
                 border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            
+            .alert {
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 12px 24px;
+                background: rgba(231, 76, 60, 0.9);
+                color: white;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 1000;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                animation: fadeIn 0.3s ease-out, fadeOut 0.5s ease-in 9.5s forwards;
+            }
+            
+            .alert i {
+                margin-right: 8px;
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translate(-50%, -20px); }
+                to { opacity: 1; transform: translate(-50%, 0); }
+            }
+            
+            @keyframes fadeOut {
+                from { opacity: 1; transform: translate(-50%, 0); }
+                to { opacity: 0; transform: translate(-50%, -20px); }
             }
             
             .login-header {
@@ -150,9 +184,14 @@ if (!isset($_SESSION['logviewer_auth']) || $_SESSION['logviewer_auth'] !== true)
         </style>
     </head>
     <body>
+        <?php if ($loginError): ?>
+        <div class="alert">
+            <i class="fas fa-exclamation-circle"></i> Usuário ou senha inválidos
+        </div>
+        <?php endif; ?>
         <div class="login-container">
             <div class="login-header">
-                <img src="https://gabriel.kw24.com.br/6_LOGO%20KW24.png" alt="KW24 Logo">
+                <img src="https://gabriel.kw24.com.br/06_KW24_TAGLINE_%20POSITIVO.png" alt="KW24 Logo">
             </div>
             <h1>Log Viewer</h1>
             <form method="post">
@@ -418,6 +457,7 @@ function formatLogTableRow($entry) {
             color: #333;
             display: flex;
             min-height: 100vh;
+            overflow-x: hidden; /* Previne rolagem horizontal */
         }
         
         .sidebar {
@@ -427,22 +467,81 @@ function formatLogTableRow($entry) {
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+        
+        .sidebar.collapsed {
+            width: 60px;
+        }
+        
+        .toggle-btn {
+            position: absolute;
+            top: 15px;
+            right: -15px;
+            width: 30px;
+            height: 30px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar.collapsed .toggle-btn i {
+            transform: rotate(180deg);
+        }
+        
+        .toggle-btn:hover {
+            background-color: var(--primary-dark);
         }
         
         .logo-container {
             padding: 20px;
             text-align: center;
             background: rgba(0,0,0,0.2);
+            overflow: hidden;
         }
         
         .logo-container img {
             max-width: 160px;
             height: auto;
+            transition: max-width 0.3s ease, opacity 0.3s ease;
+        }
+        
+        .sidebar.collapsed .logo-container img {
+            max-width: 40px;
+            opacity: 0.8;
         }
         
         .sidebar-menu {
             padding: 20px 0;
             flex-grow: 1;
+        }
+        
+        .toggle-menu {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.7);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 5px;
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar.collapsed .toggle-menu {
+            transform: rotate(180deg);
+            right: 5px;
         }
         
         .user-panel {
@@ -452,6 +551,13 @@ function formatLogTableRow($entry) {
             align-items: center;
             justify-content: space-between;
             font-size: 0.9rem;
+            overflow: hidden;
+            transition: padding 0.3s ease;
+        }
+        
+        .sidebar.collapsed .user-panel {
+            padding: 15px 5px;
+            justify-content: center;
         }
         
         .user-info {
@@ -460,6 +566,14 @@ function formatLogTableRow($entry) {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            transition: opacity 0.3s ease, width 0.3s ease, margin 0.3s ease;
+            margin-right: 10px;
+        }
+        
+        .sidebar.collapsed .user-info {
+            width: 0;
+            opacity: 0;
+            margin-right: 0;
         }
         
         .logout-btn {
@@ -467,10 +581,35 @@ function formatLogTableRow($entry) {
             color: white;
             border: none;
             border-radius: 4px;
+            width: auto;
             padding: 5px 10px;
             font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .sidebar.collapsed .logout-btn {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        
+        .logout-btn span {
+            transition: opacity 0.3s ease;
+        }
+        
+        .sidebar.collapsed .logout-btn span {
+            display: none;
+        }
+        
+        .sidebar.collapsed .logout-btn::before {
+            content: "\\f2f5";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
         }
         
         .logout-btn:hover {
@@ -478,12 +617,16 @@ function formatLogTableRow($entry) {
         }
         
         .sidebar-menu a {
-            display: block;
+            display: flex;
+            align-items: center;
             color: rgba(255,255,255,0.8);
             padding: 12px 20px;
             text-decoration: none;
             font-size: 15px;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
         }
         
         .sidebar-menu a:hover, .sidebar-menu a.active {
@@ -494,12 +637,62 @@ function formatLogTableRow($entry) {
         .sidebar-menu a.active {
             border-left: 4px solid var(--accent);
             font-weight: 500;
+            padding-left: 16px;
         }
         
         .sidebar-menu a i {
             margin-right: 10px;
             width: 20px;
             text-align: center;
+            font-size: 16px;
+            transition: margin 0.3s ease;
+        }
+        
+        .sidebar.collapsed .sidebar-menu a i {
+            margin-right: 0;
+        }
+        
+        .sidebar.collapsed .sidebar-menu a span {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+        }
+        
+        .menu-tooltip {
+            position: absolute;
+            left: 70px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+        
+        .sidebar.collapsed .sidebar-menu a:hover .menu-tooltip {
+            opacity: 1;
+        }
+        
+        .menu-tooltip {
+            position: absolute;
+            left: 70px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 1000;
+        }
+        
+        .sidebar.collapsed .sidebar-menu a:hover .menu-tooltip {
+            opacity: 1;
         }
         
         .main-content {
@@ -507,6 +700,12 @@ function formatLogTableRow($entry) {
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            margin-left: 220px;
+            transition: margin-left 0.3s ease;
+        }
+        
+        .main-content.expanded {
+            margin-left: 60px;
         }
         
         .top-bar {
@@ -785,6 +984,18 @@ function formatLogTableRow($entry) {
                 flex-direction: row;
                 justify-content: space-between;
                 align-items: center;
+                height: auto;
+                min-height: 60px;
+            }
+            
+            .sidebar.collapsed {
+                width: 100%;
+                /* Não muda a largura no mobile */
+            }
+            
+            .toggle-btn {
+                display: none;
+                /* Esconde o botão toggle no mobile */
             }
             
             .logo-container {
@@ -820,6 +1031,25 @@ function formatLogTableRow($entry) {
                 width: auto;
             }
             
+            .sidebar-menu a span {
+                display: none;
+                /* Esconde o texto no mobile */
+            }
+            
+            .menu-tooltip {
+                display: none;
+                /* Esconde os tooltips no mobile */
+            }
+            
+            .user-panel {
+                padding: 10px;
+            }
+            
+            .main-content {
+                margin-left: 0 !important;
+                /* Ignora a margem no mobile */
+            }
+            
             .filters {
                 flex-direction: column;
             }
@@ -846,21 +1076,26 @@ function formatLogTableRow($entry) {
 <body>
     <!-- Menu Lateral -->
     <div class="sidebar">
+        <button id="sidebarToggle" class="toggle-btn">
+            <i class="fas fa-chevron-left"></i>
+        </button>
         <div class="logo-container">
             <img src="https://gabriel.kw24.com.br/6_LOGO%20KW24.png" alt="KW24 Logo">
         </div>
         <div class="sidebar-menu">
             <a href="?mode=filter" class="<?= (!$downloadMode) ? 'active' : '' ?>">
-                <i class="fas fa-filter"></i> Filtro
+                <i class="fas fa-filter"></i> <span>Filtro</span>
+                <div class="menu-tooltip">Filtro</div>
             </a>
             <a href="?mode=download" class="<?= ($downloadMode) ? 'active' : '' ?>">
-                <i class="fas fa-download"></i> Download
+                <i class="fas fa-download"></i> <span>Download</span>
+                <div class="menu-tooltip">Download</div>
             </a>
         </div>
         <div class="user-panel">
             <div class="user-info"><?= htmlspecialchars($_SESSION['logviewer_user'] ?? 'Usuário') ?></div>
             <form method="post" action="?logout=1">
-                <button type="submit" class="logout-btn">Sair</button>
+                <button type="submit" class="logout-btn"><span>Sair</span></button>
             </form>
         </div>
     </div>
@@ -978,6 +1213,33 @@ function formatLogTableRow($entry) {
     document.getElementById('trace').addEventListener('change', function() {
         const date = document.getElementById('date').value;
         window.location.href = `?mode=filter&trace=${this.value}${date ? '&date=' + date : ''}`;
+    });
+    
+    // Função para controlar a barra lateral
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.querySelector('.sidebar');
+        const toggleBtn = document.getElementById('sidebarToggle');
+        const mainContent = document.querySelector('.main-content');
+        
+        // Verificar se há uma preferência salva no localStorage
+        const sidebarState = localStorage.getItem('sidebarState');
+        if (sidebarState === 'collapsed') {
+            sidebar.classList.add('collapsed');
+            mainContent.classList.add('expanded');
+        }
+        
+        // Adicionar evento de clique ao botão de toggle
+        toggleBtn.addEventListener('click', function() {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+            
+            // Salvar o estado atual no localStorage
+            if (sidebar.classList.contains('collapsed')) {
+                localStorage.setItem('sidebarState', 'collapsed');
+            } else {
+                localStorage.setItem('sidebarState', 'expanded');
+            }
+        });
     });
     </script>
 </body>
