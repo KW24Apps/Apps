@@ -1,5 +1,9 @@
 <?php
+namespace Controllers;
+
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
+
+use Helpers\BitrixHelper;
 
 class TaskController
 {

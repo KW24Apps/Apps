@@ -1,5 +1,10 @@
 <?php
+namespace Controllers;
+
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
+
+use Helpers\BitrixHelper;
+use DateTime;
 
 class LoopController
 {

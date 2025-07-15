@@ -4,6 +4,9 @@ namespace routers;
 require_once __DIR__ . '/../controllers/TaskController.php';
 require_once __DIR__ . '/../controllers/LoopController.php';
 
+use Controllers\TaskController;
+use Controllers\LoopController;
+
 $rota = $_GET['rota'] ?? '';
 
 if ($rota === 'task/criar') {
