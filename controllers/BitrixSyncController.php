@@ -54,7 +54,7 @@ class BitrixSyncController
             // define webhook padrão
             $webhookPadrao = 'https://gnapp.bitrix24.com.br/rest/21/yzwc932754bgujc3'; // ajuste se necessário
 
-            $resultadoEmpresas = BitrixCompanyHelper::consultarEmpresas(['bitrix' => [$companyId]], $webhookPadrao, $camposEmpresa);
+            $resultadoEmpresas = BitrixCompanyHelper::consultarEmpresas(['bitrix' => [$companyId]],$camposEmpresa);
 
 
             $company = $resultadoEmpresas['bitrix'][0] ?? null;
@@ -115,7 +115,6 @@ class BitrixSyncController
 
                 $resultadoContatos = BitrixContactHelper::consultarContatos(    
                     ['bitrix' => $idsContatos],
-                    $webhookPadrao,
                     $camposContato
 );
                 foreach ($resultadoContatos['bitrix'] as $contato) {

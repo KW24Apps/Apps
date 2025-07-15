@@ -1,28 +1,25 @@
 <?php
-
-require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
-
+require_once __DIR__ . '/../helpers/LogHelper.php';
 
 use dao\AplicacaoAcessoDAO;
 
 class DealController
-{
+    {
     public function criar()
     {
-        $dados = $_GET;
-        $cliente = $dados['cliente'] ?? null;
-        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'deal');
-        $webhook = $acesso['webhook_bitrix'] ?? null;
-        if (!$webhook) {
-            http_response_code(403);
-            echo json_encode(['erro' => 'Acesso negado para criar negociação.']);
-            return;
-        }
+        $params = $_GET;
 
-        $dados['webhook'] = $webhook;
-        $resultado = BitrixDealHelper::criarNegocio($dados);
+        $spa = $params['spa'] ?? null;
+        $categoryId = $params['CATEGORY_ID'] ?? null;
+
+        // Filtra todos os campos UF_CRM_* dinamicamente
+        $fields = array_filter($params, function ($key) {
+            return strpos($key, 'UF_CRM_') === 0;
+        }, ARRAY_FILTER_USE_KEY);
+
+        $resultado = BitrixDealHelper::criarDeal($spa, $categoryId, $fields);
 
         header('Content-Type: application/json');
         echo json_encode($resultado);
@@ -31,20 +28,11 @@ class DealController
     public function consultar()
     {
         $params = $_GET;
-        $cliente = $params['cliente'] ?? null;
         $entityId = $params['spa'] ?? $params['entityId'] ?? null;
-        $id = $params['deal'] ?? $params['id'] ?? null;
+        $dealId = $params['deal'] ?? $params['id'] ?? null;
         $fields = $params['campos'] ?? $params['fields'] ?? null;
 
-        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'deal');
-        $webhook = $acesso['webhook_bitrix'] ?? null;
-        if (!$webhook) {
-            http_response_code(403);
-            echo json_encode(['erro' => 'Acesso negado para consultar negociação.']);
-            return;
-        }
-
-        $resultado = BitrixDealHelper::consultarDeal($entityId, $id, $fields, $webhook);
+        $resultado = BitrixDealHelper::consultarDeal($entityId, $dealId, $fields);
 
         header('Content-Type: application/json');
         echo json_encode($resultado);
@@ -52,21 +40,16 @@ class DealController
 
     public function editar()
     {
-        $dados = $_GET;
-        $cliente = $dados['cliente'] ?? null;
-        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'deal');
-        $webhook = $acesso['webhook_bitrix'] ?? null;
-        
-        if (!$webhook) {
-            http_response_code(403);
-            echo json_encode(['erro' => 'Acesso negado para editar negociação.']);
-            return;
-        }
+        $params = $_GET;
+        $entityId = $params['spa'] ?? $params['entityId'] ?? null;
+        $dealId = $params['deal'] ?? $params['id'] ?? null;
 
-        $dados['webhook'] = $webhook;
-        $resultado = BitrixDealHelper::editarNegociacao($dados);
+        // Remove os campos fixos antes de repassar para os fields
+        unset($params['cliente'], $params['spa'], $params['entityId'], $params['deal'], $params['id']);
+
+        $resultado = BitrixDealHelper::editarDeal($entityId, $dealId, $params);
 
         header('Content-Type: application/json');
         echo json_encode($resultado);
     }
-}
+    }

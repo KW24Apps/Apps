@@ -8,6 +8,8 @@ require_once __DIR__ . '/../helpers/LogHelper.php';
 
 class AplicacaoAcessoDAO
 {
+    
+    // Método para obter o acesso de uma aplicação com base na chave de acesso e no slug da aplicação
     public static function obterWebhookPermitido($chaveAcesso, $slugAplicacao)
     {
         $config = require __DIR__ . '/../config/config.php';
@@ -21,17 +23,13 @@ class AplicacaoAcessoDAO
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             $sql = "
-                SELECT
-                    ca.webhook_bitrix,
-                    ca.clicksign_token,
-                    ca.clicksign_secret,
-                    ca.cliente_id
+                SELECT ca.*, c.nome as cliente_nome
                 FROM clientes c
                 JOIN cliente_aplicacoes ca ON ca.cliente_id = c.id
                 JOIN aplicacoes a ON ca.aplicacao_id = a.id
                 WHERE c.chave_acesso = :chave
-                  AND a.slug = :slug
-                  AND ca.ativo = 1
+                AND a.slug = :slug
+                AND ca.ativo = 1
                 LIMIT 1
             ";
 
@@ -41,19 +39,18 @@ class AplicacaoAcessoDAO
             $stmt->execute();
             $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            $log = [
-                'dataHora' => date('Y-m-d H:i:s'),
-                'chaveAcesso' => $chaveAcesso,
-                'slugAplicacao' => $slugAplicacao,
-                'sql' => trim($sql),
-                'resultado' => $resultado
-            ];
-            file_put_contents(__DIR__ . '/../logs/aplicacao_acesso_debug.log', json_encode($log, JSON_UNESCAPED_UNICODE) . PHP_EOL, FILE_APPEND);
+            // Salva o resultado global para acesso futuro (boa prática para facilitar no controller/helper)
+            if ($resultado) {
+                $GLOBALS['ACESSO_AUTENTICADO'] = $resultado;
+            }
 
+            // Log apenas informações mínimas e seguras
+            $nomeCliente = $resultado['cliente_nome'] ?? 'desconhecido';
+            LogHelper::logAcessoAplicacao(['mensagem' => 'Acesso liberado', 'cliente' => $nomeCliente, 'slug' => $slugAplicacao, 'status' => $resultado ? 'ok' : 'falha']);
 
             return $resultado ?: null;
         } catch (PDOException $e) {
-            file_put_contents(__DIR__ . '/../logs/aplicacao_acesso_debug.log', 'Erro DB: ' . $e->getMessage() . PHP_EOL, FILE_APPEND);
+            LogHelper::logAcessoAplicacao(['mensagem' => 'Erro DB', 'erro' => $e->getMessage()]);
             return null;
         }
     }

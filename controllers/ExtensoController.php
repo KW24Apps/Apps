@@ -1,65 +1,46 @@
 <?php
-
-require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../helpers/FormataHelper.php';
-require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
-
-use dao\AplicacaoAcessoDAO;
 
 class ExtensoController
 {
-    public function executar($params)
+    public function executar()
     {
-        $cliente = $params['cliente'] ?? null;
-        $spa = $params['spa'] ?? null;
-        $dealId = $params['deal'] ?? null;
+        header('Content-Type: application/json');
+        $params = $_GET;
 
-        $camposBitrix = array_filter($params, fn($v) => strpos($v, 'UF_CRM_') === 0);
-        $camposSelecionados = array_values($camposBitrix);
+        $entityId = $params['spa'] ?? $params['entityId'] ?? null;
+        $dealId = $params['deal'] ?? $params['id'] ?? null;
+        $campoValor = $params['valor'] ?? null;
+        $campoRetorno = $params['retorno'] ?? null;
 
-        $campoValor = $camposSelecionados[0] ?? null;
-        $campoRetorno = $camposSelecionados[1] ?? null;
-
-        if (!$cliente || !$spa || !$dealId || !$campoValor || !$campoRetorno) {
-            http_response_code(400);
-            echo json_encode(['erro' => 'Parâmetros obrigatórios ausentes ou inválidos.']);
-            return;
+        // Validação padronizada
+        $parametrosObrigatorios = ['spa', 'deal', 'valor', 'retorno'];
+        foreach ($parametrosObrigatorios as $param) {
+            if (empty($params[$param])) {
+                http_response_code(400);
+                echo json_encode(['erro' => "Parâmetro obrigatório ausente: $param"]);
+                return;
+            }
         }
 
-        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'extenso');
-        $webhook = $acesso['webhook_bitrix'] ?? null;
+        $resultado = BitrixDealHelper::consultarDeal($entityId, $dealId, $campoValor);
+        $item = $resultado['result']['item'] ?? null;
 
+        // Padroniza acesso ao campo
+        $campoBitrix = BitrixHelper::formatarCampos([$campoValor => null]);
+        $campoBitrixKey = array_key_first($campoBitrix);
 
-        if (!$webhook) {
-            http_response_code(403);
-            echo json_encode(['erro' => 'Acesso negado para executar operação de extenso.']);
-            return;
-        }
-
-        $dados = BitrixDealHelper::consultarNegociacao([
-            'webhook' => $webhook,
-            'spa' => $spa,
-            'deal' => $dealId,
-            'campos' => implode(',', $camposSelecionados)
-        ]);
-
-        $item = $dados['result']['item'] ?? null;
-        if (!$item || !isset($item['ufCrm' . substr($campoValor, 7)])) {
+        if (!$item || !isset($item[$campoBitrixKey])) {
             http_response_code(404);
             echo json_encode(['erro' => 'Valor não encontrado no negócio.']);
             return;
         }
 
-        $valor = FormataHelper::normalizarValor($item['ufCrm' . substr($campoValor, 7)]);
+        $valor = FormataHelper::normalizarValor($item[$campoBitrixKey]);
         $extenso = FormataHelper::valorPorExtenso($valor);
 
-        BitrixDealHelper::editarNegociacao([
-            'webhook' => $webhook,
-            'spa' => $spa,
-            'deal' => $dealId,
-            $campoRetorno => $extenso
-        ]);
+        BitrixDealHelper::editarDeal($entityId, $dealId, [$campoRetorno => $extenso]);
 
         echo json_encode(['extenso' => $extenso]);
     }

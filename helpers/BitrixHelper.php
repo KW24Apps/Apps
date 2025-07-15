@@ -1,5 +1,5 @@
 <?php
-
+require_once __DIR__ . '/../helpers/LogHelper.php';
 class BitrixHelper
 
 
@@ -8,12 +8,12 @@ class BitrixHelper
     public static function chamarApi($endpoint, $params, $opcoes = [])
     {
 
-        $webhookBase = $opcoes['webhook'] ?? '';
+        $webhookBase = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? '';
         if (!$webhookBase) {
+            LogHelper::logBitrixHelpers("Webhook não informado para chamada do endpoint: $endpoint");
             return ['error' => 'Webhook não informado'];
         }
 
-        $logAtivo = $opcoes['log'] ?? false;
         $url = $webhookBase . '/' . $endpoint . '.json';
         $postData = http_build_query($params);
 
@@ -30,16 +30,16 @@ class BitrixHelper
         curl_close($ch);
 
         $respostaJson = json_decode($resposta, true);
-        LogHelper::logDocumentoAssinado("Resposta da chamada API Bitrix | endpoint=$endpoint | httpCode=$httpCode | erro=$curlErro | resposta=" . json_encode($respostaJson), 'chamarApi');
-
- 
-        if ($logAtivo) {
-            $mensagem = "==== CHAMADA API ====\n";
-            $mensagem .= "Endpoint: $endpoint\nURL: $url\nDados: $postData\nHTTP: $httpCode\nErro: $curlErro\nResposta: $resposta\n";
-            $mensagem .= "Campos enviados (params): " . print_r($params, true) . "\n";
-            LogHelper::logBitrixHelpers($mensagem, "BitrixHelper::chamarApi");
+         
+        $traceId = defined('TRACE_ID') ? TRACE_ID : 'sem_trace';
+        $resumo = "[$traceId] Endpoint: $endpoint | HTTP: $httpCode | Erro: $curlErro";
+        
+        if (!empty($respostaJson['error_description'])) {
+            $resumo .= " | Descrição: " . $respostaJson['error_description'];
         }
-        LogHelper::logClickSign("Resposta Bitrix API | método: $endpoint | response: " . json_encode($resposta ?? null), 'BitrixHelper');
+
+        LogHelper::logBitrixHelpers($resumo, "BitrixHelper::chamarApi");
+
         return $respostaJson;
     }
     
@@ -62,6 +62,5 @@ class BitrixHelper
 
         return $fields;
     }
-
 
 }

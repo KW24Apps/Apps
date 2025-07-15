@@ -1,10 +1,11 @@
 <?php
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
+require_once __DIR__ . '/../helpers/LogHelper.php';
 class BitrixCompanyHelper
 
 {
     // Consulta múltiplas empresas organizadas por campo de origem
-    public static function consultarEmpresas(array $campos, string $webhook, array $camposDesejados = [])
+    public static function consultarEmpresas(array $campos, array $camposDesejados = [])
     {
         $resultado = [];
 
@@ -14,7 +15,6 @@ class BitrixCompanyHelper
             foreach ((array)$ids as $id) {
                 $resposta = self::consultarEmpresa([
                     'empresa' => $id,
-                    'webhook' => $webhook,
                     'campos' => $camposDesejados
                 ]);
 
@@ -35,9 +35,8 @@ class BitrixCompanyHelper
     public static function consultarEmpresa($dados)
     {
         $empresaId = $dados['empresa'] ?? null;
-        $webhook = $dados['webhook'] ?? null;
 
-        if (!$empresaId || !$webhook) {
+        if (!$empresaId) {
             file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', "[consultarEmpresa] Parâmetros ausentes. Dados: " . json_encode($dados) . PHP_EOL, FILE_APPEND);
             return ['erro' => 'Parâmetros obrigatórios não informados.'];
         }
@@ -45,7 +44,6 @@ class BitrixCompanyHelper
         $params = ['ID' => $empresaId];
 
         $resultado = BitrixHelper::chamarApi('crm.company.get', $params, [
-            'webhook' => $webhook,
             'log' => true
         ]);
 
@@ -65,12 +63,9 @@ class BitrixCompanyHelper
         return $empresa;
     }
 
+    // Cria uma nova empresa no Bitrix24 via API
     public static function criarEmpresa($dados)
     {
-        $webhook = $dados['webhook'] ?? null;
-        if (!$webhook) {
-            return ['erro' => 'Webhook não informado.'];
-        }
 
         unset($dados['webhook'], $dados['cliente']);
 
@@ -78,17 +73,13 @@ class BitrixCompanyHelper
             'fields' => $dados
         ];
 
-        return BitrixHelper::chamarApi($webhook, 'crm.company.add', $payload);
+        return BitrixHelper::chamarApi('crm.company.add', $payload);
     }
 
+    // Edita uma empresa existente no Bitrix24 via API
     public static function editarCamposEmpresa($dados)
     {
-        $webhook = $dados['webhook'] ?? null;
         $id = $dados['id'] ?? null;
-
-        if (!$webhook || !$id) {
-            return ['erro' => 'Webhook ou ID não informado.'];
-        }
 
         unset($dados['webhook'], $dados['cliente'], $dados['id']);
 
@@ -108,10 +99,8 @@ class BitrixCompanyHelper
             'fields' => $fields
         ];
 
-        return BitrixHelper::chamarApi('crm.company.update', $payload, ['webhook' => $webhook]);
+        return BitrixHelper::chamarApi('crm.company.update', $payload);
 
     }
-
-    
 
 }

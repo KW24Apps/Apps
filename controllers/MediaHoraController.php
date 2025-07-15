@@ -1,7 +1,5 @@
 <?php
 
-require_once __DIR__ . '/../helpers/BitrixHelper.php';
-require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
 
 use dao\AplicacaoAcessoDAO;
@@ -10,35 +8,24 @@ class MediaHoraController {
     public function executar() {
         header('Content-Type: application/json');
 
-        $dados = $_GET;
-        $cliente = $dados['cliente'] ?? null;
-        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'mediahora');
-        $webhook = $acesso['webhook_bitrix'] ?? null;
-
-        if (!$webhook) {
-            http_response_code(403);
-            echo json_encode(['erro' => 'Acesso negado a Aplicação de Mídia Hora.']);
-            return;
-        }
+        $params = $_GET;
+        $entityId = $params['spa'] ?? $params['entityId'] ?? null;
+        $dealId = $params['deal'] ?? $params['id'] ?? null;
+        $dataInicio = $params['inicio'];
+        $dataFim = $params['fim'];
+        $campoRetorno = $params['retorno'];
+        $hruteis = $params['hruteis'] ?? '08-18(11:30-13:30)';         // Padrão de horas úteis, pode ser personalizado
+        $fields =  $params['retorno'] ?? null;
 
         // Validação de parâmetros obrigatórios
         $parametrosObrigatorios = ['spa', 'deal', 'inicio', 'fim', 'retorno'];
         foreach ($parametrosObrigatorios as $param) {
-            if (empty($dados[$param])) {
+            if (empty($params[$param])) {
                 http_response_code(400);
                 echo json_encode(['erro' => "Parâmetro obrigatório ausente: $param"]);
                 return;
             }
         }
-
-        $spa = intval($dados['spa']);
-        $dealId = intval($dados['deal']);
-        $campoRetorno = $dados['retorno'];
-        $dataInicio = $dados['inicio'];
-        $dataFim = $dados['fim'];
-        // Padrão de horas úteis, pode ser personalizado
-        // Exemplo: '08-18(11:30-13:30)' significa
-        $hruteis = $dados['hruteis'] ?? '08-18(11:30-13:30)';
 
         // Conversão das datas para objeto DateTime
         $formatos = ['d/m/Y H:i:s', 'Y-m-d H:i:s'];
@@ -52,13 +39,14 @@ class MediaHoraController {
         }
 
         // Cálculo de horas úteis
+        
         $horasUteis = $this->calcularHorasUteis($inicio, $fim, $hruteis);
 
         // Preparar os dados para o BitrixDealHelper seguindo o mesmo padrão do DealController
-        $dados['webhook'] = $webhook;
-        $dados[$campoRetorno] = $horasUteis;
+        $params[$campoRetorno] = $horasUteis;
 
-        $resultado = BitrixDealHelper::editarNegociacao($dados);
+        $fields = [$campoRetorno => $horasUteis];
+        $resultado = BitrixDealHelper::editarDeal($entityId, $dealId, $fields);
 
         echo json_encode([
             'success' => true,

@@ -1,5 +1,11 @@
 <?php
 require_once __DIR__ . '/helpers/LogHelper.php';
+require_once __DIR__ . '/dao/AplicacaoAcessoDAO.php';
+
+use dao\AplicacaoAcessoDAO;
+
+// Gera o TRACE_ID uma única vez
+LogHelper::gerarTraceId(); // Gera o TRACE_ID uma única vez
 
 // Log de erros via função
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
@@ -15,6 +21,28 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // Log de entrada global
 LogHelper::registrarEntradaGlobal($uri, $method);
+
+
+// --- Autenticação global: busca e valida cliente ---
+if (strpos($uri, 'deal') === 0) {
+    $slugAplicacao = 'deal';
+} elseif (strpos($uri, 'extenso') === 0) {
+    $slugAplicacao = 'extenso';
+} elseif (strpos($uri, 'clicksign') === 0) {
+    $slugAplicacao = 'clicksign';    
+} elseif (strpos($uri, 'company') === 0) {
+    $slugAplicacao = 'company';
+} elseif (strpos($uri, 'mediahora') === 0) {
+    $slugAplicacao = 'mediahora';  
+} else {
+    $slugAplicacao = null;
+}
+
+$cliente = $_GET['cliente'] ?? null;
+if ($cliente && $slugAplicacao) {
+    AplicacaoAcessoDAO::obterWebhookPermitido($cliente,$slugAplicacao);
+}
+// --- Fim da autenticação global ---
 
 // Direcionamento com base no prefixo
 if (strpos($uri, 'deal') === 0) {

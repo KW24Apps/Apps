@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../helpers/BitrixHelper.php';
+require_once __DIR__ . '/../helpers/LogHelper.php';
 
 class BitrixDiskHelper
 {
