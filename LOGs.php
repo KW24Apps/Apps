@@ -489,24 +489,27 @@ function formatLogTableRow($entry) {
         }
         
         .toggle-btn {
-            position: absolute;
+            position: fixed;
             top: 15px;
-            right: -20px;
-            width: 40px;
-            height: 40px;
+            left: 200px;
+            width: 36px;
+            height: 36px;
             background-color: var(--primary);
             color: white;
             border-radius: 50%;
-            border: none;
+            border: 2px solid white;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            z-index: 100;
-            transition: transform 0.3s ease;
-            font-size: 16px;
-            border: 2px solid white;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            font-size: 18px;
+        }
+        
+        .sidebar.collapsed .toggle-btn {
+            left: 40px;
         }
         
         .sidebar.collapsed .toggle-btn i {
@@ -518,15 +521,16 @@ function formatLogTableRow($entry) {
         }
         
         .logo-container {
-            padding: 20px;
+            padding: 15px 10px;
             text-align: center;
             background: rgba(0,0,0,0.2);
             overflow: hidden;
             transition: height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
+            margin-bottom: 10px;
         }
         
         .logo-container img {
-            max-width: 160px;
+            max-width: 140px;
             height: auto;
             transition: max-width 0.3s ease, opacity 0.3s ease;
         }
@@ -545,6 +549,13 @@ function formatLogTableRow($entry) {
         .sidebar-menu {
             padding: 20px 0;
             flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar.collapsed .sidebar-menu {
+            align-items: center;
+            padding: 20px 0;
         }
         
         .toggle-menu {
@@ -614,15 +625,16 @@ function formatLogTableRow($entry) {
         }
         
         .sidebar.collapsed .logout-btn {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 0;
             margin: 10px auto;
-            font-size: 16px;
+            font-size: 18px;
             border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.15);
         }
         
         .logout-btn span {
@@ -633,10 +645,16 @@ function formatLogTableRow($entry) {
             display: none;
         }
         
-        .sidebar.collapsed .logout-btn::before {
-            content: "\\f2f5";
-            font-family: "Font Awesome 6 Free";
-            font-weight: 900;
+        .d-none {
+            display: none;
+        }
+        
+        .sidebar.collapsed .d-none.d-sidebar-collapsed-block {
+            display: block;
+        }
+        
+        .sidebar.collapsed .logout-btn i {
+            display: inline-block;
         }
         
         .logout-btn:hover {
@@ -654,6 +672,13 @@ function formatLogTableRow($entry) {
             overflow: hidden;
             white-space: nowrap;
             position: relative;
+            width: 100%;
+        }
+        
+        .sidebar.collapsed .sidebar-menu a {
+            justify-content: center;
+            padding: 15px 5px;
+            border-left: none;
         }
         
         .sidebar-menu a:hover, .sidebar-menu a.active {
@@ -665,6 +690,12 @@ function formatLogTableRow($entry) {
             border-left: 4px solid var(--accent);
             font-weight: 500;
             padding-left: 16px;
+        }
+        
+        .sidebar.collapsed .sidebar-menu a.active {
+            border-left: none;
+            border-right: 4px solid var(--accent);
+            padding-left: 5px;
         }
         
         .sidebar-menu a i {
@@ -692,15 +723,17 @@ function formatLogTableRow($entry) {
         .menu-tooltip {
             position: absolute;
             left: 70px;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.9);
             color: white;
-            padding: 5px 10px;
+            padding: 6px 12px;
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 13px;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.2s;
             white-space: nowrap;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            z-index: 1000;
         }
         
         .sidebar.collapsed .sidebar-menu a:hover .menu-tooltip {
@@ -733,10 +766,12 @@ function formatLogTableRow($entry) {
             margin-left: 220px;
             transition: margin-left 0.3s ease;
             padding: 0;
+            width: calc(100% - 220px);
         }
         
         .main-content.expanded {
             margin-left: 60px;
+            width: calc(100% - 60px);
         }
         
         .top-bar {
@@ -1017,6 +1052,10 @@ function formatLogTableRow($entry) {
                 align-items: center;
                 height: auto;
                 min-height: 60px;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
             }
             
             .sidebar.collapsed {
@@ -1078,6 +1117,8 @@ function formatLogTableRow($entry) {
             
             .main-content {
                 margin-left: 0 !important;
+                width: 100% !important;
+                margin-top: 60px; /* Espaço para o menu fixo no topo */
                 /* Ignora a margem no mobile */
             }
             
@@ -1108,27 +1149,29 @@ function formatLogTableRow($entry) {
     <!-- Menu Lateral -->
     <div class="sidebar">
         <button id="sidebarToggle" class="toggle-btn" title="Expandir/Recolher Menu">
-            <i class="fas fa-chevron-left"></i>
+            <i class="fas fa-angle-left"></i>
         </button>
         <div class="logo-container">
-            <img src="https://gabriel.kw24.com.br/6_LOGO%20KW24.png" alt="KW24 Logo">
+            <img src="https://gabriel.kw24.com.br/02_KW24_HORIZONTAL_NEGATIVO.png" alt="KW24 Logo">
         </div>
         <div class="sidebar-content">
-            <div class="sidebar-menu">
-                <a href="?mode=filter" class="<?= (!$downloadMode) ? 'active' : '' ?>">
-                    <i class="fas fa-filter"></i> <span>Filtro</span>
-                    <div class="menu-tooltip">Filtro</div>
-                </a>
-                <a href="?mode=download" class="<?= ($downloadMode) ? 'active' : '' ?>">
-                    <i class="fas fa-download"></i> <span>Download</span>
-                    <div class="menu-tooltip">Download</div>
-                </a>
+            <div class="sidebar-menu">            <a href="?mode=filter" class="<?= (!$downloadMode) ? 'active' : '' ?>" title="Filtro">
+                <i class="fas fa-filter"></i> <span>Filtro</span>
+                <div class="menu-tooltip">Filtro</div>
+            </a>
+            <a href="?mode=download" class="<?= ($downloadMode) ? 'active' : '' ?>" title="Download">
+                <i class="fas fa-download"></i> <span>Download</span>
+                <div class="menu-tooltip">Download</div>
+            </a>
             </div>
         </div>
         <div class="user-panel">
             <div class="user-info"><?= htmlspecialchars($_SESSION['logviewer_user'] ?? 'Usuário') ?></div>
             <form method="post" action="?logout=1">
-                <button type="submit" class="logout-btn"><span>Sair</span></button>
+                <button type="submit" class="logout-btn" title="Sair">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Sair</span>
+                </button>
             </form>
         </div>
     </div>
@@ -1259,9 +1302,11 @@ function formatLogTableRow($entry) {
             if (state === 'collapsed') {
                 sidebar.classList.add('collapsed');
                 mainContent.classList.add('expanded');
+                document.body.classList.add('sidebar-collapsed');
             } else {
                 sidebar.classList.remove('collapsed');
                 mainContent.classList.remove('expanded');
+                document.body.classList.remove('sidebar-collapsed');
             }
         }
         
@@ -1272,9 +1317,13 @@ function formatLogTableRow($entry) {
         }
         
         // Adicionar evento de clique ao botão de toggle
-        toggleBtn.addEventListener('click', function() {
+        toggleBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
             sidebar.classList.toggle('collapsed');
             mainContent.classList.toggle('expanded');
+            document.body.classList.toggle('sidebar-collapsed');
             
             // Salvar o estado atual no localStorage
             if (sidebar.classList.contains('collapsed')) {
