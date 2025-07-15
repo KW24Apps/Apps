@@ -1,0 +1,2 @@
+[2025-07-15 02:55:51] [20250715_025551_a54a] - [Erro] [[2] require_once(X:\VSCode\apis.kw24.com.br\Apps\controllers/dao/AplicacaoAcessoDAO.php): Failed to open stream: No such file or directory em X:\VSCode\apis.kw24.com.br\Apps\controllers\ClickSignController.php na linha 6]  em  na linha 
+[2025-07-15 02:55:51] [20250715_025551_a54a] - [Erro] [Exceção não capturada: Failed opening required 'X:\VSCode\apis.kw24.com.br\Apps\controllers/dao/AplicacaoAcessoDAO.php' (include_path='.;C:\php\pear')]  em  na linha 
