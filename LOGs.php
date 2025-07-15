@@ -183,7 +183,7 @@ if (!isset($_SESSION['logviewer_auth']) || $_SESSION['logviewer_auth'] !== true)
             }
         </style>
     </head>
-    <body>
+    <body class="<?= $sidebarState === 'collapsed' ? 'sidebar-collapsed' : '' ?>">
         <?php if ($loginError): ?>
         <div class="alert">
             <i class="fas fa-exclamation-circle"></i> Usuário ou senha inválidos
@@ -350,6 +350,9 @@ sort($uniqueTraces);
 
 // Verifica se estamos no modo de download
 $downloadMode = isset($_GET['mode']) && $_GET['mode'] === 'download';
+
+// Verifica se há um estado da sidebar na URL
+$sidebarState = $_GET['sidebar'] ?? '';
 
 // Para debugging, conta quantos arquivos foram processados
 $fileCount = count($logFiles);
@@ -555,7 +558,7 @@ function formatLogTableRow($entry) {
         
         .sidebar.collapsed .sidebar-menu {
             align-items: center;
-            padding: 20px 0;
+            padding: 60px 0 20px 0; /* Aumentado o padding-top para descer os itens de menu */
         }
         
         .toggle-menu {
@@ -1145,9 +1148,9 @@ function formatLogTableRow($entry) {
     <!-- Font Awesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
+<body class="<?= $sidebarState === 'collapsed' ? 'sidebar-collapsed' : '' ?>">
     <!-- Menu Lateral -->
-    <div class="sidebar">
+    <div class="sidebar <?= $sidebarState === 'collapsed' ? 'collapsed' : '' ?>">
         <button id="sidebarToggle" class="toggle-btn" title="Expandir/Recolher Menu">
             <i class="fas fa-angle-left"></i>
         </button>
@@ -1155,11 +1158,11 @@ function formatLogTableRow($entry) {
             <img src="https://gabriel.kw24.com.br/02_KW24_HORIZONTAL_NEGATIVO.png" alt="KW24 Logo">
         </div>
         <div class="sidebar-content">
-            <div class="sidebar-menu">            <a href="?mode=filter" class="<?= (!$downloadMode) ? 'active' : '' ?>" title="Filtro">
+            <div class="sidebar-menu">            <a href="#" data-mode="filter" class="sidebar-link <?= (!$downloadMode) ? 'active' : '' ?>" title="Filtro">
                 <i class="fas fa-filter"></i> <span>Filtro</span>
                 <div class="menu-tooltip">Filtro</div>
             </a>
-            <a href="?mode=download" class="<?= ($downloadMode) ? 'active' : '' ?>" title="Download">
+            <a href="#" data-mode="download" class="sidebar-link <?= ($downloadMode) ? 'active' : '' ?>" title="Download">
                 <i class="fas fa-download"></i> <span>Download</span>
                 <div class="menu-tooltip">Download</div>
             </a>
@@ -1177,7 +1180,7 @@ function formatLogTableRow($entry) {
     </div>
     
     <!-- Conteúdo Principal -->
-    <div class="main-content">
+    <div class="main-content <?= $sidebarState === 'collapsed' ? 'expanded' : '' ?>">
         <div class="top-bar">
             <h1 class="page-title">Log Viewer</h1>
         </div>
@@ -1281,14 +1284,39 @@ function formatLogTableRow($entry) {
     
     <script>
     // Script para atualizar a página automaticamente quando mudam os filtros
-    document.getElementById('date').addEventListener('change', function() {
+    document.getElementById('date')?.addEventListener('change', function() {
         const trace = document.getElementById('trace').value;
-        window.location.href = `?mode=filter&date=${this.value}${trace ? '&trace=' + trace : ''}`;
+        const sidebarState = localStorage.getItem('sidebarState') || '';
+        window.location.href = `?mode=filter&date=${this.value}${trace ? '&trace=' + trace : ''}${sidebarState ? '&sidebar=' + sidebarState : ''}`;
     });
     
-    document.getElementById('trace').addEventListener('change', function() {
+    document.getElementById('trace')?.addEventListener('change', function() {
         const date = document.getElementById('date').value;
-        window.location.href = `?mode=filter&trace=${this.value}${date ? '&date=' + date : ''}`;
+        const sidebarState = localStorage.getItem('sidebarState') || '';
+        window.location.href = `?mode=filter&trace=${this.value}${date ? '&date=' + date : ''}${sidebarState ? '&sidebar=' + sidebarState : ''}`;
+    });
+    
+    // Manipular cliques nos links da barra lateral
+    document.querySelectorAll('.sidebar-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const mode = this.getAttribute('data-mode');
+            const sidebarState = localStorage.getItem('sidebarState') || '';
+            
+            // Construir os parâmetros da URL dependendo do modo
+            let params = `mode=${mode}`;
+            
+            if (mode === 'filter') {
+                const date = document.getElementById('date')?.value || '';
+                const trace = document.getElementById('trace')?.value || '';
+                if (date) params += `&date=${date}`;
+                if (trace) params += `&trace=${trace}`;
+            }
+            
+            if (sidebarState) params += `&sidebar=${sidebarState}`;
+            
+            window.location.href = `?${params}`;
+        });
     });
     
     // Função para controlar a barra lateral
@@ -1310,10 +1338,17 @@ function formatLogTableRow($entry) {
             }
         }
         
-        // Verificar se há uma preferência salva no localStorage
-        const sidebarState = localStorage.getItem('sidebarState');
-        if (sidebarState) {
-            applySidebarState(sidebarState);
+        // Verificar se há uma preferência na URL ou no localStorage
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlSidebarState = urlParams.get('sidebar');
+        const localSidebarState = localStorage.getItem('sidebarState');
+        
+        // Priorizar o estado da URL, depois usar o localStorage
+        if (urlSidebarState) {
+            applySidebarState(urlSidebarState);
+            localStorage.setItem('sidebarState', urlSidebarState);
+        } else if (localSidebarState) {
+            applySidebarState(localSidebarState);
         }
         
         // Adicionar evento de clique ao botão de toggle
