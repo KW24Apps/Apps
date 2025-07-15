@@ -4,6 +4,7 @@ require_once __DIR__ . '/../helpers/BitrixContactHelper.php';
 require_once __DIR__ . '/../helpers/ClickSignHelper.php';
 require_once __DIR__ . '/../helpers/LogHelper.php';
 require_once __DIR__ . '/dao/AplicacaoAcessoDAO.php';
+require_once __DIR__ . '/../helpers/UtilHelpers.php';
 
 use dao\AplicacaoAcessoDAO;
 
@@ -18,7 +19,7 @@ class ClickSignController
 
         $fields = [];
         foreach ($params as $campo => $valor) {
-            if (!in_array($campo, ['cliente', 'spa', 'entityId', 'deal', 'id']) && $valor) {
+            if (!in_array($campo, ['spa', 'entityId', 'deal', 'id']) && $valor) {
                 $fields[$campo] = $valor;
             }
         }
@@ -142,7 +143,7 @@ class ClickSignController
         }
 
         $arquivoInfo = ['urlMachine' => $urlMachine];
-        $arquivoConvertido = BitrixDealHelper::baixarArquivoBase64($arquivoInfo);
+        $arquivoConvertido = UtilHelpers::baixarArquivoBase64($arquivoInfo);
 
         if (!$arquivoConvertido) {
             LogHelper::logClickSign("Erro ao converter o arquivo", 'controller');
@@ -513,7 +514,7 @@ class ClickSignController
                         'urlMachine' => $url,
                         'name' => $nomeArquivo
                     ];
-                    $arquivoBase64 = BitrixDealHelper::baixarArquivoBase64($arquivoInfo);
+                    $arquivoBase64 = UtilHelpers::baixarArquivoBase64($arquivoInfo);
 
                     if (!$arquivoBase64) {
                         LogHelper::logClickSign("Erro ao baixar/converter arquivo para anexo no negócio", 'documentoDisponivel');
