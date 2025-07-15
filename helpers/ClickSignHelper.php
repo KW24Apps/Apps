@@ -36,7 +36,6 @@ class ClickSignHelper
             LogHelper::logClickSign('[ClickSignHelper] - Erro cURL: ' . $curlError, 'ClickSignHelper');
         }
 
-        file_put_contents(__DIR__ . '/../logs/clicksign_debug.log', "[RESPOSTA] " . $resposta . PHP_EOL, FILE_APPEND);
         curl_close($ch);
 
         return json_decode($resposta, true);
@@ -83,7 +82,6 @@ class ClickSignHelper
             $curlError = curl_error($ch);
             LogHelper::logClickSign('[ClickSignHelper][criarSignatario] - Erro cURL: ' . $curlError, 'ClickSignHelper');
         }
-        file_put_contents(__DIR__ . '/../logs/clicksign_debug.log', "[RESPOSTA] " . $resposta . PHP_EOL, FILE_APPEND);
         curl_close($ch);
         return json_decode($resposta, true);
     }

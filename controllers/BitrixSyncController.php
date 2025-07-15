@@ -16,26 +16,22 @@ use Throwable;
 class BitrixSyncController
 {
     private $dao;
-    private $logFile;
 
     public function __construct()
     {
         $this->dao = new BitrixSincDAO();
-        $this->logFile = __DIR__ . '/../logs/bitrix_sync.log';
     }
 
     public function syncCompany()
     {
         try {
             if (!isset($_GET['company_id'])) {
-                $this->log('Erro: company_id não informado.');
                 http_response_code(400);
                 echo json_encode(['error' => 'company_id is required']);
                 return;
             }
 
             $companyId = $_GET['company_id'];
-            $this->log("Iniciando sincronização para company_id: $companyId");
                 $camposEmpresa = [
                     'ID',
                     'TITLE',
@@ -68,7 +64,6 @@ class BitrixSyncController
             $company = $resultadoEmpresas['bitrix'][0] ?? null;
             
             if (!$company) {
-                $this->log("Empresa ID $companyId não encontrada no Bitrix.");
                 http_response_code(404);
                 echo json_encode(['error' => 'Empresa não encontrada no Bitrix']);
                 return;
@@ -84,16 +79,13 @@ class BitrixSyncController
                 'endereco'       => $company['ADDRESS'] ?? null,
                 'link_bitrix'    => self::extrairLinkBitrix($company)
             ];
-            $this->log("Empresa extraída: " . json_encode($empresa));
 
             $empresaDb = $this->dao->buscarEmpresaPorIdBitrix($empresa['id_bitrix']);
             if ($empresaDb) {
                 $this->dao->atualizarEmpresa($empresa);
                 $empresa['id'] = $empresaDb['id'];
-                $this->log("Empresa atualizada no banco: ID local {$empresa['id']}");
             } else {
                 $empresa['id'] = $this->dao->inserirEmpresa($empresa);
-                $this->log("Empresa inserida no banco: ID local {$empresa['id']}");
             }
 
             $camposContatos = [
@@ -134,7 +126,6 @@ class BitrixSyncController
                         'email'     => $contato['EMAIL'][0]['VALUE'] ?? null
                     ];
                     $this->dao->sincronizarContato($empresa['id'], $dadosContato);
-                    $this->log("Contato sincronizado: " . json_encode($dadosContato));
                 }
             }
 
@@ -152,17 +143,14 @@ class BitrixSyncController
                     $ativo = in_array($valorCampo, ['1', 'y', 'yes', 'true']) ? 1 : 0;
                     $webhook = $company[$campos['webhook']] ?? null;
 
-                    $this->log("Aplicação ID $aplicacaoId | Valor bruto: {$valorCampoBruto} | Interpretado: {$valorCampo} | Ativo: {$ativo}");
                     $this->dao->sincronizarAplicacao($empresa['id'], $aplicacaoId, $ativo, $webhook);
                 }
 
 
-            $this->log("Sincronização concluída para company_id: $companyId");
             echo json_encode(['status' => 'sincronizacao concluida']);
 
         } catch (Throwable $e) {
             $erro = '[Erro syncCompany] ' . $e->getMessage() . ' - Linha: ' . $e->getLine() . PHP_EOL;
-            file_put_contents(__DIR__ . '/../logs/erros.log', $erro, FILE_APPEND);
             http_response_code(500);
             echo 'Erro interno: ' . $e->getMessage();
         }
@@ -171,11 +159,5 @@ class BitrixSyncController
     private static function extrairLinkBitrix($company)
     {
         return isset($company['ID']) ? "https://" . $_SERVER['HTTP_HOST'] : null;
-    }
-
-    private function log($mensagem)
-    {
-        $data = date('Y-m-d H:i:s');
-        file_put_contents($this->logFile, "[$data] $mensagem\n", FILE_APPEND);
     }
 }

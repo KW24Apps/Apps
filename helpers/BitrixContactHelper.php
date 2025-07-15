@@ -21,10 +21,6 @@ class BitrixContactHelper
                     'campos' => $camposDesejados
                 ]);
 
-
-                $log = "[consultarContatos] Origem: $origem | ID: $id | Resultado: " . json_encode($resposta) . PHP_EOL;
-                file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', $log, FILE_APPEND);
-
                 if (!isset($resposta['erro'])) {
                     $resultado[$origem][] = $resposta;
                 }
@@ -40,7 +36,6 @@ class BitrixContactHelper
         $contatoId = $dados['contato'] ?? null;
 
         if (!$contatoId) {
-            file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', "[consultarContato] Parâmetros ausentes. Dados: " . json_encode($dados) . PHP_EOL, FILE_APPEND);
             return ['erro' => 'Parâmetros obrigatórios não informados.'];
         }
  

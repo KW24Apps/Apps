@@ -21,10 +21,6 @@ class BitrixCompanyHelper
                     'campos' => $camposDesejados
                 ]);
 
-
-                $log = "[consultarEmpresas] Origem: $origem | ID: $id | Resultado: " . json_encode($resposta) . PHP_EOL;
-                file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', $log, FILE_APPEND);
-
                 if (!isset($resposta['erro'])) {
                     $resultado[$origem][] = $resposta;
                 }
@@ -40,7 +36,6 @@ class BitrixCompanyHelper
         $empresaId = $dados['empresa'] ?? null;
 
         if (!$empresaId) {
-            file_put_contents(__DIR__ . '/../logs/bitrix_sync.log', "[consultarEmpresa] Parâmetros ausentes. Dados: " . json_encode($dados) . PHP_EOL, FILE_APPEND);
             return ['erro' => 'Parâmetros obrigatórios não informados.'];
         }
 
