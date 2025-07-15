@@ -2,7 +2,7 @@
 namespace Controllers;
 
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
-require_once __DIR__ . '/../helpers/utils.php';
+require_once __DIR__ . '/../helpers/UtilHelpers.php';
 
 use Helpers\BitrixDealHelper;
 use Helpers\UtilHelpers;
