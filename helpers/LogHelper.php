@@ -8,7 +8,7 @@ class LogHelper
     public static function gerarTraceId(): void
     {
         if (!defined('TRACE_ID')) {
-            $traceId = date('Ymd_His') . '_' . substr(bin2hex(random_bytes(2)), 0, 4);
+            $traceId = bin2hex(random_bytes(4));
             define('TRACE_ID', $traceId);
         }
     }
@@ -17,6 +17,8 @@ class LogHelper
     public static function registrarEntradaGlobal(string $uri, string $method): void
     {
         $evento = null;
+        $aplicacao = defined('NOME_APLICACAO') ? NOME_APLICACAO : 'desconhecida';
+        $contexto = 'Index::EntradaGlobal';
 
         if ($uri === 'clicksignretorno' && $method === 'POST') {
             $body = file_get_contents('php://input');
@@ -27,7 +29,7 @@ class LogHelper
         $arquivoLog = __DIR__ . '/../logs/entradas.log';
         $timestamp = date('Y-m-d H:i:s');
         $traceId = defined('TRACE_ID') ? TRACE_ID : 'sem_trace';
-        $linha = "[$timestamp] [$traceId] - URI: $uri | MÉTODO: $method";
+         $linha = "[$timestamp] [$traceId] [$aplicacao] [$contexto] - URI: $uri | MÉTODO: $method";
         if ($evento) $linha .= " | EVENTO: $evento";
         $linha .= PHP_EOL;
         file_put_contents($arquivoLog, $linha, FILE_APPEND);
@@ -39,7 +41,8 @@ class LogHelper
         $arquivoLog = __DIR__ . '/../logs/erros_global.log';
         $timestamp = date('Y-m-d H:i:s');
         $traceId = defined('TRACE_ID') ? TRACE_ID : 'sem_trace';
-
+        $aplicacao = defined('NOME_APLICACAO') ? NOME_APLICACAO : 'desconhecida';
+        $contexto = 'Index::ErroGlobal';
         $mensagem = "[Erro]";
         if ($errno !== null) {
             $mensagem .= " [$errno] $errstr em $errfile na linha $errline";
@@ -47,7 +50,7 @@ class LogHelper
             $mensagem .= " Erro não identificado";
         }
 
-        $linha = "[$timestamp] [$traceId] - $mensagem" . PHP_EOL;
+         $linha = "[$timestamp] [$traceId] [$aplicacao] [$contexto] - $mensagem" . PHP_EOL;
         file_put_contents($arquivoLog, $linha, FILE_APPEND);
     }
 
@@ -57,15 +60,17 @@ class LogHelper
         $arquivoLog = __DIR__ . '/../logs/logRotasNaoEncontradas.log';
         $timestamp = date('Y-m-d H:i:s');
         $traceId = defined('TRACE_ID') ? TRACE_ID : 'sem_trace';
+        $aplicacao = defined('NOME_APLICACAO') ? NOME_APLICACAO : 'desconhecida';
+        $contexto = 'Index::RotaNaoEncontrada';
 
-        $linha = "[$timestamp] [$traceId] [$arquivoRota] - Rota não encontrada | URI: $uri | MÉTODO: $method" . PHP_EOL;
+        $linha = "[$timestamp] [$traceId] [$aplicacao] [$contexto] - $arquivoRota | Rota não encontrada | URI: $uri | MÉTODO: $method" . PHP_EOL;
         file_put_contents($arquivoLog, $linha, FILE_APPEND);
     }
 
     // Registra de Log de Permição de Cliente/Apilicação
     public static function logAcessoAplicacao(array $dados): void
     {
-        $arquivoLog = __DIR__ . '/../logs/aplicacao_acesso_debug.log';
+        $arquivoLog = __DIR__ . '/../logs/aplicacao_acesso.log';
         $timestamp = date('Y-m-d H:i:s');
         $traceId = defined('TRACE_ID') ? TRACE_ID : 'sem_trace';
         $linha = "[$timestamp] [$traceId] - ACESSO: " . json_encode($dados, JSON_UNESCAPED_UNICODE) . PHP_EOL;

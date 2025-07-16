@@ -5,64 +5,56 @@ require_once __DIR__ . '/dao/AplicacaoAcessoDAO.php';
 
 use Helpers\LogHelper;
 use dao\AplicacaoAcessoDAO;
+use Helpers\UtilHelpers;
+
+$slugAplicacao = UtilHelpers::detectarAplicacaoPorUri($uri);
 
 // Gera o TRACE_ID uma única vez
-LogHelper::gerarTraceId(); // Gera o TRACE_ID uma única vez
+LogHelper::gerarTraceId();
 
 // Log de erros via função
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
-    LogHelper::registrarErroGlobal("[$errno] $errstr em $errfile na linha $errline");
+    LogHelper::registrarErroGlobal("[$errno] $errstr em $errfile na linha $errline", NOME_APLICACAO, 'Index::ErroGlobal');
 });
 set_exception_handler(function ($exception) {
-    LogHelper::registrarErroGlobal("Exceção não capturada: " . $exception->getMessage());
+    LogHelper::registrarErroGlobal("Exceção não capturada: " . $exception->getMessage(), NOME_APLICACAO, 'Index::ErroGlobal');
 });
-
-// Captura a URI e limpa barras
-$uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
-$method = $_SERVER['REQUEST_METHOD'];
 
 // Log de entrada global
 LogHelper::registrarEntradaGlobal($uri, $method);
 
-
 // --- Autenticação global: busca e valida cliente ---
-if (strpos($uri, 'deal') === 0) {
-    $slugAplicacao = 'deal';
-} elseif (strpos($uri, 'extenso') === 0) {
-    $slugAplicacao = 'extenso';
-} elseif (strpos($uri, 'clicksign') === 0) {
-    $slugAplicacao = 'clicksign';    
-} elseif (strpos($uri, 'company') === 0) {
-    $slugAplicacao = 'company';
-} elseif (strpos($uri, 'mediahora') === 0) {
-    $slugAplicacao = 'mediahora';  
-} else {
-    $slugAplicacao = null;
-}
-
 $cliente = $_GET['cliente'] ?? null;
 if ($cliente && $slugAplicacao) {
-    AplicacaoAcessoDAO::obterWebhookPermitido($cliente,$slugAplicacao);
+    AplicacaoAcessoDAO::obterWebhookPermitido($cliente, $slugAplicacao);
 }
 // --- Fim da autenticação global ---
 
 // Direcionamento com base no prefixo
-if (strpos($uri, 'deal') === 0) {
-    require_once 'routers/dealRoutes.php';
-} elseif (strpos($uri, 'extenso') === 0) {
-    require_once __DIR__ . '/routers/extensoRoutes.php';
-} elseif (strpos($uri, 'bitrix-sync') === 0) {
-    require_once __DIR__ .'/routers/bitrixSyncRoutes.php';
-} elseif (strpos($uri, 'task') === 0) {
-    require_once __DIR__ . '/routers/taskRoutes.php';
-} elseif (strpos($uri, 'clicksign') === 0) {
-    require_once __DIR__ . '/routers/clicksignRoutes.php';    
-} elseif (strpos($uri, 'company') === 0) {
-    require_once __DIR__ . '/routers/companyRoutes.php';
-} elseif (strpos($uri, 'mediahora') === 0) {
-    require_once __DIR__ . '/routers/mediaoraRouter.php';    
-} else {
-    LogHelper::registrarErroGlobal("Rota não reconhecida | URI: $uri | Método: $method");
-    http_response_code(404);
-    echo json_encode(['erro' => 'Projeto não reconhecido']);
+switch (NOME_APLICACAO) {
+    case 'deal':
+        require_once 'routers/dealRoutes.php';
+        break;
+    case 'extenso':
+        require_once __DIR__ . '/routers/extensoRoutes.php';
+        break;
+    case 'bitrix-sync':
+        require_once __DIR__ . '/routers/bitrixSyncRoutes.php';
+        break;
+    case 'task':
+        require_once __DIR__ . '/routers/taskRoutes.php';
+        break;
+    case 'clicksign':
+        require_once __DIR__ . '/routers/clicksignRoutes.php';
+        break;
+    case 'company':
+        require_once __DIR__ . '/routers/companyRoutes.php';
+        break;
+    case 'mediahora':
+        require_once __DIR__ . '/routers/mediaoraRouter.php';
+        break;
+    default:
+        LogHelper::registrarRotaNaoEncontrada($uri, $method, __FILE__);
+        http_response_code(404);
+        echo json_encode(['erro' => 'Projeto não reconhecido']);
 }

@@ -174,4 +174,25 @@ class UtilHelpers
         return $data;
     }
 
+    // Detecta a aplicação com base na URI
+    public static function detectarAplicacaoPorUri($uri)
+    {
+        $slug = null;
+        if (strpos($uri, 'deal') === 0) {
+            $slug = 'deal';
+        } elseif (strpos($uri, 'extenso') === 0) {
+            $slug = 'extenso';
+        } elseif (strpos($uri, 'clicksign') === 0) {
+            $slug = 'clicksign';
+        } elseif (strpos($uri, 'company') === 0) {
+            $slug = 'company';
+        } elseif (strpos($uri, 'mediahora') === 0) {
+            $slug = 'mediahora';
+        }
+        if (!defined('NOME_APLICACAO')) {
+            define('NOME_APLICACAO', $slug ?: 'desconhecida');
+        }
+        return $slug ?: 'desconhecida';
+    }
+
 }
