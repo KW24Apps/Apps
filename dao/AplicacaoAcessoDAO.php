@@ -49,11 +49,10 @@ class AplicacaoAcessoDAO
 
             // Log apenas informações mínimas e seguras
             $nomeCliente = $resultado['cliente_nome'] ?? 'desconhecido';
-            LogHelper::logAcessoAplicacao(['mensagem' => 'Acesso liberado', 'cliente' => $nomeCliente, 'slug' => $slugAplicacao, 'status' => $resultado ? 'ok' : 'falha']);
-
+            LogHelper::logAcessoAplicacao(['mensagem' => 'Acesso liberado', 'cliente' => $nomeCliente, 'slug' => $slugAplicacao, 'status' => $resultado ? 'ok' : 'falha'], __CLASS__ . '::' . __FUNCTION__);
             return $resultado ?: null;
         } catch (PDOException $e) {
-            LogHelper::logAcessoAplicacao(['mensagem' => 'Erro DB', 'erro' => $e->getMessage()]);
+            LogHelper::logAcessoAplicacao(['mensagem' => 'Erro DB', 'erro' => $e->getMessage()], __CLASS__ . '::' . __FUNCTION__);
             return null;
         }
     }

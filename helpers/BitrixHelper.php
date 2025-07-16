@@ -13,7 +13,7 @@ class BitrixHelper
 
         $webhookBase = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? '';
         if (!$webhookBase) {
-            LogHelper::logBitrixHelpers("Webhook não informado para chamada do endpoint: $endpoint");
+            LogHelper::logBitrixHelpers("Webhook não informado para chamada do endpoint: $endpoint", __CLASS__ . '::' . __FUNCTION__);
             return ['error' => 'Webhook não informado'];
         }
 
@@ -41,7 +41,7 @@ class BitrixHelper
             $resumo .= " | Descrição: " . $respostaJson['error_description'];
         }
 
-        LogHelper::logBitrixHelpers($resumo, "BitrixHelper::chamarApi");
+        LogHelper::logBitrixHelpers($resumo, __CLASS__ . '::' . __FUNCTION__);
 
         return $respostaJson;
     }
