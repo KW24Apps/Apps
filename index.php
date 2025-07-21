@@ -24,10 +24,12 @@ set_exception_handler(function ($exception) {
 LogHelper::registrarEntradaGlobal($uri, $method);
 
 // --- Autenticação global: busca e valida cliente ---
+// --- Autenticação global: busca e valida cliente ---
 $cliente = $_GET['cliente'] ?? null;
-if ($cliente && $slugAplicacao) {
-    AplicacaoAcessoDAO::obterWebhookPermitido($cliente, $slugAplicacao);
+if ($cliente && $slugAplicacao && NOME_APLICACAO !== 'bitrix-sync') {
+    AplicacaoAcessoDAO::ValidarClienteAplicacao($cliente, $slugAplicacao);
 }
+// --- Fim da autenticação global ---
 // --- Fim da autenticação global ---
 
 // Direcionamento com base no prefixo
@@ -53,6 +55,9 @@ switch (NOME_APLICACAO) {
     case 'mediahora':
         require_once __DIR__ . '/routers/mediaoraRouter.php';
         break;
+    case 'omie':
+        require_once __DIR__ . '/routers/OmieRouter.php';
+    break;    
     default:
         LogHelper::registrarRotaNaoEncontrada($uri, $method, __FILE__);
         http_response_code(404);

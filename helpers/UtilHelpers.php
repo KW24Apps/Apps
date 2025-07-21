@@ -188,6 +188,10 @@ class UtilHelpers
             $slug = 'company';
         } elseif (strpos($uri, 'mediahora') === 0) {
             $slug = 'mediahora';
+        } elseif (strpos($uri, 'omie') === 0) {
+            $slug = 'omie';
+        } elseif (strpos($uri, 'bitrix-sync') === 0) {
+            $slug = 'bitrix-sync';
         }
         if (!defined('NOME_APLICACAO')) {
             define('NOME_APLICACAO', $slug ?: 'desconhecida');

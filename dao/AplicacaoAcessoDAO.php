@@ -13,7 +13,7 @@ class AplicacaoAcessoDAO
 {
     
     // Método para obter o acesso de uma aplicação com base na chave de acesso e no slug da aplicação
-    public static function obterWebhookPermitido($chaveAcesso, $slugAplicacao)
+    public static function ValidarClienteAplicacao($chaveAcesso, $slugAplicacao)
     {
         $config = require __DIR__ . '/../config/config.php';
 
