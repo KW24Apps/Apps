@@ -15,7 +15,7 @@ class CompanyController
     {
         $dados = $_GET;
         $cliente = $dados['cliente'] ?? null;
-        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'company');
+        $acesso = AplicacaoAcessoDAO::ValidarClienteAplicacao($cliente, 'company');
         $webhook = $acesso['webhook_bitrix'] ?? null;
 
         if (!$webhook) {
@@ -35,7 +35,7 @@ class CompanyController
     {
         $filtros = $_GET;
         $cliente = $filtros['cliente'] ?? null;
-        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'company');
+        $acesso = AplicacaoAcessoDAO::ValidarClienteAplicacao($cliente, 'company');
         $webhook = $acesso['webhook_bitrix'] ?? null;
 
         if (!$webhook) {
@@ -55,7 +55,7 @@ class CompanyController
     {
         $dados = $_GET;
         $cliente = $dados['cliente'] ?? null;
-        $acesso = AplicacaoAcessoDAO::obterWebhookPermitido($cliente, 'company');
+        $acesso = AplicacaoAcessoDAO::ValidarClienteAplicacao($cliente, 'company');
         $webhook = $acesso['webhook_bitrix'] ?? null;
 
         if (!$webhook) {
