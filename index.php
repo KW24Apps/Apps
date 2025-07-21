@@ -24,12 +24,10 @@ set_exception_handler(function ($exception) {
 LogHelper::registrarEntradaGlobal($uri, $method);
 
 // --- Autenticação global: busca e valida cliente ---
-// --- Autenticação global: busca e valida cliente ---
 $cliente = $_GET['cliente'] ?? null;
 if ($cliente && $slugAplicacao && NOME_APLICACAO !== 'bitrix-sync') {
     AplicacaoAcessoDAO::ValidarClienteAplicacao($cliente, $slugAplicacao);
 }
-// --- Fim da autenticação global ---
 // --- Fim da autenticação global ---
 
 // Direcionamento com base no prefixo
