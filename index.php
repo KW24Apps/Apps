@@ -63,5 +63,5 @@ switch (NOME_APLICACAO) {
     default:
         LogHelper::registrarRotaNaoEncontrada($uri, $method, __FILE__);
         http_response_code(404);
-        echo json_encode(['erro' => 'Projeto não reconhecido']);
+        echo json_encode(['erro' => 'Projeto não reconhecido', 'uri' => $uri, 'slugAplicacao' => $slugAplicacao, 'NOME_APLICACAO' => NOME_APLICACAO]);
 }
