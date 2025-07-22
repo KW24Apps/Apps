@@ -33,8 +33,8 @@ if ($cliente && $slugAplicacao && NOME_APLICACAO !== 'bitrix-sync') {
 // Direcionamento com base no prefixo
 switch (NOME_APLICACAO) {
 
-    case 'dealscheduler':
-        require_once __DIR__ . '/routers/dealSchedulerRoutes.php';
+    case 'scheduler':
+        require_once __DIR__ . '/routers/SchedulerRoutes.php';
         break;
     case 'deal':
         require_once 'routers/dealRoutes.php';
