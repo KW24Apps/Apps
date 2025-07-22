@@ -177,7 +177,6 @@ class UtilHelpers
     // Detecta a aplicação com base na URI
     public static function detectarAplicacaoPorUri($uri)
     {
-        $uri = ltrim($uri, '/');
         $slug = null;
         if (strpos($uri, 'scheduler') === 0) {
             $slug = 'scheduler';
