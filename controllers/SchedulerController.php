@@ -47,8 +47,15 @@ class SchedulerController
         $dealController->consultar();
         $result = ob_get_clean();
 
-        // 5. Exibe o resultado da consulta para teste
+        // 5. Filtra e exibe apenas os campos do config_extra, com nomes corretos
+        $data = json_decode($result, true);
+        $item = $data['result']['item'] ?? [];
+        $retorno = [];
+        foreach ($ufCampos as $campo) {
+            $retorno[$campo] = $item[$campo] ?? null;
+        }
+        $retorno['id'] = $item['id'] ?? null;
         header('Content-Type: application/json');
-        echo $result;
+        echo json_encode(['result' => ['item' => $retorno]]);
     }
 }
