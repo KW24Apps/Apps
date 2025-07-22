@@ -1,10 +1,8 @@
 <?php
 
-
 require_once __DIR__ . '/helpers/UtilHelpers.php';
 require_once __DIR__ . '/helpers/LogHelper.php';
 require_once __DIR__ . '/dao/AplicacaoAcessoDAO.php';
-
 
 use Helpers\LogHelper;
 use dao\AplicacaoAcessoDAO;
