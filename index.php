@@ -10,19 +10,8 @@ use Helpers\LogHelper;
 use dao\AplicacaoAcessoDAO;
 use Helpers\UtilHelpers;
 
-file_put_contents(
-    __DIR__ . '/test_jurandir.log',
-    date('c') . " teste01  | uri={$uri} | slugAplicacao={$slugAplicacao} | NOME_APLICACAO=" . (defined('NOME_APLICACAO') ? NOME_APLICACAO : 'N/A') . "\n",
-    FILE_APPEND
-);
 
 $slugAplicacao = UtilHelpers::detectarAplicacaoPorUri($uri);
-
-file_put_contents(
-    __DIR__ . '/test_jurandir.log',
-    date('c') . "teste 02 | uri={$uri} | slugAplicacao={$slugAplicacao} | NOME_APLICACAO=" . (defined('NOME_APLICACAO') ? NOME_APLICACAO : 'N/A') . "\n",
-    FILE_APPEND
-);
 
 // Gera o TRACE_ID uma única vez
 LogHelper::gerarTraceId();
