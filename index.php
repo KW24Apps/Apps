@@ -1,4 +1,7 @@
 <?php
+
+file_put_contents(__DIR__ . '/test_jurandir.log', date('c')." - Passou pelo index\n", FILE_APPEND);
+
 require_once __DIR__ . '/helpers/LogHelper.php';
 require_once __DIR__ . '/dao/AplicacaoAcessoDAO.php';
 
