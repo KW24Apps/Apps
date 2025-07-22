@@ -32,9 +32,15 @@ class SchedulerController
             return;
         }
 
-        // 3. Monta lista de UF_CRM_* para consulta
+        // 3. Monta lista de UF_CRM_* para consulta (normaliza para maiúsculo e underline)
         $campos = $configJson[$spaKey]['campos'];
-        $ufCampos = array_column($campos, 'uf');
+        $ufCampos = array_map(function($c) {
+            $c = strtoupper($c);
+            if (strpos($c, 'UF_CRM_') !== 0) {
+                $c = 'UF_CRM_' . preg_replace('/^UF_CRM_?/i', '', $c);
+            }
+            return $c;
+        }, array_column($campos, 'uf'));
 
         // 4. Consulta o Deal usando o helper já existente
         require_once __DIR__ . '/../controllers/DealController.php';
