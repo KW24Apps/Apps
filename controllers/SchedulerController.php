@@ -32,15 +32,20 @@ class SchedulerController
             return;
         }
 
-        // 3. Monta lista de UF_CRM_* para consulta (normaliza para maiúsculo e underline)
+        // 3. Monta lista de UF_CRM_* para consulta (usa BitrixHelper::formatarCampos para compatibilidade total)
+        require_once __DIR__ . '/../helpers/BitrixHelper.php';
         $campos = $configJson[$spaKey]['campos'];
-        $ufCampos = array_map(function($c) {
-            $c = strtoupper($c);
-            if (strpos($c, 'UF_CRM_') !== 0) {
-                $c = 'UF_CRM_' . preg_replace('/^UF_CRM_?/i', '', $c);
-            }
-            return $c;
-        }, array_column($campos, 'uf'));
+        $ufCamposOriginais = array_column($campos, 'uf');
+        $ufCamposFormatados = BitrixHelper::formatarCampos(array_fill_keys($ufCamposOriginais, null));
+        // Mapeia campo original => campo formatado
+        $mapCampos = [];
+        $ufCampos = [];
+        foreach ($ufCamposOriginais as $campo) {
+            $normalizado = BitrixHelper::formatarCampos([$campo => null]);
+            $chaveBitrix = array_key_first($normalizado);
+            $mapCampos[$campo] = $chaveBitrix;
+            $ufCampos[] = $chaveBitrix;
+        }
 
         // 4. Consulta o Deal usando o helper já existente
         require_once __DIR__ . '/../controllers/DealController.php';
@@ -53,12 +58,12 @@ class SchedulerController
         $dealController->consultar();
         $result = ob_get_clean();
 
-        // 5. Filtra e exibe apenas os campos do config_extra, com nomes corretos
+        // 5. Filtra e exibe apenas os campos do config_extra, com nomes corretos (compatível com Bitrix)
         $data = json_decode($result, true);
         $item = $data['result']['item'] ?? [];
         $retorno = [];
-        foreach ($ufCampos as $campo) {
-            $retorno[$campo] = $item[$campo] ?? null;
+        foreach ($mapCampos as $campoOriginal => $campoBitrix) {
+            $retorno[$campoOriginal] = $item[$campoBitrix] ?? null;
         }
         $retorno['id'] = $item['id'] ?? null;
         header('Content-Type: application/json');
