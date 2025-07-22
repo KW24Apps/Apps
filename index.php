@@ -1,6 +1,6 @@
 <?php
 
-file_put_contents(__DIR__ . '/test_jurandir.log', date('c')." - Passou pelo index\n", FILE_APPEND);
+
 
 require_once __DIR__ . '/helpers/LogHelper.php';
 require_once __DIR__ . '/dao/AplicacaoAcessoDAO.php';
@@ -25,6 +25,12 @@ set_exception_handler(function ($exception) {
 
 // Log de entrada global
 LogHelper::registrarEntradaGlobal($uri, $method);
+
+file_put_contents(
+    __DIR__ . '/test_jurandir.log',
+    date('c') . " - Erro: Projeto não reconhecido | uri={$uri} | slugAplicacao={$slugAplicacao} | NOME_APLICACAO=" . (defined('NOME_APLICACAO') ? NOME_APLICACAO : 'N/A') . "\n",
+    FILE_APPEND
+);
 
 // --- Autenticação global: busca e valida cliente ---
 $cliente = $_GET['cliente'] ?? null;
