@@ -12,7 +12,7 @@ use Helpers\UtilHelpers;
 
 $uri = $_SERVER['REQUEST_URI'];
 $method = $_SERVER['REQUEST_METHOD'];
-
+file_put_contents(__DIR__ . '/test_jurandir.log', date('c') . " [DEBUG] Antes de chamar detectarAplicacaoPorUri | uri={$uri}\n", FILE_APPEND);
 $slugAplicacao = UtilHelpers::detectarAplicacaoPorUri($uri);
 
 // Gera o TRACE_ID uma única vez
