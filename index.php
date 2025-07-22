@@ -31,6 +31,7 @@ if ($cliente && $slugAplicacao && NOME_APLICACAO !== 'bitrix-sync') {
     AplicacaoAcessoDAO::ValidarClienteAplicacao($cliente, $slugAplicacao);
 }
 // --- Fim da autenticação global ---
+error_log("DEBUG::NOME_APLICACAO=" . NOME_APLICACAO . " | slugAplicacao=" . $slugAplicacao);
 
 // Direcionamento com base no prefixo
 switch (NOME_APLICACAO) {
