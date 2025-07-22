@@ -1,7 +1,7 @@
 <?php
 namespace controllers;
 
-class DealSchedulerController
+class SchedulerController
 {
     // Método principal para lidar com a requisição
     public function executar()
