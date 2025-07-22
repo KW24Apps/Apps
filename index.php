@@ -7,8 +7,6 @@ use Helpers\LogHelper;
 use dao\AplicacaoAcessoDAO;
 use Helpers\UtilHelpers;
 
-$uri = $_SERVER['REQUEST_URI'];
-$method = $_SERVER['REQUEST_METHOD'];
 $slugAplicacao = UtilHelpers::detectarAplicacaoPorUri($uri);
 
 // Gera o TRACE_ID uma única vez
@@ -30,9 +28,6 @@ $cliente = $_GET['cliente'] ?? null;
 if ($cliente && $slugAplicacao && NOME_APLICACAO !== 'bitrix-sync') {
     AplicacaoAcessoDAO::ValidarClienteAplicacao($cliente, $slugAplicacao);
 }
-// --- Fim da autenticação global ---
-error_log("DEBUG::NOME_APLICACAO=" . NOME_APLICACAO . " | slugAplicacao=" . $slugAplicacao);
-
 // Direcionamento com base no prefixo
 switch (NOME_APLICACAO) {
 
@@ -66,5 +61,5 @@ switch (NOME_APLICACAO) {
     default:
         LogHelper::registrarRotaNaoEncontrada($uri, $method, __FILE__);
         http_response_code(404);
-        echo json_encode(['erro' => 'Projeto não reconhecido 123', 'uri' => $uri, 'slugAplicacao' => $slugAplicacao, 'NOME_APLICACAO' => NOME_APLICACAO]);
+        echo json_encode(['erro' => 'Projeto não reconhecido', 'uri' => $uri, 'slugAplicacao' => $slugAplicacao, 'NOME_APLICACAO' => NOME_APLICACAO]);
 }
