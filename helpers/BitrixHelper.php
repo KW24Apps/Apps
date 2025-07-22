@@ -71,6 +71,6 @@ class BitrixHelper
 
         return $fields;
     }
-
+  
 
 }
