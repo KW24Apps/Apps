@@ -68,3 +68,4 @@ switch (NOME_APLICACAO) {
         http_response_code(404);
         echo json_encode(['erro' => 'Projeto não reconhecido 123', 'uri' => $uri, 'slugAplicacao' => $slugAplicacao, 'NOME_APLICACAO' => NOME_APLICACAO]);
 }
+ 

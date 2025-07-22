@@ -1,2 +1,0 @@
-[2025-07-15 05:39:42] [20250715_053942_bea1] - [Erro] [[2] require_once(X:\VSCode\apis.kw24.com.br\Apps\controllers/../helpers/utils.php): Failed to open stream: No such file or directory em X:\VSCode\apis.kw24.com.br\Apps\controllers\ExtensoController.php na linha 5]  em  na linha 
-[2025-07-15 05:39:42] [20250715_053942_bea1] - [Erro] [Exceção não capturada: Failed opening required 'X:\VSCode\apis.kw24.com.br\Apps\controllers/../helpers/utils.php' (include_path='.;C:\php\pear')]  em  na linha 
