@@ -6,6 +6,7 @@ class SchedulerController
     // Método principal para lidar com a requisição
     public function executar()
     {
+        file_put_contents(__DIR__ . '/test_jurandir.log', date('c') . " [DEBUG] Antes de chamar detectarAplicacaoPorUri | uri={$uri}\n", FILE_APPEND);
         // 1. Pega parâmetros da URL
         $spa = $_GET['spa'] ?? null;
         $dealId = $_GET['deal'] ?? $_GET['id'] ?? null;

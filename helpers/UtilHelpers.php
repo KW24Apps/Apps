@@ -177,7 +177,6 @@ class UtilHelpers
     // Detecta a aplicação com base na URI
     public static function detectarAplicacaoPorUri($uri)
     {
-        file_put_contents(__DIR__ . '/test_jurandir.log', date('c') . " [DEBUG] Entrou na detectarAplicacaoPorUri | uri={$uri}\n", FILE_APPEND);
         $uri = ltrim($uri, '/');
         $slug = null;
         if (strpos($uri, 'scheduler') === 0) {
@@ -200,7 +199,6 @@ class UtilHelpers
         if (!defined('NOME_APLICACAO')) {
             define('NOME_APLICACAO', $slug ?: 'desconhecida');
         }
-        file_put_contents(__DIR__ . '/test_jurandir.log', date('c') . " [DEBUG] Saiu da detectarAplicacaoPorUri | slug={$slug}\n", FILE_APPEND);
         return $slug ?: 'desconhecida';
     }
 
