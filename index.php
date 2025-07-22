@@ -7,6 +7,8 @@ use Helpers\LogHelper;
 use dao\AplicacaoAcessoDAO;
 use Helpers\UtilHelpers;
 
+$uri = $_SERVER['REQUEST_URI'];
+$method = $_SERVER['REQUEST_METHOD'];
 $slugAplicacao = UtilHelpers::detectarAplicacaoPorUri($uri);
 
 // Gera o TRACE_ID uma única vez
