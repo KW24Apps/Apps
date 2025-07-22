@@ -178,7 +178,9 @@ class UtilHelpers
     public static function detectarAplicacaoPorUri($uri)
     {
         $slug = null;
-        if (strpos($uri, 'deal') === 0) {
+        if (strpos($uri, 'dealscheduler') === 0) {
+            $slug = 'dealscheduler';
+        } elseif (strpos($uri, 'deal') === 0) {
             $slug = 'deal';
         } elseif (strpos($uri, 'extenso') === 0) {
             $slug = 'extenso';
