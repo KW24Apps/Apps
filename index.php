@@ -7,7 +7,12 @@ use Helpers\LogHelper;
 use dao\AplicacaoAcessoDAO;
 use Helpers\UtilHelpers;
 
+
 $slugAplicacao = UtilHelpers::detectarAplicacaoPorUri($uri);
+
+// DEBUG: Verificar se o fluxo chega até aqui
+echo json_encode(['debug' => 'antes do switch', 'uri' => $uri, 'slugAplicacao' => $slugAplicacao, 'NOME_APLICACAO' => defined('NOME_APLICACAO') ? NOME_APLICACAO : null]);
+exit;
 
 // Gera o TRACE_ID uma única vez
 LogHelper::gerarTraceId();
