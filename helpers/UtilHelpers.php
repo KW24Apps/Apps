@@ -178,6 +178,9 @@ class UtilHelpers
     public static function detectarAplicacaoPorUri($uri)
     {
         $slug = null;
+        // DEBUG: log o valor da URI
+        file_put_contents(__DIR__ . '/debug_uri.log', date('Y-m-d H:i:s') . " | URI: $uri\n", FILE_APPEND);
+
         if (strpos($uri, 'scheduler') === 0) {
             $slug = 'scheduler';
         } elseif (strpos($uri, 'deal') === 0) {
@@ -195,6 +198,9 @@ class UtilHelpers
         } elseif (strpos($uri, 'bitrix-sync') === 0) {
             $slug = 'bitrix-sync';
         }
+        // DEBUG: log o slug detectado
+        file_put_contents(__DIR__ . '/debug_uri.log', date('Y-m-d H:i:s') . " | SLUG: $slug\n", FILE_APPEND);
+
         if (!defined('NOME_APLICACAO')) {
             define('NOME_APLICACAO', $slug ?: 'desconhecida');
         }
