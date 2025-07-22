@@ -10,7 +10,19 @@ use Helpers\LogHelper;
 use dao\AplicacaoAcessoDAO;
 use Helpers\UtilHelpers;
 
+file_put_contents(
+    __DIR__ . '/test_jurandir.log',
+    date('c') . " teste01  | uri={$uri} | slugAplicacao={$slugAplicacao} | NOME_APLICACAO=" . (defined('NOME_APLICACAO') ? NOME_APLICACAO : 'N/A') . "\n",
+    FILE_APPEND
+);
+
 $slugAplicacao = UtilHelpers::detectarAplicacaoPorUri($uri);
+
+file_put_contents(
+    __DIR__ . '/test_jurandir.log',
+    date('c') . "teste 02 | uri={$uri} | slugAplicacao={$slugAplicacao} | NOME_APLICACAO=" . (defined('NOME_APLICACAO') ? NOME_APLICACAO : 'N/A') . "\n",
+    FILE_APPEND
+);
 
 // Gera o TRACE_ID uma única vez
 LogHelper::gerarTraceId();
@@ -26,11 +38,6 @@ set_exception_handler(function ($exception) {
 // Log de entrada global
 LogHelper::registrarEntradaGlobal($uri, $method);
 
-file_put_contents(
-    __DIR__ . '/test_jurandir.log',
-    date('c') . " - Erro: Projeto não reconhecido | uri={$uri} | slugAplicacao={$slugAplicacao} | NOME_APLICACAO=" . (defined('NOME_APLICACAO') ? NOME_APLICACAO : 'N/A') . "\n",
-    FILE_APPEND
-);
 
 // --- Autenticação global: busca e valida cliente ---
 $cliente = $_GET['cliente'] ?? null;
