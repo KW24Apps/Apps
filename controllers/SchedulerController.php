@@ -166,15 +166,23 @@ class SchedulerController
             if ($dia > $hojeNum) {
                 $dataAtualObj->modify('next ' . $diasDaSemanaMap[$dia]);
                 $dataAtualObj->setTime(6, 0, 0);
+                if ($dataAtualObj <= new DateTime($dataAtual)) {
+                    $dataAtualObj->modify('+1 day');
+                }
                 return $dataAtualObj->format('c');
             }
         }
 
+        // Se nenhum dia após hoje foi encontrado, pega o primeiro do próximo ciclo
         $primeiroDia = $diasSemana[0];
         $dataAtualObj->modify('next ' . $diasDaSemanaMap[$primeiroDia]);
         $dataAtualObj->setTime(6, 0, 0);
+        if ($dataAtualObj <= new DateTime($dataAtual)) {
+            $dataAtualObj->modify('+1 day');
+        }
         return $dataAtualObj->format('c');
     }
+
 
     private function calcularProximaDataMensal(int $diaMes, string $dataAtual): string
     {
