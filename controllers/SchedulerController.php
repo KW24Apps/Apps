@@ -44,8 +44,6 @@ class SchedulerController
 
         file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | SPA:$spa | DEAL_ID:$dealId | CAMPOS:$ufCampos\n", FILE_APPEND);
 
-
-
         $resultado = BitrixDealHelper::consultarDeal($spa, $dealId, $ufCampos);
 
         // 5. Imprime o resultado (igual DealController)

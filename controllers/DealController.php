@@ -33,10 +33,7 @@ class DealController
         $entityId = $params['spa'] ?? $params['entityId'] ?? null;
         $dealId = $params['deal'] ?? $params['id'] ?? null;
         $fields = $params['campos'] ?? $params['fields'] ?? null;
-
-        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | SPA:$entityId | DEAL_ID:$dealId | CAMPOS:$fields\n", FILE_APPEND);
-
-
+      
         $resultado = BitrixDealHelper::consultarDeal($entityId, $dealId, $fields);
 
         header('Content-Type: application/json');
