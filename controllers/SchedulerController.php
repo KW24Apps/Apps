@@ -12,11 +12,14 @@ class SchedulerController
 {
     public function executar()
     {
+        LogHelper::logSchedulerController('Início do método executar');
+
         // 1. Pega parâmetros básicos
         $spa = $_GET['spa'] ?? null;
         $dealId = $_GET['deal'] ?? $_GET['id'] ?? null;
 
         if (!$spa || !$dealId) {
+            LogHelper::logSchedulerController('Erro: Parâmetros spa ou dealId não informados');
             header('Content-Type: application/json');
             echo json_encode(['erro' => 'Parâmetros spa e deal/id são obrigatórios']);
             return;
@@ -25,6 +28,7 @@ class SchedulerController
         // 2. Busca campos da config_extra (via acesso autenticado)
         $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
         if (!$configExtra) {
+            LogHelper::logSchedulerController('Erro: Configuração extra não encontrada');
             header('Content-Type: application/json');
             echo json_encode(['erro' => 'Configuração extra não encontrada']);
             return;
@@ -34,6 +38,7 @@ class SchedulerController
         $spaKey = 'SPA_' . $spa;
 
         if (!isset($configJson[$spaKey]['campos'])) {
+            LogHelper::logSchedulerController("Erro: SPA '$spaKey' não encontrada no config_extra");
             header('Content-Type: application/json');
             echo json_encode(['erro' => 'SPA não encontrada no config_extra']);
             return;
@@ -142,6 +147,9 @@ class SchedulerController
 
         // Atualiza no Bitrix
         $update = BitrixDealHelper::editarDeal($spa, $dealId, $fieldsParaAtualizar);
+        if (!$update['success']) {
+            LogHelper::logSchedulerController('Erro ao atualizar deal: ' . json_encode($update));
+        }
 
         $retorno['Proxima Data'] = $proximaData;
 
@@ -151,6 +159,7 @@ class SchedulerController
 
     private function calcularProximaDataSemanal(array $diasSemana, string $dataAtual): string
     {
+        LogHelper::logSchedulerController("Início calcularProximaDataSemanal - diasSemana: " . json_encode($diasSemana) . " | dataAtual: $dataAtual");
         $diasSemana = array_map('intval', $diasSemana);
         sort($diasSemana);
 
@@ -171,6 +180,7 @@ class SchedulerController
             if ($dia > $hojeNum) {
                 $dataAtualObj->modify('next ' . $diasDaSemanaMap[$dia]);
                 $dataAtualObj->setTime(6, 0, 0);
+                LogHelper::logSchedulerController("Próxima data encontrada no ciclo atual: " . $dataAtualObj->format('c'));
                 return $dataAtualObj->format('c');
             }
         }
@@ -185,7 +195,7 @@ class SchedulerController
             $dataAtualObj->modify('+1 day');
             $dataAtualObj->setTime(6, 0, 0);
         }
-
+        LogHelper::logSchedulerController("Próxima data do próximo ciclo: " . $dataAtualObj->format('c'));
         return $dataAtualObj->format('c');
     }
 
