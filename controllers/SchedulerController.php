@@ -2,8 +2,10 @@
 namespace Controllers;
 
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
+require_once __DIR__ . '/../helpers/BitrixHelper.php';
 
 use Helpers\BitrixDealHelper;
+use Helpers\BitrixHelper;
 
 class SchedulerController
 {
@@ -39,13 +41,26 @@ class SchedulerController
         // 3. Monta lista dos campos UF_CRM_* do grupo da SPA
         $campos = $configJson[$spaKey]['campos'];
         $ufCampos = array_column($campos, 'uf');
+        // Formata os campos no padrão do retorno da API
+        $ufCamposFormatados = BitrixHelper::formatarCampos(array_fill_keys($ufCampos, null));
+        // Só as chaves
+        $listaCampos = array_keys($ufCamposFormatados);
 
-        // 4. Chama direto o helper, igual o controller de consulta
+        // 4. Consulta o deal
+        $resultado = BitrixDealHelper::consultarDeal($spa, $dealId, implode(',', $ufCampos));
 
-        $resultado = BitrixDealHelper::consultarDeal($spa, $dealId, $ufCampos);
+        // 5. Monta retorno com nome amigável
+        $itemRetornado = $resultado['result']['item'] ?? [];
+        $retorno = [];
 
-        // 5. Imprime o resultado (igual DealController)
+        foreach ($campos as $campo) {
+            // Formata o nome do campo igual no retorno
+            $campoFormatado = array_key_first(BitrixHelper::formatarCampos([$campo['uf'] => null]));
+            $retorno[$campo['nome']] = $itemRetornado[$campoFormatado] ?? null;
+        }
+        $retorno['id'] = $itemRetornado['id'] ?? null;
+
         header('Content-Type: application/json');
-        echo json_encode($resultado);
+        echo json_encode(['result' => ['item' => $retorno]]);
     }
 }
