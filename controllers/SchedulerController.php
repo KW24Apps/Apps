@@ -49,8 +49,16 @@ class SchedulerController
         // 4. Consulta o deal
         $resultado = BitrixDealHelper::consultarDeal($spa, $dealId, implode(',', $ufCampos));
 
-        // 5. Retorna exatamente o que veio
+        // 5. Consulta os fields da SPA (pega definição dos campos, inclusive os de lista)
+        $fields = BitrixHelper::consultarCamposSpa($spa);
+
+        // 6. Mapeia os valores dos campos lista de ID para texto
+        $itemRetornado = $resultado['result']['item'] ?? [];
+        $itemConvertido = BitrixHelper::mapearValoresEnumerados($itemRetornado, $fields);
+
+        // 7. Monta retorno final (você pode trocar para nome amigável aqui se quiser)
         header('Content-Type: application/json');
-        echo json_encode($resultado);
+        echo json_encode(['result' => ['item' => $itemConvertido]]);
         }
+
     }

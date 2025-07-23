@@ -89,5 +89,30 @@ class BitrixHelper
         return $fields;
     }
   
+    // Mapeia valores enumerados de campos UF_CRM_* para seus textos correspondentes
+    public static function mapearValoresEnumerados($dados, $fields)
+    {
+        foreach ($fields as $uf => $definicaoCampo) {
+            if (!isset($dados[$uf])) {
+                continue;
+            }
+            if (isset($definicaoCampo['type']) && $definicaoCampo['type'] === 'enumeration' && isset($definicaoCampo['items'])) {
+                // Monta o mapa ID => VALUE para esse campo
+                $mapa = [];
+                foreach ($definicaoCampo['items'] as $item) {
+                    $mapa[$item['ID']] = $item['VALUE'];
+                }
+                // Troca os valores numéricos por textos
+                if (is_array($dados[$uf])) {
+                    $dados[$uf] = array_map(function($v) use ($mapa) {
+                        return $mapa[$v] ?? $v;
+                    }, $dados[$uf]);
+                } else {
+                    $dados[$uf] = $mapa[$dados[$uf]] ?? $dados[$uf];
+                }
+            }
+        }
+        return $dados;
+    }
 
 }
