@@ -11,7 +11,7 @@ class BitrixHelper
     public static function chamarApi($endpoint, $params, $opcoes = [])
     {
 
-        $webhookBase = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? '';
+        $webhookBase = trim($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? '');
         file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | WEBHOOK:$webhookBase | ENDPOINT:$endpoint | PARAMS:" . json_encode($params) . "\n", FILE_APPEND);
 
         if (!$webhookBase) {
