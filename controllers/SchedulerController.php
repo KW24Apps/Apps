@@ -41,6 +41,9 @@ class SchedulerController
         $ufCampos = array_column($campos, 'uf');
 
         // 4. Chama direto o helper, igual o controller de consulta
+
+        file_put_contents(__DIR__ . '/../logs/debug_scheduler.log', print_r($ufCampos, true), FILE_APPEND);
+
         $resultado = BitrixDealHelper::consultarDeal($spa, $dealId, implode(',', $ufCampos));
 
         // 5. Imprime o resultado (igual DealController)
