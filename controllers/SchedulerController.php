@@ -94,15 +94,20 @@ class SchedulerController
         }
         $proximaData = null;
 
-        if ($periodo === 'Semanal') {
-            $diasSemana = $retorno['Dias da semana'] ?? [];
-            $proximaData = $this->calcularProximaDataSemanal($diasSemana, $dataAtual);
-        } elseif ($periodo === 'Mensal') {
-            $diaMes = (int)($retorno['Dias de criação de tarefas (Mês)'] ?? 1);
-            $proximaData = $this->calcularProximaDataMensal($diaMes, $dataAtual);
-        } elseif ($periodo === 'Intervalo de tempo') {
-            $intervaloDias = (int)($retorno['Intervalo de tempo'] ?? 0);
-            $proximaData = $this->calcularProximaDataIntervalo($intervaloDias, $dataAtual);
+        if (!$retorno['RETORNO DATA']) {
+            // Primeira execução: usa data início com horário fixo, sem cálculo
+            $proximaData = $dataAtual;
+        } else {
+            if ($periodo === 'Semanal') {
+                $diasSemana = $retorno['Dias da semana'] ?? [];
+                $proximaData = $this->calcularProximaDataSemanal($diasSemana, $dataAtual);
+            } elseif ($periodo === 'Mensal') {
+                $diaMes = (int)($retorno['Dias de criação de tarefas (Mês)'] ?? 1);
+                $proximaData = $this->calcularProximaDataMensal($diaMes, $dataAtual);
+            } elseif ($periodo === 'Intervalo de tempo') {
+                $intervaloDias = (int)($retorno['Intervalo de tempo'] ?? 0);
+                $proximaData = $this->calcularProximaDataIntervalo($intervaloDias, $dataAtual);
+            }
         }
 
         // Validação de término por data fixa
