@@ -42,7 +42,7 @@ class SchedulerController
 
         // 4. Chama direto o helper, igual o controller de consulta
 
-        file_put_contents(__DIR__ . '/../logs/debug_scheduler.log', print_r($ufCampos, true), FILE_APPEND);
+        file_put_contents(__DIR__ . '/../logs/01.log', print_r($ufCampos, true), FILE_APPEND);
 
         $resultado = BitrixDealHelper::consultarDeal($spa, $dealId, implode(',', $ufCampos));
 
