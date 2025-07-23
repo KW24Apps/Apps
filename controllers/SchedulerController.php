@@ -67,7 +67,19 @@ class SchedulerController
 
         // 7. Calcula próxima data
         $periodo = $retorno['Período'] ?? null;
-        $dataAtual = (new DateTime())->format('c');
+        $dataAtual = $retorno['RETORNO DATA'] ?? null;
+        if (!$dataAtual) {
+            // Primeira execução: usar Data de início
+            $dataAtual = $retorno['Data de início'] ?? (new DateTime())->format('c');
+            $dt = new DateTime($dataAtual);
+            $dt->setTime(6, 0, 0);
+            $dataAtual = $dt->format('c');
+        } else {
+            // Ajusta horário para 6h mesmo na data de retorno existente
+            $dt = new DateTime($dataAtual);
+            $dt->setTime(6, 0, 0);
+            $dataAtual = $dt->format('c');
+        }
         $proximaData = null;
 
         if ($periodo === 'Semanal') {
@@ -108,12 +120,14 @@ class SchedulerController
         foreach ($diasSemana as $dia) {
             if ($dia > $hojeNum) {
                 $dataAtualObj->modify('next ' . $diasDaSemanaMap[$dia]);
+                $dataAtualObj->setTime(6, 0, 0);
                 return $dataAtualObj->format('c');
             }
         }
 
         $primeiroDia = $diasSemana[0];
         $dataAtualObj->modify('next ' . $diasDaSemanaMap[$primeiroDia]);
+        $dataAtualObj->setTime(6, 0, 0);
         return $dataAtualObj->format('c');
     }
 
@@ -133,7 +147,7 @@ class SchedulerController
             }
             $dataAtualObj->setDate($ano, $mes, $diaMes);
         }
-
+        $dataAtualObj->setTime(6, 0, 0);
         return $dataAtualObj->format('c');
     }
 
@@ -141,6 +155,7 @@ class SchedulerController
     {
         $dataAtualObj = new DateTime($dataAtual);
         $dataAtualObj->modify("+$intervaloDias days");
+        $dataAtualObj->setTime(6, 0, 0);
         return $dataAtualObj->format('c');
     }
 }
