@@ -65,6 +65,18 @@ class SchedulerController
         }
         $retorno['id'] = $itemConvertido['id'] ?? null;
 
+        // Extrai UFs dos campos de Retorno API e RETORNO DATA
+        $ufRetornoApi = null;
+        $ufRetornoData = null;
+        foreach ($campos as $campo) {
+            if ($campo['nome'] === 'Retorno API') {
+                $ufRetornoApi = $campo['uf'];
+            }
+            if ($campo['nome'] === 'RETORNO DATA') {
+                $ufRetornoData = $campo['uf'];
+            }
+        }
+
         // 7. Calcula próxima data
         $periodo = $retorno['Período'] ?? null;
         $dataAtual = $retorno['RETORNO DATA'] ?? null;
@@ -113,6 +125,18 @@ class SchedulerController
                 $proximaData = null; // Excedeu repetições, para repetir
             }
         }
+
+        // Monta array para atualizar campos no Bitrix
+        $fieldsParaAtualizar = [];
+        if ($ufRetornoApi) {
+            $fieldsParaAtualizar[$ufRetornoApi] = $proximaData ? 'Próxima tarefa agendada' : 'Ciclo finalizado';
+        }
+        if ($ufRetornoData) {
+            $fieldsParaAtualizar[$ufRetornoData] = $proximaData;
+        }
+
+        // Atualiza no Bitrix
+        $update = BitrixDealHelper::editarDeal($spa, $dealId, $fieldsParaAtualizar);
 
         $retorno['Proxima Data'] = $proximaData;
 
