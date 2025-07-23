@@ -6,6 +6,7 @@ require_once __DIR__ . '/../helpers/BitrixHelper.php';
 
 use Helpers\BitrixDealHelper;
 use Helpers\BitrixHelper;
+use DateTime;
 
 class SchedulerController
 {
@@ -56,7 +57,7 @@ class SchedulerController
         $itemRetornado = $resultado['result']['item'] ?? [];
         $itemConvertido = BitrixHelper::mapearValoresEnumerados($itemRetornado, $fields);
 
-        // 7. Monta retorno final (você pode trocar para nome amigável aqui se quiser)
+        // Inicializa o retorno com os campos nome amigável
         $retorno = [];
         foreach ($campos as $campo) {
             $campoFormatado = array_key_first(BitrixHelper::formatarCampos([$campo['uf'] => null]));
@@ -64,8 +65,82 @@ class SchedulerController
         }
         $retorno['id'] = $itemConvertido['id'] ?? null;
 
-        header('Content-Type: application/json');
-        echo json_encode(['result' => ['item' => $retorno]]);
+        // 7. Calcula próxima data
+        $periodo = $retorno['Período'] ?? null;
+        $dataAtual = (new DateTime())->format('c');
+        $proximaData = null;
+
+        if ($periodo === 'Semanal') {
+            $diasSemana = $retorno['Dias da semana'] ?? [];
+            $proximaData = $this->calcularProximaDataSemanal($diasSemana, $dataAtual);
+        } elseif ($periodo === 'Mensal') {
+            $diaMes = (int)($retorno['Dias de criação de tarefas (Mês)'] ?? 1);
+            $proximaData = $this->calcularProximaDataMensal($diaMes, $dataAtual);
+        } elseif ($periodo === 'Intervalo de tempo') {
+            $intervaloDias = (int)($retorno['Intervalo de tempo'] ?? 0);
+            $proximaData = $this->calcularProximaDataIntervalo($intervaloDias, $dataAtual);
         }
 
+        $retorno['Proxima Data'] = $proximaData;
+
+        header('Content-Type: application/json');
+        echo json_encode(['result' => ['item' => $retorno]]);
     }
+
+    private function calcularProximaDataSemanal(array $diasSemana, string $dataAtual): string
+    {
+        $diasSemana = array_map('intval', $diasSemana);
+        sort($diasSemana);
+
+        $dataAtualObj = new DateTime($dataAtual);
+        $hojeNum = (int)$dataAtualObj->format('N');
+
+        $diasDaSemanaMap = [
+            1 => 'Monday',
+            2 => 'Tuesday',
+            3 => 'Wednesday',
+            4 => 'Thursday',
+            5 => 'Friday',
+            6 => 'Saturday',
+            7 => 'Sunday'
+        ];
+
+        foreach ($diasSemana as $dia) {
+            if ($dia > $hojeNum) {
+                $dataAtualObj->modify('next ' . $diasDaSemanaMap[$dia]);
+                return $dataAtualObj->format('c');
+            }
+        }
+
+        $primeiroDia = $diasSemana[0];
+        $dataAtualObj->modify('next ' . $diasDaSemanaMap[$primeiroDia]);
+        return $dataAtualObj->format('c');
+    }
+
+    private function calcularProximaDataMensal(int $diaMes, string $dataAtual): string
+    {
+        $dataAtualObj = new DateTime($dataAtual);
+        $ano = (int)$dataAtualObj->format('Y');
+        $mes = (int)$dataAtualObj->format('m');
+
+        if ((int)$dataAtualObj->format('d') < $diaMes) {
+            $dataAtualObj->setDate($ano, $mes, $diaMes);
+        } else {
+            $mes++;
+            if ($mes > 12) {
+                $mes = 1;
+                $ano++;
+            }
+            $dataAtualObj->setDate($ano, $mes, $diaMes);
+        }
+
+        return $dataAtualObj->format('c');
+    }
+
+    private function calcularProximaDataIntervalo(int $intervaloDias, string $dataAtual): string
+    {
+        $dataAtualObj = new DateTime($dataAtual);
+        $dataAtualObj->modify("+$intervaloDias days");
+        return $dataAtualObj->format('c');
+    }
+}
