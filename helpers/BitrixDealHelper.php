@@ -80,8 +80,6 @@ class BitrixDealHelper
     public static function consultarDeal($entityId, $dealId, $fields)
     {
 
-        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | entityId:$entityId | dealId:$dealId | fields:" . implode(',', $fields) . "\n", FILE_APPEND);
-
         // Normaliza campos para array e remove espaços
         if (is_string($fields)) {
             $fields = array_map('trim', explode(',', $fields));
@@ -98,14 +96,8 @@ class BitrixDealHelper
             'id' => $dealId,
         ];
 
-        
-        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | chamarApi params: " . print_r($params, true) . "\n", FILE_APPEND);
-
         $respostaApi = BitrixHelper::chamarApi('crm.item.get', $params, []);
-        
-        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | respostaApi: " . print_r($respostaApi, true) . "\n", FILE_APPEND);
-
-
+    
         $dadosBrutos = $respostaApi['result']['item'] ?? [];
 
         $camposFormatados = BitrixHelper::formatarCampos(array_fill_keys($fields, null));

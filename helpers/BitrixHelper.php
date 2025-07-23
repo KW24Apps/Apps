@@ -12,6 +12,8 @@ class BitrixHelper
     {
 
         $webhookBase = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? '';
+        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | WEBHOOK:$webhookBase | ENDPOINT:$endpoint | PARAMS:" . json_encode($params) . "\n", FILE_APPEND);
+
         if (!$webhookBase) {
             LogHelper::logBitrixHelpers("Webhook não informado para chamada do endpoint: $endpoint", __CLASS__ . '::' . __FUNCTION__);
             return ['error' => 'Webhook não informado'];
