@@ -162,7 +162,17 @@ class SchedulerController
     private function calcularProximaDataSemanal(array $diasSemana, string $dataAtual): string
     {
         LogHelper::logSchedulerController("Início calcularProximaDataSemanal - diasSemana: " . json_encode($diasSemana) . " | dataAtual: $dataAtual");
-        $diasSemana = array_map('intval', $diasSemana);
+        $mapaDias = [
+            'Segunda' => 1,
+            'Terça' => 2,
+            'Quarta' => 3,
+            'Quinta' => 4,
+            'Sexta' => 5,
+            'Sábado' => 6,
+            'Domingo' => 7,
+        ];
+        $diasSemana = array_map(fn($d) => $mapaDias[$d] ?? 0, $diasSemana);
+        $diasSemana = array_filter($diasSemana); // remove zeros
         sort($diasSemana);
 
         $dataAtualObj = new DateTime($dataAtual);
