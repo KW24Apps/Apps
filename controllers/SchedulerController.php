@@ -49,18 +49,8 @@ class SchedulerController
         // 4. Consulta o deal
         $resultado = BitrixDealHelper::consultarDeal($spa, $dealId, implode(',', $ufCampos));
 
-        // 5. Monta retorno com nome amigável
-        $itemRetornado = $resultado['result']['item'] ?? [];
-        $retorno = [];
-
-        foreach ($campos as $campo) {
-            // Formata o nome do campo igual no retorno
-            $campoFormatado = array_key_first(BitrixHelper::formatarCampos([$campo['uf'] => null]));
-            $retorno[$campo['nome']] = $itemRetornado[$campoFormatado] ?? null;
-        }
-        $retorno['id'] = $itemRetornado['id'] ?? null;
-
+        // 5. Retorna exatamente o que veio
         header('Content-Type: application/json');
-        echo json_encode(['result' => ['item' => $retorno]]);
+        echo json_encode($resultado);
+        }
     }
-}

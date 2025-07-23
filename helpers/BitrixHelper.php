@@ -47,6 +47,21 @@ class BitrixHelper
 
         return $respostaJson;
     }
+
+    // Consulta os campos de uma SPA (Single Page Application) no Bitrix24
+    public static function consultarCamposSpa($entityTypeId)
+    {
+        // Monta parâmetros
+        $params = [
+            'entityTypeId' => $entityTypeId,
+        ];
+
+        // Chama a API do Bitrix para buscar os campos da SPA
+        $respostaApi = BitrixHelper::chamarApi('crm.item.fields', $params);
+
+        // Retorna o resultado bruto dos campos da SPA
+        return $respostaApi['result']['fields'] ?? [];
+    }
     
     // Formata os campos conforme o padrão esperado pelo Bitrix (camelCase)
     public static function formatarCampos($dados)
