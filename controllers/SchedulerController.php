@@ -57,8 +57,15 @@ class SchedulerController
         $itemConvertido = BitrixHelper::mapearValoresEnumerados($itemRetornado, $fields);
 
         // 7. Monta retorno final (você pode trocar para nome amigável aqui se quiser)
+        $retorno = [];
+        foreach ($campos as $campo) {
+            $campoFormatado = array_key_first(BitrixHelper::formatarCampos([$campo['uf'] => null]));
+            $retorno[$campo['nome']] = $itemConvertido[$campoFormatado] ?? null;
+        }
+        $retorno['id'] = $itemConvertido['id'] ?? null;
+
         header('Content-Type: application/json');
-        echo json_encode(['result' => ['item' => $itemConvertido]]);
+        echo json_encode(['result' => ['item' => $retorno]]);
         }
 
     }
