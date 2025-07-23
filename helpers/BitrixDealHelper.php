@@ -98,7 +98,13 @@ class BitrixDealHelper
             'id' => $dealId,
         ];
 
+        
+        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | chamarApi params: " . print_r($params, true) . "\n", FILE_APPEND);
+
         $respostaApi = BitrixHelper::chamarApi('crm.item.get', $params, []);
+        
+        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | respostaApi: " . print_r($respostaApi, true) . "\n", FILE_APPEND);
+
 
         $dadosBrutos = $respostaApi['result']['item'] ?? [];
 
