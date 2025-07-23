@@ -38,11 +38,11 @@ class SchedulerController
 
         // 3. Monta lista dos campos UF_CRM_* do grupo da SPA
         $campos = $configJson[$spaKey]['campos'];
-        $ufCampos = implode(',', array_column($campos, 'uf'));
+        $ufCampos = array_column($campos, 'uf');
 
         // 4. Chama direto o helper, igual o controller de consulta
 
-        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | SPA:$spa | DEAL_ID:$dealId | CAMPOS:$ufCampos\n", FILE_APPEND);
+        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | SPA:$spa | DEAL_ID:$dealId | CAMPOS:" . implode(',', $ufCampos) . "\n", FILE_APPEND);
 
         $resultado = BitrixDealHelper::consultarDeal($spa, $dealId, $ufCampos);
 
