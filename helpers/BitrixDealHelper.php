@@ -80,7 +80,7 @@ class BitrixDealHelper
     public static function consultarDeal($entityId, $dealId, $fields)
     {
 
-        file_put_contents(__DIR__ . '/../logs/02.log', date('c') . " | entityId:$entityId | dealId:$dealId | fields:" . implode(',', $fields) . "\n", FILE_APPEND);
+        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | entityId:$entityId | dealId:$dealId | fields:" . implode(',', $fields) . "\n", FILE_APPEND);
 
         // Normaliza campos para array e remove espaços
         if (is_string($fields)) {
