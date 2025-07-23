@@ -93,6 +93,27 @@ class SchedulerController
             $proximaData = $this->calcularProximaDataIntervalo($intervaloDias, $dataAtual);
         }
 
+        // Validação de término por data fixa
+        $dataTermino = $retorno['Data de término ou repetições'] ?? null;
+        if (!$this->validarTerminoPorData($proximaData, $dataTermino)) {
+            $proximaData = null; // Já passou do término, para repetir
+        }
+
+        // Validação de término por quantidade de repetições
+        $quantidadeMax = (int)($retorno['Quantidade de repetições'] ?? 0);
+        if ($quantidadeMax > 0) {
+            $continua = $this->validarTerminoPorRepeticoes(
+                $retorno['Data de início'] ?? $dataAtual,
+                $dataAtual,
+                $quantidadeMax,
+                $periodo,
+                $diasSemana ?? []
+            );
+            if (!$continua) {
+                $proximaData = null; // Excedeu repetições, para repetir
+            }
+        }
+
         $retorno['Proxima Data'] = $proximaData;
 
         header('Content-Type: application/json');
@@ -158,4 +179,65 @@ class SchedulerController
         $dataAtualObj->setTime(6, 0, 0);
         return $dataAtualObj->format('c');
     }
+
+    private function validarTerminoPorData(string $proximaData, ?string $dataTermino): bool
+    {
+        if (!$dataTermino) {
+            return true; // Sem data de término, continua
+        }
+
+        $dtProxima = new DateTime($proximaData);
+        $dtTermino = new DateTime($dataTermino);
+
+        return $dtProxima <= $dtTermino;
+    }
+
+    private function validarTerminoPorRepeticoes(string $dataInicio, string $dataAtual, int $repeticoesMax, string $periodo, array $diasSemana = []): bool
+    {
+        $dtInicio = new DateTime($dataInicio);
+        $dtAtual = new DateTime($dataAtual);
+
+        if ($repeticoesMax <= 0) {
+            return true; // Sem limite, continua
+        }
+
+        $totalRepeticoes = 0;
+
+        switch ($periodo) {
+            case 'Semanal':
+                $totalDias = $dtInicio->diff($dtAtual)->days;
+                $semanas = floor($totalDias / 7);
+                $eventosPorSemana = count($diasSemana);
+                $totalRepeticoes = $semanas * $eventosPorSemana;
+
+                // Ajuste para dias da semana adicionais no período atual
+                $diaSemanaInicio = (int)$dtInicio->format('N');
+                $diaSemanaAtual = (int)$dtAtual->format('N');
+                foreach ($diasSemana as $dia) {
+                    if ($dia >= $diaSemanaInicio && $dia <= $diaSemanaAtual) {
+                        $totalRepeticoes++;
+                    }
+                }
+                break;
+
+            case 'Mensal':
+                $meses = (($dtAtual->format('Y') - $dtInicio->format('Y')) * 12) + ($dtAtual->format('m') - $dtInicio->format('m'));
+                $totalRepeticoes = $meses + 1; // Considera o mês atual
+
+                break;
+
+            case 'Intervalo de tempo':
+                $intervaloDias = (int)$repeticoesMax; // Nesse caso, $repeticoesMax representa o intervalo
+                $diasPassados = $dtInicio->diff($dtAtual)->days;
+                $totalRepeticoes = floor($diasPassados / $intervaloDias) + 1;
+                break;
+
+            default:
+                $totalRepeticoes = 0; // Indefinido
+        }
+
+        return $totalRepeticoes <= $repeticoesMax;
+    }
+
+
 }
