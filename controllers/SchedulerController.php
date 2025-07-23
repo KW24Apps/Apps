@@ -3,7 +3,9 @@ namespace Controllers;
 
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
+require_once __DIR__ . '/../helpers/LogHelper.php';
 
+use Helpers\LogHelper;
 use Helpers\BitrixDealHelper;
 use Helpers\BitrixHelper;
 use DateTime;
