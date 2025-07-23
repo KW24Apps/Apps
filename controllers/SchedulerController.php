@@ -101,6 +101,7 @@ class SchedulerController
         }
         $proximaData = null;
 
+        // ==== PERÍODO ====
         if (!$retorno['RETORNO DATA']) {
             // Primeira execução: usa data início com horário fixo, sem cálculo
             $proximaData = $dataAtual;
@@ -117,26 +118,32 @@ class SchedulerController
             }
         }
 
-        // Validação de término por data fixa
-        $dataTermino = $retorno['Data de término ou repetições'] ?? null;
-        if (!$this->validarTerminoPorData($proximaData, $dataTermino)) {
-            $proximaData = null; // Já passou do término, para repetir
-        }
+        // ==== TÉRMINO ====
+        // Campo lista: $retorno['Término'] pode ser 'Data fixa', 'Depois de X repetições' ou 'Nunca'
+        $termino = $retorno['Término'] ?? 'Nunca';
 
-        // Validação de término por quantidade de repetições
-        $quantidadeMax = (int)($retorno['Quantidade de repetições'] ?? 0);
-        if ($quantidadeMax > 0) {
-            $continua = $this->validarTerminoPorRepeticoes(
-                $retorno['Data de início'] ?? $dataAtual,
-                $dataAtual,
-                $quantidadeMax,
-                $periodo,
-                $diasSemana ?? []
-            );
-            if (!$continua) {
-                $proximaData = null; // Excedeu repetições, para repetir
+        if ($termino === 'Data fixa') {
+            $dataTermino = $retorno['Data de término ou repetições'] ?? null;
+            if (!$this->validarTerminoPorData($proximaData, $dataTermino)) {
+                $proximaData = null;
+            }
+        } elseif ($termino === 'Depois de X repetições') {
+            $quantidadeMax = (int)($retorno['Quantidade de repetições'] ?? 0);
+            if ($quantidadeMax > 0) {
+                $continua = $this->validarTerminoPorRepeticoes(
+                    $retorno['Data de início'] ?? $dataAtual,
+                    $dataAtual,
+                    $quantidadeMax,
+                    $periodo,
+                    $diasSemana ?? []
+                );
+                if (!$continua) {
+                    $proximaData = null;
+                }
             }
         }
+
+
 
         // Monta array para atualizar campos no Bitrix
         $fieldsParaAtualizar = [];
