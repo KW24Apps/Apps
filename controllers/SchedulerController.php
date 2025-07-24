@@ -112,7 +112,7 @@ class SchedulerController
             } elseif ($periodo === 'Mensal') {
                 $diaMes = (int)($retorno['Dias de criação de tarefas (Mês)'] ?? 1);
                 $proximaData = $this->calcularProximaDataMensal($diaMes, $dataAtual);
-            } elseif ($periodo === 'Intervalo de tempo') {
+            } elseif ($periodo === 'Intervalo de tempo' || $periodo === 'Intervalo de dias') {
                 $intervaloDias = (int)($retorno['Intervalo de tempo'] ?? 0);
                 $proximaData = $this->calcularProximaDataIntervalo($intervaloDias, $dataAtual);
             }
@@ -304,6 +304,5 @@ class SchedulerController
 
         return $totalRepeticoes <= $repeticoesMax;
     }
-
 
 }
