@@ -83,16 +83,26 @@ class GeraroptndController
 
         // 6. Monta resposta amigável: UF, nome amigável, valor e valor texto (se for lista)
         $resposta = [];
+        // Mapeamento manual dos códigos de fase para nomes amigáveis
+        $fasesMap = [
+            'C53:UC_1PAPS7' => 'Solicitar Diagnóstico',
+            'C53:WON' => 'Concluído',
+        ];
+
         foreach ($camposBitrix as $uf) {
             $def = $fields[$uf] ?? null;
-            // Para o campo de fase (stageId), nome amigável padrão
             if ($uf === 'stageId') {
                 $nome = 'Fase';
             } else {
                 $nome = $def['title'] ?? $uf;
             }
             $valor = $item[$uf] ?? null;
-            $valorTexto = $itemConvertido[$uf] ?? $valor;
+            // Se for stageId, tenta mapear para nome amigável
+            if ($uf === 'stageId' && $valor && isset($fasesMap[$valor])) {
+                $valorTexto = $fasesMap[$valor];
+            } else {
+                $valorTexto = $itemConvertido[$uf] ?? $valor;
+            }
             $resposta[$uf] = [
                 'nome' => $nome,
                 'valor' => $valor,
