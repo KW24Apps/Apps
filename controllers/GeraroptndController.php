@@ -2,6 +2,11 @@
 namespace Controllers;
 
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
+require_once __DIR__ . '/../helpers/BitrixHelper.php';
+
+use Helpers\BitrixHelper;
+use Helpers\BitrixDealHelper;
+
 class GeraroptndController
 {
     public function executar()
@@ -65,12 +70,32 @@ class GeraroptndController
         ];
 
         // 3. Consulta o deal no Bitrix
-        
         $camposStr = implode(',', $camposBitrix);
         $resultado = \Helpers\BitrixDealHelper::consultarDeal(2, $dealId, $camposStr);
 
-        // 4. Retorna os dados consultados (para teste)
+        // 4. Consulta definição dos campos (SPA 2)
+        $fields = BitrixHelper::consultarCamposSpa(2);
+
+        // 5. Mapeia valores enumerados para texto
+        $item = $resultado['result']['item'] ?? [];
+        $itemConvertido = BitrixHelper::mapearValoresEnumerados($item, $fields);
+
+        // 6. Monta resposta amigável: UF, nome amigável, valor e valor texto (se for lista)
+        $resposta = [];
+        foreach ($camposBitrix as $uf) {
+            $def = $fields[$uf] ?? null;
+            $nome = $def['title'] ?? $uf;
+            $valor = $item[$uf] ?? null;
+            $valorTexto = $itemConvertido[$uf] ?? $valor;
+            $resposta[$uf] = [
+                'nome' => $nome,
+                'valor' => $valor,
+                'texto' => $valorTexto
+            ];
+        }
+        $resposta['id'] = $item['id'] ?? null;
+
         header('Content-Type: application/json');
-        echo json_encode(['result' => $resultado]);
+        echo json_encode(['result' => $resposta]);
     }
 }
