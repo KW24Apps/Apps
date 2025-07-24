@@ -179,7 +179,9 @@ class UtilHelpers
     {
         $uri = ltrim($uri, '/');
         $slug = null;
-        if (strpos($uri, 'scheduler') === 0) {
+        if (strpos($uri, 'geraroportunidades') === 0) {
+            $slug = 'geraroptnd';
+        } elseif (strpos($uri, 'scheduler') === 0) {
             $slug = 'scheduler';
         } elseif (strpos($uri, 'deal') === 0) {
             $slug = 'deal';

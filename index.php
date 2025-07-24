@@ -63,6 +63,9 @@ switch (NOME_APLICACAO) {
     case 'omie':
         require_once __DIR__ . '/routers/OmieRouter.php';
     break;    
+    case 'geraroptnd':
+        require_once __DIR__ . '/routers/GeraroptndRoutes.php';
+        break;
     default:
         LogHelper::registrarRotaNaoEncontrada($uri, $method, __FILE__);
         http_response_code(404);
