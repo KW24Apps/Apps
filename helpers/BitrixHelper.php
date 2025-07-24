@@ -69,19 +69,27 @@ class BitrixHelper
         $fields = [];
 
         foreach ($dados as $campo => $valor) {
+            // Se já está no padrão camelCase (ufCrm_ ou ufCrmXX_), não altera
+            if (preg_match('/^ufCrm(\d+_)?\d+$/', $campo)) {
+                $fields[$campo] = $valor;
+                continue;
+            }
+
             // Normaliza prefixos quebrados, aceita ufcrm_, uf_crm_, UF_CRM_...
             $campoNormalizado = strtoupper(str_replace(['ufcrm_', 'uf_crm_'], 'UF_CRM_', $campo));
 
-            // Identifica se é SPA (tem _41_) ou DEAL (não tem _41_)
-            if (strpos($campoNormalizado, 'UF_CRM_41_') === 0) {
-                // SPA: mantem ufCrm41_...
-                $chaveConvertida = 'ufCrm41_' . substr($campoNormalizado, 10);
+            // SPA: UF_CRM_XX_YYYYYYY (XX = qualquer número de SPA, YYYYYYY = campo)
+            if (preg_match('/^UF_CRM_(\d+)_([0-9]+)$/', $campoNormalizado, $m)) {
+                $chaveConvertida = 'ufCrm' . $m[1] . '_' . $m[2];
                 $fields[$chaveConvertida] = $valor;
-            } elseif (strpos($campoNormalizado, 'UF_CRM_') === 0) {
-                // DEAL: ufCrm_...
-                $chaveConvertida = 'ufCrm_' . substr($campoNormalizado, 7);
+            }
+            // DEAL: UF_CRM_YYYYYYY
+            elseif (preg_match('/^UF_CRM_([0-9]+)$/', $campoNormalizado, $m)) {
+                $chaveConvertida = 'ufCrm_' . $m[1];
                 $fields[$chaveConvertida] = $valor;
-            } else {
+            }
+            // Se não bate nenhum padrão, mantém como veio
+            else {
                 $fields[$campo] = $valor;
             }
         }
