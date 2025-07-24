@@ -91,12 +91,12 @@ class SchedulerController
             // Primeira execução: usar Data de início
             $dataAtual = $retorno['Data de início'] ?? (new DateTime())->format('c');
             $dt = new DateTime($dataAtual);
-            $dt->setTime(6, 0, 0);
+            $dt->setTime(1, 0, 0);
             $dataAtual = $dt->format('c');
         } else {
             // Ajusta horário para 6h mesmo na data de retorno existente
             $dt = new DateTime($dataAtual);
-            $dt->setTime(6, 0, 0);
+            $dt->setTime(1, 0, 0);
             $dataAtual = $dt->format('c');
         }
         $proximaData = null;
@@ -198,7 +198,7 @@ class SchedulerController
         foreach ($diasSemana as $dia) {
             if ($dia > $hojeNum) {
                 $dataAtualObj->modify('next ' . $diasDaSemanaMap[$dia]);
-                $dataAtualObj->setTime(6, 0, 0);
+                $dataAtualObj->setTime(1, 0, 0);
                 LogHelper::logSchedulerController("Próxima data encontrada no ciclo atual: " . $dataAtualObj->format('c'));
                 return $dataAtualObj->format('c');
             }
@@ -207,12 +207,12 @@ class SchedulerController
         // Se não encontrou dia depois de hoje, pega o primeiro do próximo ciclo e garante que está no dia certo
         $primeiroDia = $diasSemana[0];
         $dataAtualObj->modify('next ' . $diasDaSemanaMap[$primeiroDia]);
-        $dataAtualObj->setTime(6, 0, 0);
+        $dataAtualObj->setTime(1, 0, 0);
 
         // Avança enquanto não estiver em um dia permitido (caso o modify('next') não caia exatamente no dia)
         while (!in_array((int)$dataAtualObj->format('N'), $diasSemana)) {
             $dataAtualObj->modify('+1 day');
-            $dataAtualObj->setTime(6, 0, 0);
+            $dataAtualObj->setTime(1, 0, 0);
         }
         LogHelper::logSchedulerController("Próxima data do próximo ciclo: " . $dataAtualObj->format('c'));
         return $dataAtualObj->format('c');
@@ -234,7 +234,7 @@ class SchedulerController
             }
             $dataAtualObj->setDate($ano, $mes, $diaMes);
         }
-        $dataAtualObj->setTime(6, 0, 0);
+        $dataAtualObj->setTime(1, 0, 0);
         return $dataAtualObj->format('c');
     }
 
@@ -242,7 +242,7 @@ class SchedulerController
     {
         $dataAtualObj = new DateTime($dataAtual);
         $dataAtualObj->modify("+$intervaloDias days");
-        $dataAtualObj->setTime(6, 0, 0);
+        $dataAtualObj->setTime(1, 0, 0);
         return $dataAtualObj->format('c');
     }
 
