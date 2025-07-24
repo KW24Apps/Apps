@@ -1,6 +1,7 @@
 <?php
 namespace Controllers;
 
+require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
 class GeraroptndController
 {
     public function executar()
@@ -64,9 +65,9 @@ class GeraroptndController
         ];
 
         // 3. Consulta o deal no Bitrix
-        require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
+        
         $camposStr = implode(',', $camposBitrix);
-        $resultado = \Helpers\BitrixDealHelper::consultarDeal(null, $dealId, $camposStr);
+        $resultado = \Helpers\BitrixDealHelper::consultarDeal(2, $dealId, $camposStr);
 
         // 4. Retorna os dados consultados (para teste)
         header('Content-Type: application/json');
