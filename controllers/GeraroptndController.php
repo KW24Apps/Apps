@@ -67,6 +67,7 @@ class GeraroptndController
             'ufCrm_1737406345', // Valor Custo Extra de Compensação
             'ufCrm_1687542931', // Percentual Fixo do Parceiro
             'ufCrm_1687543122', // Percentual Variável do Parceiro
+            'stageId', // Fase do negócio
         ];
 
         // 3. Consulta o deal no Bitrix
@@ -84,7 +85,12 @@ class GeraroptndController
         $resposta = [];
         foreach ($camposBitrix as $uf) {
             $def = $fields[$uf] ?? null;
-            $nome = $def['title'] ?? $uf;
+            // Para o campo de fase (stageId), nome amigável padrão
+            if ($uf === 'stageId') {
+                $nome = 'Fase';
+            } else {
+                $nome = $def['title'] ?? $uf;
+            }
             $valor = $item[$uf] ?? null;
             $valorTexto = $itemConvertido[$uf] ?? $valor;
             $resposta[$uf] = [
