@@ -117,6 +117,11 @@ class BitrixDealHelper
         foreach (array_keys($camposFormatados) as $campoConvertido) {
             $valoresBrutos[$campoConvertido] = $dadosBrutos[$campoConvertido] ?? null;
         }
+        
+        // Garantir que companyId seja incluído se existir nos dados brutos
+        if (isset($dadosBrutos['companyId']) && !isset($valoresBrutos['companyId'])) {
+            $valoresBrutos['companyId'] = $dadosBrutos['companyId'];
+        }
 
         // 6. Mapeia valores enumerados
         $valoresConvertidos = BitrixHelper::mapearValoresEnumerados($valoresBrutos, $camposSpa);
