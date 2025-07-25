@@ -1,3 +1,0 @@
-[2025-07-25 04:15:01] [e28c9293] [clicksign] [dao\AplicacaoAcessoDAO::ValidarClienteAplicacao] - ACESSO: {"mensagem":"Acesso liberado","cliente":"NIMBUS CONSULTORIA ESTRATEGICA LTDA","slug":"clicksign","status":"ok"}
-[2025-07-25 04:15:50] [829412ff] [clicksign] [dao\AplicacaoAcessoDAO::ValidarClienteAplicacao] - ACESSO: {"mensagem":"Acesso liberado","cliente":"NIMBUS CONSULTORIA ESTRATEGICA LTDA","slug":"clicksign","status":"ok"}
-[2025-07-25 04:24:31] [c85b3701] [clicksign] [dao\AplicacaoAcessoDAO::ValidarClienteAplicacao] - ACESSO: {"mensagem":"Acesso liberado","cliente":"NIMBUS CONSULTORIA ESTRATEGICA LTDA","slug":"clicksign","status":"ok"}
