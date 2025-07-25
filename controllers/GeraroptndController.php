@@ -2,9 +2,7 @@
 namespace Controllers;
 
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
-require_once __DIR__ . '/../helpers/BitrixHelper.php';
 
-use Helpers\BitrixHelper;
 use Helpers\BitrixDealHelper;
 
 class GeraroptndController
@@ -72,7 +70,7 @@ class GeraroptndController
 
         // 3. Consulta o deal no Bitrix (já retorna campos e valores amigáveis)
         $camposStr = implode(',', $camposBitrix);
-        $resultado = \Helpers\BitrixDealHelper::consultarDeal(2, $dealId, $camposStr);
+        $resultado = BitrixDealHelper::consultarDeal(2, $dealId, $camposStr);
         $item = $resultado['result'] ?? [];
         header('Content-Type: application/json');
         echo json_encode(['result' => $item]);

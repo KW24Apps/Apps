@@ -8,3 +8,6 @@
 [2025-07-25 04:15:51] [829412ff] [clicksign] [Helpers\BitrixHelper::chamarApi] - [829412ff] Endpoint: crm.status.list | HTTP: 200 | Erro: 
 [2025-07-25 04:15:51] [829412ff] [clicksign] [Helpers\BitrixHelper::chamarApi] - [829412ff] Endpoint: crm.contact.get | HTTP: 200 | Erro: 
 [2025-07-25 04:16:00] [829412ff] [clicksign] [Helpers\BitrixHelper::chamarApi] - [829412ff] Endpoint: crm.item.update | HTTP: 200 | Erro: 
+[2025-07-25 04:24:32] [c85b3701] [clicksign] [Helpers\BitrixHelper::chamarApi] - [c85b3701] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 04:24:32] [c85b3701] [clicksign] [Helpers\BitrixHelper::chamarApi] - [c85b3701] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 04:24:32] [c85b3701] [clicksign] [Helpers\BitrixHelper::chamarApi] - [c85b3701] Endpoint: crm.status.list | HTTP: 200 | Erro: 
