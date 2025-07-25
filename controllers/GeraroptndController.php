@@ -70,38 +70,22 @@ class GeraroptndController
             'stageId', // Fase do negócio
         ];
 
-        // 3. Consulta o deal no Bitrix
+        // 3. Consulta o deal no Bitrix (já retorna campos e valores amigáveis)
         $camposStr = implode(',', $camposBitrix);
         $resultado = \Helpers\BitrixDealHelper::consultarDeal(2, $dealId, $camposStr);
-
-        // 4. Consulta definição dos campos (SPA 2)
-        $fields = BitrixHelper::consultarCamposSpa(2);
-
-        // 5. Mapeia valores enumerados para texto
         $item = $resultado['result']['item'] ?? [];
-        $itemConvertido = BitrixHelper::mapearValoresEnumerados($item, $fields);
 
-        // 6. Monta resposta amigável: UF, nome amigável, valor e valor texto (se for lista)
+        // Monta resposta amigável: UF, nome amigável, valor e valor texto (se for lista)
         $resposta = [];
-        // Mapeamento manual dos códigos de fase para nomes amigáveis
-        $fasesMap = [
-            'C53:UC_1PAPS7' => 'Solicitar Diagnóstico',
-            'C53:WON' => 'Concluído',
-        ];
-
         foreach ($camposBitrix as $uf) {
-            $def = $fields[$uf] ?? null;
-            if ($uf === 'stageId') {
+            $valor = $item[$uf] ?? null;
+            // Se for stageId, pega o nome amigável da etapa se existir
+            if ($uf === 'stageId' && isset($item['stageName'])) {
+                $valorTexto = $item['stageName'];
                 $nome = 'Fase';
             } else {
-                $nome = $def['title'] ?? $uf;
-            }
-            $valor = $item[$uf] ?? null;
-            // Se for stageId, tenta mapear para nome amigável
-            if ($uf === 'stageId' && $valor && isset($fasesMap[$valor])) {
-                $valorTexto = $fasesMap[$valor];
-            } else {
-                $valorTexto = $itemConvertido[$uf] ?? $valor;
+                $valorTexto = $valor;
+                $nome = $uf;
             }
             $resposta[$uf] = [
                 'nome' => $nome,

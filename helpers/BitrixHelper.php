@@ -6,6 +6,20 @@ require_once __DIR__ . '/../helpers/LogHelper.php';
 use Helpers\LogHelper;
 
 class BitrixHelper
+    // Retorna o nome amigável da etapa a partir do ID e do array de etapas
+    public static function mapearEtapaPorId($stageId, $stages)
+    {
+        foreach ($stages as $stage) {
+            if (isset($stage['statusId']) && $stage['statusId'] == $stageId) {
+                return $stage['name'];
+            }
+            // Fallback para outros possíveis campos de ID
+            if (isset($stage['id']) && $stage['id'] == $stageId) {
+                return $stage['name'];
+            }
+        }
+        return $stageId; // Se não encontrar, retorna o próprio ID
+    }
 {
     // Envia requisição para API Bitrix com endpoint e parâmetros fornecidos
     public static function chamarApi($endpoint, $params, $opcoes = [])
@@ -123,4 +137,27 @@ class BitrixHelper
         return $dados;
     }
 
+    // Consulta as etapas de um tipo de entidade no Bitrix24
+    public static function consultarEtapasPorTipo($entityTypeId)
+    {
+        $params = [
+            'entityTypeId' => $entityTypeId
+        ];
+        $resposta = BitrixHelper::chamarApi('crm.stage.list', $params, []);
+        return $resposta['result']['stages'] ?? [];
+    }
+    // Retorna o nome amigável da etapa a partir do ID e do array de etapas
+    public static function mapearEtapaPorId($stageId, $stages)
+    {
+        foreach ($stages as $stage) {
+            if (isset($stage['statusId']) && $stage['statusId'] == $stageId) {
+                return $stage['name'];
+            }
+            // Fallback para outros possíveis campos de ID
+            if (isset($stage['id']) && $stage['id'] == $stageId) {
+                return $stage['name'];
+            }
+        }
+        return $stageId; // Se não encontrar, retorna o próprio ID
+    }
 }

@@ -80,7 +80,7 @@ class BitrixDealHelper
     public static function consultarDeal($entityId, $dealId, $fields)
     {
 
-        // Normaliza campos para array e remove espaços
+        // 1. Normaliza campos para array e remove espaços
         if (is_string($fields)) {
             $fields = array_map('trim', explode(',', $fields));
         } else {
@@ -90,23 +90,37 @@ class BitrixDealHelper
         if (!in_array('id', $fields)) {
             array_unshift($fields, 'id');
         }
-    
+
+        // 2. Consulta o negócio (deal)
         $params = [
             'entityTypeId' => $entityId,
             'id' => $dealId,
         ];
-
         $respostaApi = BitrixHelper::chamarApi('crm.item.get', $params, []);
-    
         $dadosBrutos = $respostaApi['result']['item'] ?? [];
 
+        // 3. Consulta os campos da SPA
+        $camposSpa = BitrixHelper::consultarCamposSpa($entityId);
+
+        // 4. Consulta as etapas do tipo
+        $etapas = BitrixHelper::consultarEtapasPorTipo($entityId);
+
+        // 5. Formata os campos para o padrão camelCase
         $camposFormatados = BitrixHelper::formatarCampos(array_fill_keys($fields, null));
         $resultadoFinal = [];
-
         foreach (array_keys($camposFormatados) as $campoConvertido) {
             $resultadoFinal[$campoConvertido] = $dadosBrutos[$campoConvertido] ?? null;
         }
-        
+
+        // 6. Mapeia valores enumerados
+        $resultadoFinal = BitrixHelper::mapearValoresEnumerados($resultadoFinal, $camposSpa);
+
+        // 7. Mapeia o nome amigável da etapa, se existir campo de etapa
+        // O campo de etapa geralmente é 'stageId' ou similar
+        if (isset($resultadoFinal['stageId'])) {
+            $resultadoFinal['stageName'] = BitrixHelper::mapearEtapaPorId($resultadoFinal['stageId'], $etapas);
+        }
+
         return ['result' => ['item' => $resultadoFinal]];
     }
 
