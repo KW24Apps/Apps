@@ -137,12 +137,13 @@ class BitrixHelper
     public static function mapearEtapaPorId($stageId, $stages)
     {
         foreach ($stages as $stage) {
-            if (isset($stage['statusId']) && $stage['statusId'] == $stageId) {
-                return $stage['name'];
-            }
-            // Fallback para outros possíveis campos de ID
-            if (isset($stage['id']) && $stage['id'] == $stageId) {
-                return $stage['name'];
+            if (
+                (isset($stage['ID']) && $stage['ID'] == $stageId) ||
+                (isset($stage['STATUS_ID']) && $stage['STATUS_ID'] == $stageId) ||
+                (isset($stage['statusId']) && $stage['statusId'] == $stageId) ||
+                (isset($stage['id']) && $stage['id'] == $stageId)
+            ) {
+                return $stage['NAME'] ?? $stage['name'] ?? $stageId;
             }
         }
         return $stageId; // Se não encontrar, retorna o próprio ID
