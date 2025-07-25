@@ -123,8 +123,7 @@ class BitrixDealHelper
 
         // 8. Monta resposta amigável
         $resultadoFinal = [];
-        foreach ($fields as $campoOriginal) {
-            $campoConvertido = array_key_exists($campoOriginal, $camposFormatados) ? $campoOriginal : array_search($campoOriginal, $camposFormatados);
+        foreach ($camposFormatados as $campoConvertido => $v) {
             $valorBruto = $valoresBrutos[$campoConvertido] ?? null;
             $valorConvertido = $valoresConvertidos[$campoConvertido] ?? $valorBruto;
             $nomeAmigavel = $camposSpa[$campoConvertido]['title'] ?? $campoConvertido;
