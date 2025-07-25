@@ -10,7 +10,8 @@ use Controllers\ReceitaController;
 $uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 $method = $_SERVER['REQUEST_METHOD'];
 
-if ($uri === 'receita' && $method === 'POST') {
+if (($uri === 'receita' && $method === 'POST') ||
+    ($uri === 'receitaconsultar' && in_array($method, ['POST', 'GET']))) {
     (new ReceitaController())->consultarCNPJWebhook();
 } else {
     LogHelper::registrarRotaNaoEncontrada($uri, $method, 'receitaRoutes.php');
