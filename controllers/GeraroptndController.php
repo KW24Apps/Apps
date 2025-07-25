@@ -137,6 +137,8 @@ class GeraroptndController
                 foreach ($oferecidas as $oportunidade) {
                     // Criar negócio apenas com o campo empresa (companyId) e funil/categoria 17
                     $novoNegocio = [];
+                    // Garantir que nunca exista 'categoryId' (caixa baixa) no array
+                    unset($novoNegocio['categoryId']);
                     $companyIdMeta = $item['companyId'] ?? [];
                     $companyIdIsMultiple = $companyIdMeta['isMultiple'] ?? false;
                     if ($companyIdIsMultiple) {
@@ -154,21 +156,24 @@ class GeraroptndController
                             strcasecmp($tipoProcesso, 'Contencioso Ativo') === 0
                         ) {
                             $novoNegocio['CATEGORY_ID'] = 17; // Relatório Preliminar
-                            $novoNegocio['STAGE_ID'] = 'NEW';
                         } else {
                             $novoNegocio['CATEGORY_ID'] = 18; // Contencioso
-                            $novoNegocio['STAGE_ID'] = 'NEW';
                         }
                     } else if ($etapaAtualId === 'C53:WON') {
                         if (strcasecmp($tipoProcesso, 'Administrativo') === 0) {
                             $novoNegocio['CATEGORY_ID'] = 19; // Operacional
-                            $novoNegocio['STAGE_ID'] = 'NEW';
                         } else {
                             $novoNegocio['CATEGORY_ID'] = 18; // Contencioso
-                            $novoNegocio['STAGE_ID'] = 'NEW';
                         }
                     }
-                    $res = BitrixDealHelper::criarDeal(2, null, $novoNegocio);
+                    // Remove CATEGORY_ID do array de campos, mantém só como parâmetro
+                    $categoryId = $novoNegocio['CATEGORY_ID'];
+                    unset($novoNegocio['CATEGORY_ID']);
+                    unset($novoNegocio['categoryId']);
+                    // LOG: grava o payload enviado para criar negócio
+                    $logPayload = date('Y-m-d H:i:s') . ' | PAYLOAD CRIAR: ' . json_encode($novoNegocio, JSON_UNESCAPED_UNICODE) . "\n";
+                    file_put_contents(__DIR__ . '/../logs/01.log', $logPayload, FILE_APPEND);
+                    $res = BitrixDealHelper::criarDeal(2, $categoryId, $novoNegocio);
                     // Se criado com sucesso, salva o id
                     if (!empty($res['success']) && !empty($res['id'])) {
                         $idsCriados[] = $res['id'];

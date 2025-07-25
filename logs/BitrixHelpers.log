@@ -71,3 +71,87 @@
 [2025-07-25 17:27:41] [074bda53] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [074bda53] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
 [2025-07-25 17:27:42] [074bda53] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [074bda53] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
 [2025-07-25 17:27:42] [074bda53] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [074bda53] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:31:53] [d327ce95] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [d327ce95] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:31:54] [d327ce95] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [d327ce95] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:31:55] [d327ce95] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [d327ce95] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:31:55] [d327ce95] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [d327ce95] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:31:56] [d327ce95] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [d327ce95] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:31:57] [d327ce95] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [d327ce95] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:31:57] [d327ce95] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [d327ce95] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:44:35] [b4e45501] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b4e45501] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:44:36] [b4e45501] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b4e45501] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:44:37] [b4e45501] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b4e45501] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:44:39] [b4e45501] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b4e45501] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:44:40] [b4e45501] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b4e45501] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:44:40] [b4e45501] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b4e45501] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:44:42] [b4e45501] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b4e45501] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:45:08] [5e0928e5] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5e0928e5] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:45:09] [5e0928e5] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5e0928e5] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:45:09] [5e0928e5] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5e0928e5] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:45:10] [5e0928e5] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5e0928e5] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:45:10] [5e0928e5] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5e0928e5] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:45:11] [5e0928e5] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5e0928e5] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:45:11] [5e0928e5] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5e0928e5] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:46:47] [65003918] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [65003918] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:46:48] [65003918] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [65003918] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:46:48] [65003918] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [65003918] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:46:48] [65003918] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [65003918] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:46:49] [65003918] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [65003918] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:46:49] [65003918] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [65003918] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:46:50] [65003918] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [65003918] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:46:53] [5bbc8368] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5bbc8368] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:46:54] [5bbc8368] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5bbc8368] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:46:55] [5bbc8368] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5bbc8368] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:46:55] [5bbc8368] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5bbc8368] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:46:55] [5bbc8368] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5bbc8368] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:46:56] [5bbc8368] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5bbc8368] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:46:56] [5bbc8368] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5bbc8368] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:48:48] [eecab03b] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [eecab03b] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:48:49] [eecab03b] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [eecab03b] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:48:49] [eecab03b] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [eecab03b] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:48:49] [eecab03b] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [eecab03b] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:48:50] [eecab03b] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [eecab03b] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:48:50] [eecab03b] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [eecab03b] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:48:51] [eecab03b] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [eecab03b] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:49:28] [5d483bb0] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5d483bb0] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:49:28] [5d483bb0] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5d483bb0] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:49:29] [5d483bb0] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5d483bb0] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:49:29] [5d483bb0] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5d483bb0] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:49:30] [5d483bb0] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5d483bb0] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:49:30] [5d483bb0] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5d483bb0] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:49:31] [5d483bb0] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [5d483bb0] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:49:54] [7f2c73c1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [7f2c73c1] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:49:54] [7f2c73c1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [7f2c73c1] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:49:55] [7f2c73c1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [7f2c73c1] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:49:55] [7f2c73c1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [7f2c73c1] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:49:56] [7f2c73c1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [7f2c73c1] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:49:56] [7f2c73c1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [7f2c73c1] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:49:56] [7f2c73c1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [7f2c73c1] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:50:51] [f2d594a1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f2d594a1] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:50:51] [f2d594a1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f2d594a1] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:50:52] [f2d594a1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f2d594a1] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:50:52] [f2d594a1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f2d594a1] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:50:53] [f2d594a1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f2d594a1] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:50:53] [f2d594a1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f2d594a1] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:50:54] [f2d594a1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f2d594a1] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:52:58] [aca4a9b1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [aca4a9b1] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:52:58] [aca4a9b1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [aca4a9b1] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:52:59] [aca4a9b1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [aca4a9b1] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:52:59] [aca4a9b1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [aca4a9b1] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:53:00] [aca4a9b1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [aca4a9b1] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:53:00] [aca4a9b1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [aca4a9b1] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:53:01] [aca4a9b1] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [aca4a9b1] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:55:37] [9231b79f] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9231b79f] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:55:38] [9231b79f] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9231b79f] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:55:39] [9231b79f] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9231b79f] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:55:39] [9231b79f] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9231b79f] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:55:40] [9231b79f] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9231b79f] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:55:40] [9231b79f] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9231b79f] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:55:40] [9231b79f] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9231b79f] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:58:19] [8d93e374] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8d93e374] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:58:20] [8d93e374] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8d93e374] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:58:21] [8d93e374] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8d93e374] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:58:21] [8d93e374] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8d93e374] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:58:22] [8d93e374] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8d93e374] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:58:22] [8d93e374] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8d93e374] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:58:23] [8d93e374] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8d93e374] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
