@@ -73,12 +73,7 @@ class GeraroptndController
         // 3. Consulta o deal no Bitrix (já retorna campos e valores amigáveis)
         $camposStr = implode(',', $camposBitrix);
         $resultado = \Helpers\BitrixDealHelper::consultarDeal(2, $dealId, $camposStr);
-        $item = $resultado['result']['item'] ?? [];
-
-        // Retorna diretamente o resultado amigável já processado pelo helper
-        if (isset($item['stageName'])) {
-            $item['stageId_texto'] = $item['stageName'];
-        }
+        $item = $resultado['result'] ?? [];
         header('Content-Type: application/json');
         echo json_encode(['result' => $item]);
     }
