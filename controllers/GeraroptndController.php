@@ -9,6 +9,9 @@ class GeraroptndController
 {
     public function executar()
     {
+        // Aumenta tempo limite para processar múltiplas chamadas à API
+        set_time_limit(300); // 5 minutos
+        
         // 1. Pega parâmetro do negócio (dealId)
         $dealId = $_GET['deal'] ?? $_GET['id'] ?? null;
         if (!$dealId) {
@@ -79,6 +82,10 @@ class GeraroptndController
         $oferecidas = $ofer;
         $closerId = $dealId;
 
+        // LOG: Debug das arrays para verificar se há loops infinitos
+        $logDebug = date('Y-m-d H:i:s') . ' | DEBUG: empresas=' . count($empresas) . ', oferecidas=' . count($oferecidas) . ', conv=' . count($conv) . "\n";
+        file_put_contents(__DIR__ . '/../logs/01.log', $logDebug, FILE_APPEND);
+
         // 5. Define campos que NÃO devem ser copiados
         $naoCopiar = [
             'ufCrm_1688060696', // Oportunidades Oferecidas
@@ -133,8 +140,18 @@ class GeraroptndController
         if ($etapaAtualId === 'C53:UC_1PAPS7') {
             // Solicitar Diagnóstico: criar cruzando empresas × oportunidades oferecidas
             $idsCriados = [];
+            $contador = 0;
+            $maxTentativas = 20; // Limite máximo para evitar loops infinitos
+            
             foreach ($empresas as $empresa) {
                 foreach ($oferecidas as $oportunidade) {
+                    $contador++;
+                    if ($contador > $maxTentativas) {
+                        $logPayload = date('Y-m-d H:i:s') . ' | LIMITE ATINGIDO: Máximo de ' . $maxTentativas . ' tentativas atingido.' . "\n";
+                        file_put_contents(__DIR__ . '/../logs/01.log', $logPayload, FILE_APPEND);
+                        break 2; // Sai dos dois loops
+                    }
+                    
                     // Criar negócio apenas com o campo empresa (companyId) e funil/categoria 17
                     $novoNegocio = [];
                     // Garantir que nunca exista 'categoryId' (caixa baixa) no array
@@ -157,22 +174,25 @@ class GeraroptndController
                         ) {
                             $novoNegocio['CATEGORY_ID'] = 17; // Relatório Preliminar
                         } else {
-                            $novoNegocio['CATEGORY_ID'] = 18; // Contencioso
+                            $novoNegocio['CATEGORY_ID'] = 17; // Contencioso
                         }
                     } else if ($etapaAtualId === 'C53:WON') {
                         if (strcasecmp($tipoProcesso, 'Administrativo') === 0) {
-                            $novoNegocio['CATEGORY_ID'] = 19; // Operacional
+                            $novoNegocio['CATEGORY_ID'] = 17; // Operacional
                         } else {
-                            $novoNegocio['CATEGORY_ID'] = 18; // Contencioso
+                            $novoNegocio['CATEGORY_ID'] = 17; // Contencioso
                         }
                     }
-                    // Adiciona categoryId (caixa baixa) ao array de campos, igual ao payload que funciona
-                    $novoNegocio['categoryId'] = $novoNegocio['CATEGORY_ID'];
+                    // Extrai categoryId como parâmetro separado, igual ao DealController que funciona
+                    $categoryId = $novoNegocio['CATEGORY_ID'];
                     unset($novoNegocio['CATEGORY_ID']);
                     // LOG: grava o payload enviado para criar negócio
-                    $logPayload = date('Y-m-d H:i:s') . ' | PAYLOAD CRIAR: ' . json_encode($novoNegocio, JSON_UNESCAPED_UNICODE) . "\n";
+                    $logPayload = date('Y-m-d H:i:s') . ' | PAYLOAD CRIAR: ' . json_encode($novoNegocio, JSON_UNESCAPED_UNICODE) . ' | CATEGORY_ID: ' . $categoryId . "\n";
                     file_put_contents(__DIR__ . '/../logs/01.log', $logPayload, FILE_APPEND);
-                    $res = BitrixDealHelper::criarDeal(2, null, $novoNegocio);
+                    $res = BitrixDealHelper::criarDeal(2, $categoryId, $novoNegocio);
+                    
+                    // Delay de 2 segundos entre chamadas para evitar rate limiting do Bitrix
+                    sleep(2);
                     // Se criado com sucesso, salva o id
                     if (!empty($res['success']) && !empty($res['id'])) {
                         $idsCriados[] = $res['id'];

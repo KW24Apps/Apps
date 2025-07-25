@@ -22,8 +22,6 @@ class DealController
         }, ARRAY_FILTER_USE_KEY);
 
         // Loga o payload enviado para criar negócio
-        $logPayload = date('Y-m-d H:i:s') . ' | PAYLOAD CRIAR: ' . json_encode($fields, JSON_UNESCAPED_UNICODE) . "\n";
-        file_put_contents(__DIR__ . '/../logs/01.log', $logPayload, FILE_APPEND);
         $resultado = BitrixDealHelper::criarDeal($spa, $categoryId, $fields);
 
         header('Content-Type: application/json');

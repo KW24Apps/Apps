@@ -26,3 +26,8 @@
 [2025-07-25 18:02:32] [62694bb4] [deal] [dao\AplicacaoAcessoDAO::ValidarClienteAplicacao] - ACESSO: {"mensagem":"Acesso liberado","cliente":"NIMBUS CONSULTORIA ESTRATEGICA LTDA","slug":"deal","status":"ok"}
 [2025-07-25 18:03:44] [51e4bda5] [geraroptnd] [dao\AplicacaoAcessoDAO::ValidarClienteAplicacao] - ACESSO: {"mensagem":"Acesso liberado","cliente":"NIMBUS CONSULTORIA ESTRATEGICA LTDA","slug":"geraroptnd","status":"ok"}
 [2025-07-25 18:04:42] [6adcfd15] [geraroptnd] [dao\AplicacaoAcessoDAO::ValidarClienteAplicacao] - ACESSO: {"mensagem":"Acesso liberado","cliente":"NIMBUS CONSULTORIA ESTRATEGICA LTDA","slug":"geraroptnd","status":"ok"}
+[2025-07-25 18:04:52] [b7d5736c] [geraroptnd] [dao\AplicacaoAcessoDAO::ValidarClienteAplicacao] - ACESSO: {"mensagem":"Acesso liberado","cliente":"NIMBUS CONSULTORIA ESTRATEGICA LTDA","slug":"geraroptnd","status":"ok"}
+[2025-07-25 18:09:06] [9c11efaf] [geraroptnd] [dao\AplicacaoAcessoDAO::ValidarClienteAplicacao] - ACESSO: {"mensagem":"Acesso liberado","cliente":"NIMBUS CONSULTORIA ESTRATEGICA LTDA","slug":"geraroptnd","status":"ok"}
+[2025-07-25 18:10:30] [01b4232c] [geraroptnd] [dao\AplicacaoAcessoDAO::ValidarClienteAplicacao] - ACESSO: {"mensagem":"Acesso liberado","cliente":"NIMBUS CONSULTORIA ESTRATEGICA LTDA","slug":"geraroptnd","status":"ok"}
+[2025-07-25 18:13:35] [8218e58f] [geraroptnd] [dao\AplicacaoAcessoDAO::ValidarClienteAplicacao] - ACESSO: {"mensagem":"Acesso liberado","cliente":"NIMBUS CONSULTORIA ESTRATEGICA LTDA","slug":"geraroptnd","status":"ok"}
+[2025-07-25 18:18:47] [9257f6fb] [geraroptnd] [dao\AplicacaoAcessoDAO::ValidarClienteAplicacao] - ACESSO: {"mensagem":"Acesso liberado","cliente":"NIMBUS CONSULTORIA ESTRATEGICA LTDA","slug":"geraroptnd","status":"ok"}

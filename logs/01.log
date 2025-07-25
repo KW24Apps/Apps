@@ -24,3 +24,41 @@
 2025-07-25T18:04:45+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"144794","categoryId":18}}
 2025-07-25 18:04:46 | PAYLOAD CRIAR: {"companyId":"144794","categoryId":18}
 2025-07-25T18:04:46+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"144794","categoryId":18}}
+2025-07-25T18:04:52+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.get | PARAMS:{"entityTypeId":2,"id":"463778"}
+2025-07-25T18:04:53+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.fields | PARAMS:{"entityTypeId":2}
+2025-07-25T18:04:54+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.status.list | PARAMS:{"entityId":2}
+2025-07-25 18:04:54 | PAYLOAD CRIAR: {"companyId":"145738","categoryId":18}
+2025-07-25T18:04:54+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"145738","categoryId":18}}
+2025-07-25 18:04:55 | PAYLOAD CRIAR: {"companyId":"145738","categoryId":18}
+2025-07-25T18:04:55+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"145738","categoryId":18}}
+2025-07-25 18:04:55 | PAYLOAD CRIAR: {"companyId":"144794","categoryId":18}
+2025-07-25T18:04:55+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"144794","categoryId":18}}
+2025-07-25 18:04:56 | PAYLOAD CRIAR: {"companyId":"144794","categoryId":18}
+2025-07-25T18:04:56+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"144794","categoryId":18}}
+2025-07-25T18:09:06+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.get | PARAMS:{"entityTypeId":2,"id":"463778"}
+2025-07-25T18:09:07+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.fields | PARAMS:{"entityTypeId":2}
+2025-07-25T18:09:07+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.status.list | PARAMS:{"entityId":2}
+2025-07-25 18:09:08 | PAYLOAD CRIAR: {"companyId":"145738"}
+2025-07-25T18:09:08+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"145738","categoryId":18}}
+2025-07-25 18:09:08 | PAYLOAD CRIAR: {"companyId":"145738"}
+2025-07-25T18:09:08+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"145738","categoryId":18}}
+2025-07-25 18:09:09 | PAYLOAD CRIAR: {"companyId":"144794"}
+2025-07-25T18:09:09+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"144794","categoryId":18}}
+2025-07-25 18:09:09 | PAYLOAD CRIAR: {"companyId":"144794"}
+2025-07-25T18:09:09+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"144794","categoryId":18}}
+2025-07-25T18:10:30+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.get | PARAMS:{"entityTypeId":2,"id":"463778"}
+2025-07-25T18:10:31+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.fields | PARAMS:{"entityTypeId":2}
+2025-07-25T18:10:32+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.status.list | PARAMS:{"entityId":2}
+2025-07-25 18:10:32 | PAYLOAD CRIAR: {"companyId":"145738"} | CATEGORY_ID: 17
+2025-07-25T18:10:32+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"145738","categoryId":17}}
+2025-07-25T18:13:35+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.get | PARAMS:{"entityTypeId":2,"id":"463778"}
+2025-07-25T18:13:36+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.fields | PARAMS:{"entityTypeId":2}
+2025-07-25T18:13:36+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.status.list | PARAMS:{"entityId":2}
+2025-07-25 18:13:37 | PAYLOAD CRIAR: {"companyId":"145738"} | CATEGORY_ID: 17
+2025-07-25T18:13:37+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"145738","categoryId":17}}
+2025-07-25T18:18:47+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.get | PARAMS:{"entityTypeId":2,"id":"463778"}
+2025-07-25T18:18:48+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.fields | PARAMS:{"entityTypeId":2}
+2025-07-25T18:18:49+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.status.list | PARAMS:{"entityId":2}
+2025-07-25 18:18:49 | DEBUG: empresas=2, oferecidas=2, conv=0
+2025-07-25 18:18:49 | PAYLOAD CRIAR: {"companyId":"145738"} | CATEGORY_ID: 17
+2025-07-25T18:18:49+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"145738","categoryId":17}}

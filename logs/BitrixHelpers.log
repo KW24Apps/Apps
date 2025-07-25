@@ -171,3 +171,26 @@
 [2025-07-25 18:04:45] [6adcfd15] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [6adcfd15] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
 [2025-07-25 18:04:46] [6adcfd15] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [6adcfd15] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
 [2025-07-25 18:04:46] [6adcfd15] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [6adcfd15] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 18:04:53] [b7d5736c] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b7d5736c] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 18:04:54] [b7d5736c] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b7d5736c] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 18:04:54] [b7d5736c] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b7d5736c] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 18:04:55] [b7d5736c] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b7d5736c] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 18:04:55] [b7d5736c] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b7d5736c] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 18:04:56] [b7d5736c] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b7d5736c] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 18:04:56] [b7d5736c] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b7d5736c] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 18:09:07] [9c11efaf] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9c11efaf] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 18:09:07] [9c11efaf] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9c11efaf] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 18:09:08] [9c11efaf] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9c11efaf] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 18:09:08] [9c11efaf] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9c11efaf] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 18:09:09] [9c11efaf] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9c11efaf] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 18:09:09] [9c11efaf] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9c11efaf] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 18:09:10] [9c11efaf] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9c11efaf] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 18:10:31] [01b4232c] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [01b4232c] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 18:10:32] [01b4232c] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [01b4232c] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 18:10:32] [01b4232c] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [01b4232c] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 18:13:36] [8218e58f] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8218e58f] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 18:13:36] [8218e58f] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8218e58f] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 18:13:37] [8218e58f] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8218e58f] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 18:18:48] [9257f6fb] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9257f6fb] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 18:18:49] [9257f6fb] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9257f6fb] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 18:18:49] [9257f6fb] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9257f6fb] Endpoint: crm.status.list | HTTP: 200 | Erro: 
