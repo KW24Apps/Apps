@@ -123,16 +123,16 @@ class BitrixHelper
         return $dados;
     }
 
-    // Consulta as etapas de um tipo de entidade no Bitrix24
+    // Consulta as etapas de um tipo de entidade no Bitrix24 (usando crm.status.list para deals)
     public static function consultarEtapasPorTipo($entityTypeId)
     {
         $params = [
-            'entityTypeId' => $entityTypeId
+            'entityId' => $entityTypeId
         ];
-        $resposta = BitrixHelper::chamarApi('crm.stage.list', $params, []);
-        return $resposta['result']['stages'] ?? [];
+        $resposta = BitrixHelper::chamarApi('crm.status.list', $params, []);
+        return $resposta['result'] ?? [];
     }
-    
+
     // Retorna o nome amigável da etapa a partir do ID e do array de etapas
     public static function mapearEtapaPorId($stageId, $stages)
     {
