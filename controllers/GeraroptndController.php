@@ -192,7 +192,7 @@ class GeraroptndController
                 $dadosVinculo = [
                     'ufCrm_1670953245' => $idsCriados
                 ];
-                BitrixDealHelper::atualizarDeal(2, $dealId, $dadosVinculo);
+                BitrixDealHelper::editarDeal(2, $dealId, $dadosVinculo);
             }
         } else if ($etapaAtualId === 'C53:WON') {
             if (empty($vinculados)) {
