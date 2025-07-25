@@ -48,7 +48,7 @@ class ClickSignController
         }
 
         $registro = BitrixDealHelper::consultarDeal($entityId, $id, $fields);
-        $dados = $registro['result']['item'] ?? [];
+        $dados = $registro['result'] ?? [];
 
         // Extrai chaves camelCase corretas
         $mapCampos = [];
@@ -59,11 +59,11 @@ class ClickSignController
             }
         }
 
-        // Extração dos dados
-        $idsContratante = $dados[$mapCampos['contratante'] ?? ''] ?? null;
-        $idsContratada = $dados[$mapCampos['contratada'] ?? ''] ?? null;
-        $idsTestemunhas = $dados[$mapCampos['testemunhas'] ?? ''] ?? null;
-        $dataAssinatura = $dados[$mapCampos['data'] ?? ''] ?? null;
+        // Extração dos dados (acessando sempre o índice 'valor')
+        $idsContratante = isset($mapCampos['contratante']) ? ($dados[$mapCampos['contratante']]['valor'] ?? null) : null;
+        $idsContratada = isset($mapCampos['contratada']) ? ($dados[$mapCampos['contratada']]['valor'] ?? null) : null;
+        $idsTestemunhas = isset($mapCampos['testemunhas']) ? ($dados[$mapCampos['testemunhas']]['valor'] ?? null) : null;
+        $dataAssinatura = isset($mapCampos['data']) ? ($dados[$mapCampos['data']]['valor'] ?? null) : null;
 
         if ($dataAssinatura) {
         // Remover tudo após a data, inclusive a hora e o fuso horário
