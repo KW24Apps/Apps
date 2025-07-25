@@ -21,6 +21,7 @@ class DealController
             return strpos($key, 'UF_CRM_') === 0;
         }, ARRAY_FILTER_USE_KEY);
 
+        // Loga o payload enviado para criar negócio
         $resultado = BitrixDealHelper::criarDeal($spa, $categoryId, $fields);
 
         header('Content-Type: application/json');
