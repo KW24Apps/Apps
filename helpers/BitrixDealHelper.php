@@ -107,21 +107,44 @@ class BitrixDealHelper
 
         // 5. Formata os campos para o padrão camelCase
         $camposFormatados = BitrixHelper::formatarCampos(array_fill_keys($fields, null));
-        $resultadoFinal = [];
+        $valoresBrutos = [];
         foreach (array_keys($camposFormatados) as $campoConvertido) {
-            $resultadoFinal[$campoConvertido] = $dadosBrutos[$campoConvertido] ?? null;
+            $valoresBrutos[$campoConvertido] = $dadosBrutos[$campoConvertido] ?? null;
         }
 
         // 6. Mapeia valores enumerados
-        $resultadoFinal = BitrixHelper::mapearValoresEnumerados($resultadoFinal, $camposSpa);
+        $valoresConvertidos = BitrixHelper::mapearValoresEnumerados($valoresBrutos, $camposSpa);
 
         // 7. Mapeia o nome amigável da etapa, se existir campo de etapa
-        // O campo de etapa geralmente é 'stageId' ou similar
-        if (isset($resultadoFinal['stageId'])) {
-            $resultadoFinal['stageName'] = BitrixHelper::mapearEtapaPorId($resultadoFinal['stageId'], $etapas);
+        $stageName = null;
+        if (isset($valoresBrutos['stageId'])) {
+            $stageName = BitrixHelper::mapearEtapaPorId($valoresBrutos['stageId'], $etapas);
         }
 
-        return ['result' => ['item' => $resultadoFinal]];
+        // 8. Monta resposta amigável
+        $resultadoFinal = [];
+        foreach ($fields as $campoOriginal) {
+            $campoConvertido = array_key_exists($campoOriginal, $camposFormatados) ? $campoOriginal : array_search($campoOriginal, $camposFormatados);
+            $valorBruto = $valoresBrutos[$campoConvertido] ?? null;
+            $valorConvertido = $valoresConvertidos[$campoConvertido] ?? $valorBruto;
+            $nomeAmigavel = $camposSpa[$campoConvertido]['title'] ?? $campoConvertido;
+            // Se for stageId, usa o nome da etapa como texto
+            if ($campoConvertido === 'stageId') {
+                $valorConvertido = $stageName ?? $valorBruto;
+                $nomeAmigavel = 'Fase';
+            }
+            $resultadoFinal[$campoConvertido] = [
+                'nome' => $nomeAmigavel,
+                'valor' => $valorBruto,
+                'texto' => $valorConvertido
+            ];
+        }
+        // Sempre inclui o id bruto
+        if (isset($valoresBrutos['id'])) {
+            $resultadoFinal['id'] = $valoresBrutos['id'];
+        }
+
+        return ['result' => $resultadoFinal];
     }
 
 
