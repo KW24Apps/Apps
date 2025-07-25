@@ -36,13 +36,23 @@ class ExtensoController
         $campoBitrix = UtilHelpers::formatarCampos([$campoValor => null]);
         $campoBitrixKey = array_key_first($campoBitrix);
 
-        // Log para depuração
-        echo json_encode([
-            'debug_resultado_consulta' => $resultado,
-            'debug_formatar_campos' => $campoBitrix,
-            'debug_campoBitrixKey' => $campoBitrixKey,
-            'debug_item_keys' => $item ? array_keys($item) : null
-        ]);
-        return;
+        if (
+            !$item ||
+            !isset($item[$campoBitrixKey]) ||
+            !isset($item[$campoBitrixKey]['valor']) ||
+            $item[$campoBitrixKey]['valor'] === null ||
+            $item[$campoBitrixKey]['valor'] === ''
+        ) {
+            http_response_code(404);
+            echo json_encode(['erro' => 'Valor não encontrado no negócio.']);
+            return;
+        }
+
+        $valor = UtilHelpers::normalizarValor($item[$campoBitrixKey]['valor'] ?? null);
+        $extenso = UtilHelpers::valorPorExtenso($valor);
+
+        BitrixDealHelper::editarDeal($entityId, $dealId, [$campoRetorno => $extenso]);
+
+        echo json_encode(['extenso' => $extenso]);
     }
 }
