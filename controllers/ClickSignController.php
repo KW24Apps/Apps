@@ -50,9 +50,22 @@ class ClickSignController
         $registro = BitrixDealHelper::consultarDeal($entityId, $id, $fields);
         $dados = $registro['result'] ?? [];
 
-        // Extrai chaves camelCase corretas
+
+        // Lista de todos os campos que dependem do mapeamento
+        $camposNecessarios = [
+            'contratante',
+            'contratada',
+            'testemunhas',
+            'data',
+            'arquivoaserassinado',
+            'arquivoassinado',
+            'idclicksign',
+            'retorno'
+        ];
+
+        // Extrai chaves camelCase corretas para todos os campos necessários
         $mapCampos = [];
-        foreach (array_keys($fields) as $campo) {
+        foreach ($camposNecessarios as $campo) {
             if (!empty($params[$campo])) {
                 $normalizado = BitrixHelper::formatarCampos([$params[$campo] => null]);
                 $mapCampos[$campo] = array_key_first($normalizado);
@@ -65,9 +78,13 @@ class ClickSignController
         $idsTestemunhas = isset($mapCampos['testemunhas']) ? ($dados[$mapCampos['testemunhas']]['valor'] ?? null) : null;
         $dataAssinatura = isset($mapCampos['data']) ? ($dados[$mapCampos['data']]['valor'] ?? null) : null;
 
+        // Adiciona logs para depuração dos campos mapeados e dados
+        LogHelper::logClickSign('Mapeamento de campos: ' . json_encode($mapCampos), 'controller');
+        LogHelper::logClickSign('Dados retornados: ' . json_encode($dados), 'controller');
+
         if ($dataAssinatura) {
-        // Remover tudo após a data, inclusive a hora e o fuso horário
-        $dataAssinatura = substr($dataAssinatura, 0, 10); // "2025-07-24"
+            // Remover tudo após a data, inclusive a hora e o fuso horário
+            $dataAssinatura = substr($dataAssinatura, 0, 10); // "2025-07-24"
         }
 
         // Se a data estiver no formato DD/MM/YYYY, converta para YYYY-MM-DD
@@ -142,9 +159,13 @@ class ClickSignController
 
         LogHelper::logClickSign("Signatários validados | Total: $qtdSignatarios", 'controller');
 
+
         // Valida arquivo
-        $campoArquivo = $dados[$mapCampos['arquivoaserassinado'] ?? ''] ?? null;
+        $campoArquivo = null;
         $urlMachine = null;
+        if (isset($mapCampos['arquivoaserassinado']) && isset($dados[$mapCampos['arquivoaserassinado']])) {
+            $campoArquivo = $dados[$mapCampos['arquivoaserassinado']];
+        }
 
         if (is_array($campoArquivo)) {
             if (isset($campoArquivo[0]['urlMachine'])) $urlMachine = $campoArquivo[0]['urlMachine'];

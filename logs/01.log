@@ -1,0 +1,5 @@
+2025-07-25T04:06:59+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/21/348n8xqhp06wp41c/ | ENDPOINT:crm.item.get | PARAMS:{"entityTypeId":"1054","id":"2168"}
+2025-07-25T04:07:00+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/21/348n8xqhp06wp41c/ | ENDPOINT:crm.item.fields | PARAMS:{"entityTypeId":"1054"}
+2025-07-25T04:07:00+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/21/348n8xqhp06wp41c/ | ENDPOINT:crm.status.list | PARAMS:{"entityId":"1054"}
+2025-07-25T04:07:01+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/21/348n8xqhp06wp41c/ | ENDPOINT:crm.contact.get | PARAMS:{"ID":"8935"}
+2025-07-25T04:07:01+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/21/348n8xqhp06wp41c/ | ENDPOINT:crm.item.update | PARAMS:{"entityTypeId":"1054","id":2168,"fields":{"ufCrm41_1727805418":"Erro no envio do documento para assinatura"}}
