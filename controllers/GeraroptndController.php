@@ -75,32 +75,11 @@ class GeraroptndController
         $resultado = \Helpers\BitrixDealHelper::consultarDeal(2, $dealId, $camposStr);
         $item = $resultado['result']['item'] ?? [];
 
-        // Monta resposta amigável: UF, nome amigável, valor e valor texto (se for lista)
-        $resposta = [];
-        foreach ($camposBitrix as $uf) {
-            $valor = $item[$uf] ?? null;
-            // Se for stageId, pega o nome amigável da etapa se existir
-            if ($uf === 'stageId') {
-                $valorTexto = $item['stageName'] ?? $valor;
-                $nome = 'Fase';
-            } else {
-                // Se o valor for array, tenta trazer o valor já convertido (texto) se existir
-                $valorTexto = $valor;
-                // Se o campo já foi convertido para texto (ex: enumerados), pega o valor convertido
-                if (isset($item[$uf]) && $item[$uf] !== $valor) {
-                    $valorTexto = $item[$uf];
-                }
-                $nome = $uf;
-            }
-            $resposta[$uf] = [
-                'nome' => $nome,
-                'valor' => $valor,
-                'texto' => $valorTexto
-            ];
+        // Retorna diretamente o resultado amigável já processado pelo helper
+        if (isset($item['stageName'])) {
+            $item['stageId_texto'] = $item['stageName'];
         }
-        $resposta['id'] = $item['id'] ?? null;
-
         header('Content-Type: application/json');
-        echo json_encode(['result' => $resposta]);
+        echo json_encode(['result' => $item]);
     }
 }
