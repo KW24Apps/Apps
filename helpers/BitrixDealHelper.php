@@ -130,7 +130,8 @@ class BitrixDealHelper
             $valorBruto = $valoresBrutos[$campoConvertido] ?? null;
             $valorConvertido = $valoresConvertidos[$campoConvertido] ?? $valorBruto;
             // Se não houver nome amigável, deixa vazio
-            $nomeAmigavel = $camposSpa[$campoConvertido]['title'] ?? '';
+            // Se não houver nome amigável, usa o nome original do campo
+            $nomeAmigavel = $camposSpa[$campoConvertido]['title'] ?? $campoOriginal;
             $texto = $valorConvertido;
             // Se for stageId, usa o nome da etapa como texto
             if ($campoConvertido === 'stageId') {
