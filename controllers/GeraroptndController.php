@@ -75,6 +75,8 @@ class GeraroptndController
         if (!empty($item['ufCrm_1728327366']['texto'])) {
             $conv = is_array($item['ufCrm_1728327366']['texto']) ? $item['ufCrm_1728327366']['texto'] : explode(',', $item['ufCrm_1728327366']['texto']);
         }
+        // Adiciona variável para oportunidades oferecidas
+        $oferecidas = $ofer;
         $closerId = $dealId;
 
         // 5. Define campos que NÃO devem ser copiados
@@ -87,24 +89,56 @@ class GeraroptndController
 
         // 6. Monta os campos base para copiar
         $camposBase = [];
+        $camposArray = [
+            'ufCrm_1700684166', // Proposta - Arquivo (Opcional)
+            'ufCrm_1726062999', // Participação Decisiva (vínculo de entidade)
+        ];
         foreach ($item as $campo => $dados) {
             if (!in_array($campo, $naoCopiar)) {
-                $camposBase[$campo] = $dados['texto'] ?? $dados['valor'] ?? null;
+                $valor = $dados['texto'] ?? $dados['valor'] ?? null;
+                if (in_array($campo, $camposArray)) {
+                    if (is_array($valor)) {
+                        $camposBase[$campo] = $valor;
+                    } else if ($valor === null || $valor === '' || $valor === false) {
+                        $camposBase[$campo] = [];
+                    } else {
+                        $camposBase[$campo] = [$valor];
+                    }
+                } else {
+                    $camposBase[$campo] = $valor;
+                }
             }
         }
 
         // 7. Lógica principal: diagnóstico ou concluído
         $resultadosCriacao = [];
+        $logDiagnostico = [
+            'dealId' => $dealId,
+            'etapaAtualId' => $etapaAtualId,
+            'etapaAtualNome' => $item['stageId']['texto'] ?? '',
+            'empresas' => $empresas,
+            'oportunidadesConvertidas' => $conv,
+            'oportunidadesOferecidas' => $oferecidas,
+            'vinculados' => $item['ufCrm_1670953245']['valor'] ?? null,
+            'tentativas' => []
+        ];
         $vinculados = $item['ufCrm_1670953245']['valor'] ?? null;
-        if (empty($vinculados)) {
-            // Não passou pelo diagnóstico: criar cruzando empresas × oportunidades convertidas
+        if ($etapaAtualId === 'C53:UC_1PAPS7') {
+            // Solicitar Diagnóstico: criar cruzando empresas × oportunidades oferecidas
             foreach ($empresas as $empresa) {
-                foreach ($conv as $oportunidade) {
+                foreach ($oferecidas as $oportunidade) {
                     $novoNegocio = $camposBase;
                     $novoNegocio['companyId'] = is_array($empresa) ? (count($empresa) ? $empresa[0] : '') : $empresa;
                     $novoNegocio['ufCrm_1646069163997'] = is_array($oportunidade) ? $oportunidade : [$oportunidade];
                     $novoNegocio['ufcrm_1707331568'] = $closerId;
                     $res = BitrixDealHelper::criarDeal(2, null, $novoNegocio);
+                    $tentativa = [
+                        'empresa' => $empresa,
+                        'oportunidade' => $oportunidade,
+                        'camposEnviados' => $novoNegocio,
+                        'resultado' => $res
+                    ];
+                    $logDiagnostico['tentativas'][] = $tentativa;
                     $resultadosCriacao[] = [
                         'empresa' => $empresa,
                         'oportunidade' => $oportunidade,
@@ -112,27 +146,23 @@ class GeraroptndController
                     ];
                 }
             }
-        } else {
-            // Passou pelo diagnóstico: consultar negócios vinculados e só criar o que falta
-            $idsVinculados = is_array($vinculados) ? $vinculados : explode(',', $vinculados);
-            $existentes = [];
-            foreach ($idsVinculados as $idVinc) {
-                $resVinc = BitrixDealHelper::consultarDeal(2, $idVinc, 'companyId,ufCrm_1646069163997');
-                $dadosVinc = $resVinc['result'] ?? [];
-                $empresaVinc = $dadosVinc['companyId']['texto'] ?? null;
-                $oportunidadeVinc = $dadosVinc['ufCrm_1646069163997']['texto'] ?? null;
-                if ($empresaVinc && $oportunidadeVinc) {
-                    $existentes[$empresaVinc][$oportunidadeVinc] = true;
-                }
-            }
-            foreach ($empresas as $empresa) {
-                foreach ($conv as $oportunidade) {
-                    if (empty($existentes[$empresa][$oportunidade])) {
+        } else if ($etapaAtualId === 'C53:WON') {
+            if (empty($vinculados)) {
+                // Concluído sem diagnóstico: criar cruzando empresas × oportunidades convertidas
+                foreach ($empresas as $empresa) {
+                    foreach ($conv as $oportunidade) {
                         $novoNegocio = $camposBase;
                         $novoNegocio['companyId'] = is_array($empresa) ? (count($empresa) ? $empresa[0] : '') : $empresa;
                         $novoNegocio['ufCrm_1646069163997'] = is_array($oportunidade) ? $oportunidade : [$oportunidade];
                         $novoNegocio['ufcrm_1707331568'] = $closerId;
                         $res = BitrixDealHelper::criarDeal(2, null, $novoNegocio);
+                        $tentativa = [
+                            'empresa' => $empresa,
+                            'oportunidade' => $oportunidade,
+                            'camposEnviados' => $novoNegocio,
+                            'resultado' => $res
+                        ];
+                        $logDiagnostico['tentativas'][] = $tentativa;
                         $resultadosCriacao[] = [
                             'empresa' => $empresa,
                             'oportunidade' => $oportunidade,
@@ -140,10 +170,52 @@ class GeraroptndController
                         ];
                     }
                 }
+            } else {
+                // Concluído após diagnóstico: consultar negócios vinculados e só criar o que falta
+                $idsVinculados = is_array($vinculados) ? $vinculados : explode(',', $vinculados);
+                $existentes = [];
+                foreach ($idsVinculados as $idVinc) {
+                    $resVinc = BitrixDealHelper::consultarDeal(2, $idVinc, 'companyId,ufCrm_1646069163997');
+                    $dadosVinc = $resVinc['result'] ?? [];
+                    $empresaVinc = $dadosVinc['companyId']['texto'] ?? null;
+                    $oportunidadeVinc = $dadosVinc['ufCrm_1646069163997']['texto'] ?? null;
+                    if ($empresaVinc && $oportunidadeVinc) {
+                        $existentes[$empresaVinc][$oportunidadeVinc] = true;
+                    }
+                }
+                foreach ($empresas as $empresa) {
+                    foreach ($conv as $oportunidade) {
+                        $tentativa = [
+                            'empresa' => $empresa,
+                            'oportunidade' => $oportunidade,
+                            'jaExistente' => !empty($existentes[$empresa][$oportunidade]),
+                            'camposEnviados' => null,
+                            'resultado' => null
+                        ];
+                        if (empty($existentes[$empresa][$oportunidade])) {
+                            $novoNegocio = $camposBase;
+                            $novoNegocio['companyId'] = is_array($empresa) ? (count($empresa) ? $empresa[0] : '') : $empresa;
+                            $novoNegocio['ufCrm_1646069163997'] = is_array($oportunidade) ? $oportunidade : [$oportunidade];
+                            $novoNegocio['ufcrm_1707331568'] = $closerId;
+                            $res = BitrixDealHelper::criarDeal(2, null, $novoNegocio);
+                            $tentativa['camposEnviados'] = $novoNegocio;
+                            $tentativa['resultado'] = $res;
+                            $resultadosCriacao[] = [
+                                'empresa' => $empresa,
+                                'oportunidade' => $oportunidade,
+                                'resultado' => $res
+                            ];
+                        }
+                        $logDiagnostico['tentativas'][] = $tentativa;
+                    }
+                }
             }
         }
 
         header('Content-Type: application/json');
-        echo json_encode(['result' => $resultadosCriacao]);
+        echo json_encode([
+            'result' => $resultadosCriacao,
+            'diagnostico' => $logDiagnostico
+        ]);
     }
 }

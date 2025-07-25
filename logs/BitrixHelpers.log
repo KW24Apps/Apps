@@ -1,0 +1,24 @@
+[2025-07-25 14:49:57] [f1895d71] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f1895d71] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 14:49:58] [f1895d71] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f1895d71] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 14:49:58] [f1895d71] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f1895d71] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 14:53:28] [b00b8267] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b00b8267] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 14:53:29] [b00b8267] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b00b8267] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 14:53:29] [b00b8267] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b00b8267] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 14:53:30] [b00b8267] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b00b8267] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 14:53:30] [b00b8267] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b00b8267] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 14:53:31] [b00b8267] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b00b8267] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 14:53:31] [b00b8267] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [b00b8267] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 14:57:18] [fcb92ed9] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [fcb92ed9] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 14:57:19] [fcb92ed9] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [fcb92ed9] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 14:57:20] [fcb92ed9] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [fcb92ed9] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 14:57:20] [fcb92ed9] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [fcb92ed9] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 14:57:20] [fcb92ed9] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [fcb92ed9] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 14:57:21] [fcb92ed9] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [fcb92ed9] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 14:57:21] [fcb92ed9] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [fcb92ed9] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:03:17] [323d9117] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [323d9117] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:03:18] [323d9117] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [323d9117] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:03:18] [323d9117] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [323d9117] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:03:19] [323d9117] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [323d9117] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:03:19] [323d9117] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [323d9117] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:03:19] [323d9117] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [323d9117] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:03:20] [323d9117] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [323d9117] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
