@@ -42,7 +42,7 @@ class ExtensoController
             return;
         }
 
-        $valor = UtilHelpers::normalizarValor($item[$campoBitrixKey]);
+        $valor = UtilHelpers::normalizarValor($item[$campoBitrixKey]['valor'] ?? null);
         $extenso = UtilHelpers::valorPorExtenso($valor);
 
         BitrixDealHelper::editarDeal($entityId, $dealId, [$campoRetorno => $extenso]);
