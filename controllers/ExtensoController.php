@@ -30,7 +30,7 @@ class ExtensoController
         }
 
         $resultado = BitrixDealHelper::consultarDeal($entityId, $dealId, $campoValor);
-        $item = $resultado['result']['item'] ?? null;
+        $item = $resultado['result'] ?? null;
 
         // Padroniza acesso ao campo
         $campoBitrix = UtilHelpers::formatarCampos([$campoValor => null]);
