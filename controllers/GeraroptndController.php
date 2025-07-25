@@ -53,6 +53,15 @@ class GeraroptndController
         $resultado = BitrixDealHelper::consultarDeal(2, $dealId, $camposStr);
         $item = $resultado['result'] ?? [];
 
+        // Validação de etapa/funil permitida por ID
+        $etapasPermitidas = ['C53:UC_1PAPS7', 'C53:WON']; // Solicitar Diagnóstico e Concluído
+        $etapaAtualId = $item['stageId']['valor'] ?? '';
+        if (!in_array($etapaAtualId, $etapasPermitidas)) {
+            header('Content-Type: application/json');
+            echo json_encode(['erro' => 'Negócio está em etapa não permitida para criação de negócios.', 'etapaId' => $etapaAtualId, 'etapaNome' => $item['stageId']['texto'] ?? '']);
+            return;
+        }
+
         // 4. Extrai empresas e oportunidades oferecidas/convertidas (usando texto)
         $empresas = [];
         if (!empty($item['ufCrm_1689718588']['texto'])) {
