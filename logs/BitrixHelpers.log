@@ -22,3 +22,52 @@
 [2025-07-25 17:03:19] [323d9117] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [323d9117] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
 [2025-07-25 17:03:19] [323d9117] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [323d9117] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
 [2025-07-25 17:03:20] [323d9117] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [323d9117] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:10:38] [bccc91dc] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [bccc91dc] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:10:38] [bccc91dc] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [bccc91dc] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:10:39] [bccc91dc] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [bccc91dc] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:10:40] [bccc91dc] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [bccc91dc] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:10:40] [bccc91dc] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [bccc91dc] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:10:40] [bccc91dc] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [bccc91dc] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:10:41] [bccc91dc] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [bccc91dc] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:11:22] [822aef26] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [822aef26] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:11:22] [822aef26] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [822aef26] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:11:23] [822aef26] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [822aef26] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:11:23] [822aef26] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [822aef26] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:11:23] [822aef26] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [822aef26] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:11:24] [822aef26] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [822aef26] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:11:24] [822aef26] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [822aef26] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:12:09] [8a707c1a] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8a707c1a] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:12:10] [8a707c1a] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8a707c1a] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:12:10] [8a707c1a] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8a707c1a] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:12:11] [8a707c1a] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8a707c1a] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:12:11] [8a707c1a] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8a707c1a] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:12:12] [8a707c1a] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8a707c1a] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:12:12] [8a707c1a] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [8a707c1a] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:12:51] [049d4ce2] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [049d4ce2] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:12:51] [049d4ce2] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [049d4ce2] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:12:52] [049d4ce2] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [049d4ce2] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:12:52] [049d4ce2] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [049d4ce2] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:12:53] [049d4ce2] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [049d4ce2] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:12:53] [049d4ce2] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [049d4ce2] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:12:53] [049d4ce2] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [049d4ce2] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: Expected iterable value for multiple field, but got `string` instead
+[2025-07-25 17:16:15] [29f6fea6] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [29f6fea6] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:16:15] [29f6fea6] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [29f6fea6] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:16:16] [29f6fea6] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [29f6fea6] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:16:22] [29f6fea6] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [29f6fea6] Endpoint: crm.item.add | HTTP: 200 | Erro: 
+[2025-07-25 17:16:28] [29f6fea6] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [29f6fea6] Endpoint: crm.item.add | HTTP: 200 | Erro: 
+[2025-07-25 17:16:32] [29f6fea6] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [29f6fea6] Endpoint: crm.item.add | HTTP: 200 | Erro: 
+[2025-07-25 17:16:36] [29f6fea6] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [29f6fea6] Endpoint: crm.item.add | HTTP: 200 | Erro: 
+[2025-07-25 17:26:57] [f2c82541] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f2c82541] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:26:58] [f2c82541] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f2c82541] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:26:58] [f2c82541] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f2c82541] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:26:59] [f2c82541] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f2c82541] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:26:59] [f2c82541] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f2c82541] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:27:00] [f2c82541] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f2c82541] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:27:00] [f2c82541] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f2c82541] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:27:39] [074bda53] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [074bda53] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 17:27:40] [074bda53] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [074bda53] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 17:27:40] [074bda53] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [074bda53] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 17:27:41] [074bda53] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [074bda53] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:27:41] [074bda53] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [074bda53] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:27:42] [074bda53] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [074bda53] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
+[2025-07-25 17:27:42] [074bda53] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [074bda53] Endpoint: crm.item.add | HTTP: 400 | Erro:  | Descrição: O valor de "Pipeline" está incorreto
