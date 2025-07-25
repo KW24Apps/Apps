@@ -135,7 +135,7 @@ class BitrixDealHelper
                 $valorConvertido = $stageName ?? $valorBruto;
                 $nomeAmigavel = 'Fase';
             }
-            $resultadoFinal[$campoOriginal] = [
+            $resultadoFinal[$campoConvertido] = [
                 'nome' => $nomeAmigavel,
                 'valor' => $valorBruto,
                 'texto' => $valorConvertido
