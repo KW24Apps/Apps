@@ -121,28 +121,28 @@ class BitrixDealHelper
             $stageName = BitrixHelper::mapearEtapaPorId($valoresBrutos['stageId'], $etapas);
         }
 
-        // 8. Monta resposta amigável
+        // 8. Monta resposta amigável SEMPRE incluindo todos os campos solicitados
         $resultadoFinal = [];
-        foreach ($camposFormatados as $campoConvertido => $v) {
-            // Só inclui se existir no retorno bruto ou for o campo id
-            if (array_key_exists($campoConvertido, $dadosBrutos) || $campoConvertido === 'id') {
-                $valorBruto = $valoresBrutos[$campoConvertido] ?? null;
-                $valorConvertido = $valoresConvertidos[$campoConvertido] ?? $valorBruto;
-                $nomeAmigavel = $camposSpa[$campoConvertido]['title'] ?? $campoConvertido;
-                // Se for stageId, usa o nome da etapa como texto
-                if ($campoConvertido === 'stageId') {
-                    $valorConvertido = $stageName ?? $valorBruto;
-                    $nomeAmigavel = 'Fase';
-                }
-                $resultadoFinal[$campoConvertido] = [
-                    'nome' => $nomeAmigavel,
-                    'valor' => $valorBruto,
-                    'texto' => $valorConvertido
-                ];
+        foreach ($fields as $campoOriginal) {
+            // Converte o campo para o padrão Bitrix
+            $campoConvertidoArr = BitrixHelper::formatarCampos([$campoOriginal => null]);
+            $campoConvertido = array_key_first($campoConvertidoArr);
+            $valorBruto = $valoresBrutos[$campoConvertido] ?? null;
+            $valorConvertido = $valoresConvertidos[$campoConvertido] ?? $valorBruto;
+            $nomeAmigavel = $camposSpa[$campoConvertido]['title'] ?? $campoOriginal;
+            // Se for stageId, usa o nome da etapa como texto
+            if ($campoConvertido === 'stageId') {
+                $valorConvertido = $stageName ?? $valorBruto;
+                $nomeAmigavel = 'Fase';
             }
+            $resultadoFinal[$campoOriginal] = [
+                'nome' => $nomeAmigavel,
+                'valor' => $valorBruto,
+                'texto' => $valorConvertido
+            ];
         }
-        // Sempre inclui o id bruto, se não foi incluído acima
-        if (!isset($resultadoFinal['id']) && isset($valoresBrutos['id'])) {
+        // Sempre inclui o id bruto
+        if (isset($valoresBrutos['id'])) {
             $resultadoFinal['id'] = $valoresBrutos['id'];
         }
 
