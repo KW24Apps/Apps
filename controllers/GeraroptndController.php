@@ -33,7 +33,8 @@ class GeraroptndController
             'ufCrm_1688175234', // Controle de Etapas Nimbus #
             'ufCrm_1739823491', // Resumo Relatório Preliminar (Diagnost)
             'sourceId',         // Fonte
-            'ufCrm_1747227840', // Cliente
+            'ufCrm_1747227840', // Enviar e-mail de autorização do cliente para
+            'companyId',        // Cliente
             'ufCrm_1689718588', // Todas Empresas do Negócio
             'ufCrm_1688060696', // Oportunidades Oferecidas
             'ufCrm_1728327366', // Oportunidades Convertidas
