@@ -79,6 +79,8 @@ class BitrixDealHelper
     // Consulta uma Negócio específico no Bitrix24 via ID
     public static function consultarDeal($entityId, $dealId, $fields)
     {
+        // LOG INICIO: verificar se a função está sendo executada
+        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | INICIO CONSULTAR DEAL - dealId: $dealId\n", FILE_APPEND);
 
         // 1. Normaliza campos para array e remove espaços
         if (is_string($fields)) {
