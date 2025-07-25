@@ -79,9 +79,6 @@ class BitrixDealHelper
     // Consulta uma Negócio específico no Bitrix24 via ID
     public static function consultarDeal($entityId, $dealId, $fields)
     {
-        // LOG INICIO: verificar se a função está sendo executada
-        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | INICIO CONSULTAR DEAL - dealId: $dealId\n", FILE_APPEND);
-
         // 1. Normaliza campos para array e remove espaços
         if (is_string($fields)) {
             $fields = array_map('trim', explode(',', $fields));
@@ -109,11 +106,6 @@ class BitrixDealHelper
 
         // 5. Formata os campos para o padrão camelCase
         $camposFormatados = BitrixHelper::formatarCampos(array_fill_keys($fields, null));
-        
-        // LOG DEBUG: para identificar o problema com companyId
-        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | CAMPOS_ORIGINAIS: " . json_encode($fields) . "\n", FILE_APPEND);
-        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | CAMPOS_FORMATADOS: " . json_encode(array_keys($camposFormatados)) . "\n", FILE_APPEND);
-        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | DADOS_BRUTOS_KEYS: " . json_encode(array_keys($dadosBrutos)) . "\n", FILE_APPEND);
         
         $valoresBrutos = [];
         foreach (array_keys($camposFormatados) as $campoConvertido) {
