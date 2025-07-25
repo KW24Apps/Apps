@@ -194,3 +194,11 @@
 [2025-07-25 18:18:48] [9257f6fb] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9257f6fb] Endpoint: crm.item.get | HTTP: 200 | Erro: 
 [2025-07-25 18:18:49] [9257f6fb] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9257f6fb] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
 [2025-07-25 18:18:49] [9257f6fb] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [9257f6fb] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 18:21:10] [f940a5f9] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f940a5f9] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 18:21:11] [f940a5f9] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f940a5f9] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 18:21:11] [f940a5f9] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f940a5f9] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 18:21:48] [f940a5f9] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f940a5f9] Endpoint: crm.item.add | HTTP: 200 | Erro: 
+[2025-07-25 18:22:27] [f940a5f9] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f940a5f9] Endpoint: crm.item.add | HTTP: 200 | Erro: 
+[2025-07-25 18:23:13] [f940a5f9] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f940a5f9] Endpoint: crm.item.add | HTTP: 200 | Erro: 
+[2025-07-25 18:24:03] [f940a5f9] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f940a5f9] Endpoint: crm.item.add | HTTP: 200 | Erro: 
+[2025-07-25 18:24:13] [f940a5f9] [geraroptnd] [Helpers\BitrixHelper::chamarApi] - [f940a5f9] Endpoint: crm.item.update | HTTP: 200 | Erro: 

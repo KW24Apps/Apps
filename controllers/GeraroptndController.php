@@ -163,6 +163,18 @@ class GeraroptndController
                     } else {
                         $novoNegocio['companyId'] = is_array($empresa) ? (count($empresa) ? $empresa[0] : '') : $empresa;
                     }
+                    
+                    // Adiciona Negocio Closer (ID do deal que solicitou)
+                    $novoNegocio['ufcrm_1707331568'] = $dealId;
+                    
+                    // Adiciona Oportunidade (texto da oportunidade atual)
+                    $opMeta = $item['ufCrm_1646069163997'] ?? [];
+                    $opIsMultiple = $opMeta['isMultiple'] ?? false;
+                    if ($opIsMultiple) {
+                        $novoNegocio['ufCrm_1646069163997'] = [$oportunidade];
+                    } else {
+                        $novoNegocio['ufCrm_1646069163997'] = $oportunidade;
+                    }
                     // Define CATEGORY_ID conforme regras de etapa e tipo de processo
                     $tipoProcesso = trim($item['ufCrm_1650979003']['texto'] ?? '');
                     if ($etapaAtualId === 'C53:UC_1PAPS7') {

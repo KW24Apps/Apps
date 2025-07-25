@@ -62,3 +62,16 @@
 2025-07-25 18:18:49 | DEBUG: empresas=2, oferecidas=2, conv=0
 2025-07-25 18:18:49 | PAYLOAD CRIAR: {"companyId":"145738"} | CATEGORY_ID: 17
 2025-07-25T18:18:49+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"145738","categoryId":17}}
+2025-07-25T18:21:09+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.get | PARAMS:{"entityTypeId":2,"id":"463778"}
+2025-07-25T18:21:10+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.fields | PARAMS:{"entityTypeId":2}
+2025-07-25T18:21:11+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.status.list | PARAMS:{"entityId":2}
+2025-07-25 18:21:11 | DEBUG: empresas=2, oferecidas=2, conv=0
+2025-07-25 18:21:11 | PAYLOAD CRIAR: {"companyId":"145738"} | CATEGORY_ID: 17
+2025-07-25T18:21:11+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"145738","categoryId":17}}
+2025-07-25 18:21:50 | PAYLOAD CRIAR: {"companyId":"145738"} | CATEGORY_ID: 17
+2025-07-25T18:21:50+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"145738","categoryId":17}}
+2025-07-25 18:22:29 | PAYLOAD CRIAR: {"companyId":"144794"} | CATEGORY_ID: 17
+2025-07-25T18:22:29+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"144794","categoryId":17}}
+2025-07-25 18:23:15 | PAYLOAD CRIAR: {"companyId":"144794"} | CATEGORY_ID: 17
+2025-07-25T18:23:15+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"144794","categoryId":17}}
+2025-07-25T18:24:05+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.update | PARAMS:{"entityTypeId":2,"id":463778,"fields":{"ufCrm_1670953245":[463818,463820,463822,463824]}}
