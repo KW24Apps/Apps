@@ -93,7 +93,7 @@ class ReceitaController
             $camposBitrix = [
                 'UF_CRM_1643894689490' => $empresa['fantasia'], // nome fantasia
                 'UF_CRM_1742233369' => $empresa['nome'], // nome empresa
-                'UF_CRM_1641693445101' => $empresa['cnpj'],
+                // 'UF_CRM_1641693445101' => $empresa['cnpj'],
                 // 'TITLE' => $empresa['nome'],
                 // 'UF_CRM_ABERTURA' => $empresa['abertura'],
                 // 'UF_CRM_SITUACAO' => $empresa['situacao'],
@@ -118,7 +118,6 @@ class ReceitaController
                 // 'UF_CRM_COMPLEMENTO' => $empresa['complemento'],
                 // 'ADDRESS' => $empresa['endereco']
             ];
-            // Passa o id_bitrix separadamente, se necessário, conforme padrão do helper
             $camposBitrix['id'] = $id_bitrix;
             BitrixCompanyHelper::editarCamposEmpresa($camposBitrix);
         } else {
