@@ -19,6 +19,7 @@ class GeraroptndController
 
         // 2. Define campos fixos a consultar no deal
         $camposBitrix = [
+            'ufCrm_1689795579', // Data de Acompanhamento
             'ufCrm_1645475980', // Parceiro Comercial
             'ufCrm_1706634369', // Gerente Comercial
             'ufCrm_1693939517', // Gerente da Parceria
@@ -29,6 +30,8 @@ class GeraroptndController
             'ufCrm_1700684166', // Proposta - Arquivo (Opcional)
             'ufCrm_1738604320', // Comentário Resumo
             'ufCrm_1685983679', // Resumo do Negócio (Não Editar)
+            'ufCrm_1688175234', // Controle de Etapas Nimbus #
+            'ufCrm_1739823491', // Resumo Relatório Preliminar (Diagnost)
             'sourceId',         // Fonte
             'ufCrm_1747227840', // Cliente
             'ufCrm_1689718588', // Todas Empresas do Negócio
@@ -40,6 +43,7 @@ class GeraroptndController
             'ufCrm_1692127712', // Arquivo NDA
             'ufCrm_1651061302', // Pasta Drive Negócio Online
             'ufCrm_1657749288', // Arquivos
+            'assignedById',     // Responsável
             'ufCrm_1688177336', // ID Parceiro
             'ufCrm_1688173007', // Nome da Empresa
             'ufCrm_1688173081', // Pessoa de Contato
