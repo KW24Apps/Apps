@@ -80,11 +80,16 @@ class GeraroptndController
         foreach ($camposBitrix as $uf) {
             $valor = $item[$uf] ?? null;
             // Se for stageId, pega o nome amigável da etapa se existir
-            if ($uf === 'stageId' && isset($item['stageName'])) {
-                $valorTexto = $item['stageName'];
+            if ($uf === 'stageId') {
+                $valorTexto = $item['stageName'] ?? $valor;
                 $nome = 'Fase';
             } else {
+                // Se o valor for array, tenta trazer o valor já convertido (texto) se existir
                 $valorTexto = $valor;
+                // Se o campo já foi convertido para texto (ex: enumerados), pega o valor convertido
+                if (isset($item[$uf]) && $item[$uf] !== $valor) {
+                    $valorTexto = $item[$uf];
+                }
                 $nome = $uf;
             }
             $resposta[$uf] = [
