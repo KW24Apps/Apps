@@ -166,14 +166,13 @@ class GeraroptndController
                             $novoNegocio['CATEGORY_ID'] = 18; // Contencioso
                         }
                     }
-                    // Remove CATEGORY_ID do array de campos, mantém só como parâmetro
-                    $categoryId = $novoNegocio['CATEGORY_ID'];
+                    // Adiciona categoryId (caixa baixa) ao array de campos, igual ao payload que funciona
+                    $novoNegocio['categoryId'] = $novoNegocio['CATEGORY_ID'];
                     unset($novoNegocio['CATEGORY_ID']);
-                    unset($novoNegocio['categoryId']);
                     // LOG: grava o payload enviado para criar negócio
                     $logPayload = date('Y-m-d H:i:s') . ' | PAYLOAD CRIAR: ' . json_encode($novoNegocio, JSON_UNESCAPED_UNICODE) . "\n";
                     file_put_contents(__DIR__ . '/../logs/01.log', $logPayload, FILE_APPEND);
-                    $res = BitrixDealHelper::criarDeal(2, $categoryId, $novoNegocio);
+                    $res = BitrixDealHelper::criarDeal(2, null, $novoNegocio);
                     // Se criado com sucesso, salva o id
                     if (!empty($res['success']) && !empty($res['id'])) {
                         $idsCriados[] = $res['id'];

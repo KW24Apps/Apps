@@ -22,3 +22,7 @@
 [2025-07-25 17:55:36] [9231b79f] [geraroptnd] [Index::EntradaGlobal] - URI: /geraroportunidades?cliente=gnappC93fLq7RxKZVp28HswuAYMe1&deal=463778 | MÉTODO: POST
 [2025-07-25 17:58:19] [8d93e374] [geraroptnd] [Index::EntradaGlobal] - URI: /geraroportunidades?cliente=gnappC93fLq7RxKZVp28HswuAYMe1&deal=463778 | MÉTODO: POST
 [2025-07-25 18:00:44] [de551030] [deal] [Index::EntradaGlobal] - URI: /dealcriar?cliente=gnappC93fLq7RxKZVp28HswuAYMe1&spa=2&companyId=12345&CATEGORY_ID=17 | MÉTODO: POST
+[2025-07-25 18:01:42] [b6f22bd4] [deal] [Index::EntradaGlobal] - URI: /dealcriar?cliente=gnappC93fLq7RxKZVp28HswuAYMe1&spa=2&companyId=12345&CATEGORY_ID=17 | MÉTODO: POST
+[2025-07-25 18:02:32] [62694bb4] [deal] [Index::EntradaGlobal] - URI: /dealcriar?cliente=gnappC93fLq7RxKZVp28HswuAYMe1&spa=2&companyId=12345&CATEGORY_ID=17 | MÉTODO: POST
+[2025-07-25 18:03:44] [51e4bda5] [geraroptnd] [Index::EntradaGlobal] - URI: /geraroportunidades?cliente=gnappC93fLq7RxKZVp28HswuAYMe1&deal=463778 | MÉTODO: POST
+[2025-07-25 18:04:42] [6adcfd15] [geraroptnd] [Index::EntradaGlobal] - URI: /geraroportunidades?cliente=gnappC93fLq7RxKZVp28HswuAYMe1&deal=463778 | MÉTODO: POST
