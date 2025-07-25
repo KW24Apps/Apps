@@ -36,7 +36,13 @@ class ExtensoController
         $campoBitrix = UtilHelpers::formatarCampos([$campoValor => null]);
         $campoBitrixKey = array_key_first($campoBitrix);
 
-        if (!$item || !isset($item[$campoBitrixKey])) {
+        if (
+            !$item ||
+            !isset($item[$campoBitrixKey]) ||
+            !isset($item[$campoBitrixKey]['valor']) ||
+            $item[$campoBitrixKey]['valor'] === null ||
+            $item[$campoBitrixKey]['valor'] === ''
+        ) {
             http_response_code(404);
             echo json_encode(['erro' => 'Valor não encontrado no negócio.']);
             return;
