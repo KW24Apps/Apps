@@ -157,6 +157,4 @@ class BitrixDealHelper
         return ['result' => $resultadoFinal];
     }
 
-
-
 }
