@@ -1,7 +1,10 @@
-[2025-07-23 01:48:15] [2de969ed] [deal] [Helpers\BitrixHelper::chamarApi] - [2de969ed] Endpoint: crm.item.get | HTTP: 200 | Erro: 
-[2025-07-23 01:49:17] [06240a59] [deal] [Helpers\BitrixHelper::chamarApi] - [06240a59] Endpoint: crm.item.get | HTTP: 200 | Erro: 
-[2025-07-25 04:07:00] [eafa73c4] [clicksign] [Helpers\BitrixHelper::chamarApi] - [eafa73c4] Endpoint: crm.item.get | HTTP: 200 | Erro: 
-[2025-07-25 04:07:00] [eafa73c4] [clicksign] [Helpers\BitrixHelper::chamarApi] - [eafa73c4] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
-[2025-07-25 04:07:01] [eafa73c4] [clicksign] [Helpers\BitrixHelper::chamarApi] - [eafa73c4] Endpoint: crm.status.list | HTTP: 200 | Erro: 
-[2025-07-25 04:07:01] [eafa73c4] [clicksign] [Helpers\BitrixHelper::chamarApi] - [eafa73c4] Endpoint: crm.contact.get | HTTP: 200 | Erro: 
-[2025-07-25 04:07:01] [eafa73c4] [clicksign] [Helpers\BitrixHelper::chamarApi] - [eafa73c4] Endpoint: crm.item.update | HTTP: 200 | Erro: 
+[2025-07-25 04:15:01] [e28c9293] [clicksign] [Helpers\BitrixHelper::chamarApi] - [e28c9293] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 04:15:02] [e28c9293] [clicksign] [Helpers\BitrixHelper::chamarApi] - [e28c9293] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 04:15:02] [e28c9293] [clicksign] [Helpers\BitrixHelper::chamarApi] - [e28c9293] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 04:15:03] [e28c9293] [clicksign] [Helpers\BitrixHelper::chamarApi] - [e28c9293] Endpoint: crm.contact.get | HTTP: 200 | Erro: 
+[2025-07-25 04:15:03] [e28c9293] [clicksign] [Helpers\BitrixHelper::chamarApi] - [e28c9293] Endpoint: crm.item.update | HTTP: 200 | Erro: 
+[2025-07-25 04:15:50] [829412ff] [clicksign] [Helpers\BitrixHelper::chamarApi] - [829412ff] Endpoint: crm.item.get | HTTP: 200 | Erro: 
+[2025-07-25 04:15:50] [829412ff] [clicksign] [Helpers\BitrixHelper::chamarApi] - [829412ff] Endpoint: crm.item.fields | HTTP: 200 | Erro: 
+[2025-07-25 04:15:51] [829412ff] [clicksign] [Helpers\BitrixHelper::chamarApi] - [829412ff] Endpoint: crm.status.list | HTTP: 200 | Erro: 
+[2025-07-25 04:15:51] [829412ff] [clicksign] [Helpers\BitrixHelper::chamarApi] - [829412ff] Endpoint: crm.contact.get | HTTP: 200 | Erro: 
+[2025-07-25 04:16:00] [829412ff] [clicksign] [Helpers\BitrixHelper::chamarApi] - [829412ff] Endpoint: crm.item.update | HTTP: 200 | Erro: 

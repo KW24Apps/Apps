@@ -51,6 +51,7 @@ class ClickSignController
         $dados = $registro['result'] ?? [];
 
 
+
         // Lista de todos os campos que dependem do mapeamento
         $camposNecessarios = [
             'contratante',
@@ -77,10 +78,6 @@ class ClickSignController
         $idsContratada = isset($mapCampos['contratada']) ? ($dados[$mapCampos['contratada']]['valor'] ?? null) : null;
         $idsTestemunhas = isset($mapCampos['testemunhas']) ? ($dados[$mapCampos['testemunhas']]['valor'] ?? null) : null;
         $dataAssinatura = isset($mapCampos['data']) ? ($dados[$mapCampos['data']]['valor'] ?? null) : null;
-
-        // Adiciona logs para depuração dos campos mapeados e dados
-        LogHelper::logClickSign('Mapeamento de campos: ' . json_encode($mapCampos), 'controller');
-        LogHelper::logClickSign('Dados retornados: ' . json_encode($dados), 'controller');
 
         if ($dataAssinatura) {
             // Remover tudo após a data, inclusive a hora e o fuso horário
@@ -167,10 +164,20 @@ class ClickSignController
             $campoArquivo = $dados[$mapCampos['arquivoaserassinado']];
         }
 
+
+
         if (is_array($campoArquivo)) {
-            if (isset($campoArquivo[0]['urlMachine'])) $urlMachine = $campoArquivo[0]['urlMachine'];
-            elseif (isset($campoArquivo['urlMachine'])) $urlMachine = $campoArquivo['urlMachine'];
+            // Se vier no formato esperado do Bitrix (com 'valor' => [ { ... } ])
+            if (isset($campoArquivo['valor'][0]['urlMachine'])) {
+                $urlMachine = $campoArquivo['valor'][0]['urlMachine'];
+            } elseif (isset($campoArquivo['valor'][0]['url'])) {
+                // fallback para url comum
+                $urlMachine = $campoArquivo['valor'][0]['url'];
+            } elseif (isset($campoArquivo['urlMachine'])) {
+                $urlMachine = $campoArquivo['urlMachine'];
+            }
         }
+
 
         $arquivoInfo = ['urlMachine' => $urlMachine];
         $arquivoConvertido = UtilHelpers::baixarArquivoBase64($arquivoInfo);
