@@ -101,7 +101,7 @@ class GeraroptndController
             foreach ($empresas as $empresa) {
                 foreach ($conv as $oportunidade) {
                     $novoNegocio = $camposBase;
-                    $novoNegocio['companyId'] = is_array($empresa) ? $empresa : [$empresa];
+                    $novoNegocio['companyId'] = is_array($empresa) ? (count($empresa) ? $empresa[0] : '') : $empresa;
                     $novoNegocio['ufCrm_1646069163997'] = is_array($oportunidade) ? $oportunidade : [$oportunidade];
                     $novoNegocio['ufcrm_1707331568'] = $closerId;
                     $res = BitrixDealHelper::criarDeal(2, null, $novoNegocio);
@@ -129,7 +129,7 @@ class GeraroptndController
                 foreach ($conv as $oportunidade) {
                     if (empty($existentes[$empresa][$oportunidade])) {
                         $novoNegocio = $camposBase;
-                        $novoNegocio['companyId'] = is_array($empresa) ? $empresa : [$empresa];
+                        $novoNegocio['companyId'] = is_array($empresa) ? (count($empresa) ? $empresa[0] : '') : $empresa;
                         $novoNegocio['ufCrm_1646069163997'] = is_array($oportunidade) ? $oportunidade : [$oportunidade];
                         $novoNegocio['ufcrm_1707331568'] = $closerId;
                         $res = BitrixDealHelper::criarDeal(2, null, $novoNegocio);
