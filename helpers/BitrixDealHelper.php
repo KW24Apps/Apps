@@ -124,22 +124,25 @@ class BitrixDealHelper
         // 8. Monta resposta amigável
         $resultadoFinal = [];
         foreach ($camposFormatados as $campoConvertido => $v) {
-            $valorBruto = $valoresBrutos[$campoConvertido] ?? null;
-            $valorConvertido = $valoresConvertidos[$campoConvertido] ?? $valorBruto;
-            $nomeAmigavel = $camposSpa[$campoConvertido]['title'] ?? $campoConvertido;
-            // Se for stageId, usa o nome da etapa como texto
-            if ($campoConvertido === 'stageId') {
-                $valorConvertido = $stageName ?? $valorBruto;
-                $nomeAmigavel = 'Fase';
+            // Só inclui se existir no retorno bruto ou for o campo id
+            if (array_key_exists($campoConvertido, $dadosBrutos) || $campoConvertido === 'id') {
+                $valorBruto = $valoresBrutos[$campoConvertido] ?? null;
+                $valorConvertido = $valoresConvertidos[$campoConvertido] ?? $valorBruto;
+                $nomeAmigavel = $camposSpa[$campoConvertido]['title'] ?? $campoConvertido;
+                // Se for stageId, usa o nome da etapa como texto
+                if ($campoConvertido === 'stageId') {
+                    $valorConvertido = $stageName ?? $valorBruto;
+                    $nomeAmigavel = 'Fase';
+                }
+                $resultadoFinal[$campoConvertido] = [
+                    'nome' => $nomeAmigavel,
+                    'valor' => $valorBruto,
+                    'texto' => $valorConvertido
+                ];
             }
-            $resultadoFinal[$campoConvertido] = [
-                'nome' => $nomeAmigavel,
-                'valor' => $valorBruto,
-                'texto' => $valorConvertido
-            ];
         }
-        // Sempre inclui o id bruto
-        if (isset($valoresBrutos['id'])) {
+        // Sempre inclui o id bruto, se não foi incluído acima
+        if (!isset($resultadoFinal['id']) && isset($valoresBrutos['id'])) {
             $resultadoFinal['id'] = $valoresBrutos['id'];
         }
 
