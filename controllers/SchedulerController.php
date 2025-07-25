@@ -56,21 +56,16 @@ class SchedulerController
 
         // 4. Consulta o deal
         $resultado = BitrixDealHelper::consultarDeal($spa, $dealId, implode(',', $ufCampos));
-
-        // 5. Consulta os fields da SPA (pega definição dos campos, inclusive os de lista)
-        $fields = BitrixHelper::consultarCamposSpa($spa);
-
-        // 6. Mapeia os valores dos campos lista de ID para texto
-        $itemRetornado = $resultado['result']['item'] ?? [];
-        $itemConvertido = BitrixHelper::mapearValoresEnumerados($itemRetornado, $fields);
+        $item = $resultado['result'] ?? [];
 
         // Inicializa o retorno com os campos nome amigável
         $retorno = [];
         foreach ($campos as $campo) {
             $campoFormatado = array_key_first(BitrixHelper::formatarCampos([$campo['uf'] => null]));
-            $retorno[$campo['nome']] = $itemConvertido[$campoFormatado] ?? null;
+            // Retorna só o texto amigável, mas pode retornar o array completo se quiser
+            $retorno[$campo['nome']] = $item[$campoFormatado]['texto'] ?? null;
         }
-        $retorno['id'] = $itemConvertido['id'] ?? null;
+        $retorno['id'] = $item['id'] ?? null;
 
         // Extrai UFs dos campos de Retorno API e RETORNO DATA
         $ufRetornoApi = null;
