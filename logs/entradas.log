@@ -32,3 +32,7 @@
 [2025-07-25 18:13:35] [8218e58f] [geraroptnd] [Index::EntradaGlobal] - URI: /geraroportunidades?cliente=gnappC93fLq7RxKZVp28HswuAYMe1&deal=463778 | MÉTODO: POST
 [2025-07-25 18:18:47] [9257f6fb] [geraroptnd] [Index::EntradaGlobal] - URI: /geraroportunidades?cliente=gnappC93fLq7RxKZVp28HswuAYMe1&deal=463778 | MÉTODO: POST
 [2025-07-25 18:21:09] [f940a5f9] [geraroptnd] [Index::EntradaGlobal] - URI: /geraroportunidades?cliente=gnappC93fLq7RxKZVp28HswuAYMe1&deal=463778 | MÉTODO: POST
+[2025-07-25 18:30:44] [0c84e4c2] [geraroptnd] [Index::EntradaGlobal] - URI: /geraroportunidades?cliente=gnappC93fLq7RxKZVp28HswuAYMe1&deal=463778 | MÉTODO: POST
+[2025-07-25 18:32:17] [b7197cda] [geraroptnd] [Index::EntradaGlobal] - URI: /geraroportunidades?cliente=gnappC93fLq7RxKZVp28HswuAYMe1&deal=463778 | MÉTODO: POST
+[2025-07-25 18:33:12] [98148e9d] [geraroptnd] [Index::EntradaGlobal] - URI: /geraroportunidades?cliente=gnappC93fLq7RxKZVp28HswuAYMe1&deal=463778 | MÉTODO: POST
+[2025-07-25 18:36:59] [a559a153] [deal] [Index::EntradaGlobal] - URI: /dealcriar?cliente=gnappC93fLq7RxKZVp28HswuAYMe1&spa=2&companyId=12345&CATEGORY_ID=17&ufcrm_1707331568%20=A%C3%87%C3%83O%20DE%20DANOS%20MATERIAIS | MÉTODO: POST

@@ -75,3 +75,28 @@
 2025-07-25 18:23:15 | PAYLOAD CRIAR: {"companyId":"144794"} | CATEGORY_ID: 17
 2025-07-25T18:23:15+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"144794","categoryId":17}}
 2025-07-25T18:24:05+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.update | PARAMS:{"entityTypeId":2,"id":463778,"fields":{"ufCrm_1670953245":[463818,463820,463822,463824]}}
+2025-07-25T18:30:44+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.get | PARAMS:{"entityTypeId":2,"id":"463778"}
+2025-07-25T18:30:44+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.fields | PARAMS:{"entityTypeId":2}
+2025-07-25T18:30:45+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.status.list | PARAMS:{"entityId":2}
+2025-07-25 18:30:45 | DEBUG: empresas=2, oferecidas=1, conv=0
+2025-07-25 18:30:45 | PAYLOAD CRIAR: {"companyId":"145738","ufcrm_1707331568":"463778","ufCrm_1646069163997":"AÇÃO DE DANOS MATERIAIS"} | CATEGORY_ID: 17
+2025-07-25T18:30:45+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"145738","ufCrm_1707331568":"463778","ufCrm_1646069163997":"A\u00c7\u00c3O DE DANOS MATERIAIS","categoryId":17}}
+2025-07-25 18:30:48 | PAYLOAD CRIAR: {"companyId":"144794","ufcrm_1707331568":"463778","ufCrm_1646069163997":"AÇÃO DE DANOS MATERIAIS"} | CATEGORY_ID: 17
+2025-07-25T18:30:48+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"144794","ufCrm_1707331568":"463778","ufCrm_1646069163997":"A\u00c7\u00c3O DE DANOS MATERIAIS","categoryId":17}}
+2025-07-25T18:32:17+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.get | PARAMS:{"entityTypeId":2,"id":"463778"}
+2025-07-25T18:32:18+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.fields | PARAMS:{"entityTypeId":2}
+2025-07-25T18:32:19+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.status.list | PARAMS:{"entityId":2}
+2025-07-25 18:32:19 | DEBUG: empresas=2, oferecidas=1, conv=0
+2025-07-25 18:32:19 | PAYLOAD CRIAR: {"companyId":"145738","ufcrm_1707331568":"463778","ufCrm_1646069163997":"AÇÃO DE DANOS MATERIAIS"} | CATEGORY_ID: 17
+2025-07-25T18:32:19+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"145738","ufCrm_1707331568":"463778","ufCrm_1646069163997":"A\u00c7\u00c3O DE DANOS MATERIAIS","categoryId":17}}
+2025-07-25 18:32:22 | PAYLOAD CRIAR: {"companyId":"144794","ufcrm_1707331568":"463778","ufCrm_1646069163997":"AÇÃO DE DANOS MATERIAIS"} | CATEGORY_ID: 17
+2025-07-25T18:32:22+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"144794","ufCrm_1707331568":"463778","ufCrm_1646069163997":"A\u00c7\u00c3O DE DANOS MATERIAIS","categoryId":17}}
+2025-07-25T18:33:12+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.get | PARAMS:{"entityTypeId":2,"id":"463778"}
+2025-07-25T18:33:12+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.fields | PARAMS:{"entityTypeId":2}
+2025-07-25T18:33:13+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.status.list | PARAMS:{"entityId":2}
+2025-07-25 18:33:14 | DEBUG: empresas=2, oferecidas=1, conv=0
+2025-07-25 18:33:14 | PAYLOAD CRIAR: {"companyId":"145738","ufcrm_1707331568":"463778"} | CATEGORY_ID: 17
+2025-07-25T18:33:14+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"145738","ufCrm_1707331568":"463778","categoryId":17}}
+2025-07-25 18:33:16 | PAYLOAD CRIAR: {"companyId":"144794","ufcrm_1707331568":"463778"} | CATEGORY_ID: 17
+2025-07-25T18:33:16+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/4743/7go31k4olm9kxv1f/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":2,"fields":{"companyId":"144794","ufCrm_1707331568":"463778","categoryId":17}}
+2025-07-25T18:36:59+00:00 | WEBHOOK:https://gnapp.bitrix24.com.br/rest/21/32my76xfasvkj7ld/ | ENDPOINT:crm.item.add | PARAMS:{"entityTypeId":"2","fields":{"categoryId":"17"}}
