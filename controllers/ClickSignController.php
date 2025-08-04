@@ -299,7 +299,7 @@ class ClickSignController
 
             if ($gravado) {
                 self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, 'Documento enviado para assinatura');
-                LogHelper::logClickSign("Documento finalizado e dados atualizados no Bitrix com sucesso", 'controller');
+                LogHelper::logClickSign("Documento enviado para assinatura e dados atualizados no Bitrix com sucesso", 'controller');
                 return [
                     'success' => true,
                     'mensagem' => 'Documento enviado para assinatura',
