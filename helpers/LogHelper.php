@@ -57,7 +57,7 @@ class LogHelper
     // Registra uma rota não encontrada no log
     public static function registrarRotaNaoEncontrada(string $uri, string $method, string $arquivoRota): void
     {
-        $arquivoLog = __DIR__ . '/../logs/logRotasNaoEncontradas.log';
+        $arquivoLog = __DIR__ . '/../../../logs/logRotasNaoEncontradas.log';
         $timestamp = date('Y-m-d H:i:s');
         $traceId = defined('TRACE_ID') ? TRACE_ID : 'sem_trace';
         $aplicacao = defined('NOME_APLICACAO') ? NOME_APLICACAO : 'desconhecida';
@@ -70,7 +70,7 @@ class LogHelper
     // Registra de Log de Permição de Cliente/Apilicação
     public static function logAcessoAplicacao(array $dados, string $contexto): void
     {
-        $arquivoLog = __DIR__ . '/../logs/aplicacao_acesso.log';
+        $arquivoLog = __DIR__ . '/../../../logs/aplicacao_acesso.log';
         $timestamp = date('Y-m-d H:i:s');
         $traceId = defined('TRACE_ID') ? TRACE_ID : 'sem_trace';
         $aplicacao = defined('NOME_APLICACAO') ? NOME_APLICACAO : 'desconhecida';
@@ -88,7 +88,7 @@ class LogHelper
     // Registra uma mensagem de log para BitrixHelpers
     public static function logBitrixHelpers(string $mensagem, string $contexto = ''): void
     {
-        $arquivoLog = __DIR__ . '/../logs/BitrixHelpers.log';
+        $arquivoLog = __DIR__ . '/../../../logs/BitrixHelpers.log';
         $timestamp = date('Y-m-d H:i:s');
         $traceId = defined('TRACE_ID') ? TRACE_ID : 'sem_trace';
         $aplicacao = defined('NOME_APLICACAO') ? NOME_APLICACAO : 'desconhecida';
@@ -107,7 +107,7 @@ class LogHelper
     // Registra uma mensagem de log para ClickSign
     public static function logClickSign(string $mensagem, string $contexto = ''): void
     {
-        $arquivoLog = __DIR__ . '/../logs/clicksign.log';
+        $arquivoLog = __DIR__ . '/../../../logs/clicksign.log';
         $timestamp = date('Y-m-d H:i:s');
         $traceId = defined('TRACE_ID') ? TRACE_ID : 'sem_trace';
         $aplicacao = defined('NOME_APLICACAO') ? NOME_APLICACAO : 'desconhecida';
@@ -126,7 +126,7 @@ class LogHelper
     // Registra uma mensagem de log para o SchedulerController
     public static function logSchedulerController(string $mensagem, string $contexto = ''): void
     {
-        $arquivoLog = __DIR__ . '/../logs/scheduler_controller.log';
+        $arquivoLog = __DIR__ . '/../../../logs/scheduler_controller.log';
         $timestamp = date('Y-m-d H:i:s');
         $traceId = defined('TRACE_ID') ? TRACE_ID : 'sem_trace';
         $aplicacao = defined('NOME_APLICACAO') ? NOME_APLICACAO : 'desconhecida';
@@ -145,7 +145,7 @@ class LogHelper
     // Registra uma mensagem de log para Sincronização Bitrix
     public static function logSincronizacaoBitrix(string $mensagem, string $contexto = ''): void
     {
-        $arquivoLog = __DIR__ . '/../logs/sincronizacao_bitrix.log';
+        $arquivoLog = __DIR__ . '/../../../logs/sincronizacao_bitrix.log';
         $timestamp = date('Y-m-d H:i:s');
         $traceId = defined('TRACE_ID') ? TRACE_ID : 'sem_trace';
         $aplicacao = defined('NOME_APLICACAO') ? NOME_APLICACAO : 'desconhecida';
