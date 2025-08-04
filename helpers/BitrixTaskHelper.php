@@ -133,4 +133,108 @@ class BitrixTaskHelper
         return ['result' => ['task' => $resultadoFinal]];
     }
 
+    // listar tarefas
+    public static function listarTarefas($filtros = [], $campos = ['*'])
+    {
+        $todasTarefas = [];
+        $pagina = 0;
+        $totalProcessados = 0;
+        $continuarPaginacao = true;
+
+        while ($continuarPaginacao) {
+            $params = [
+                'select' => $campos,
+                'start' => $pagina * 50
+            ];
+
+            if (!empty($filtros)) {
+                $params['filter'] = $filtros;
+            }
+
+            $resultado = BitrixHelper::chamarApi('tasks.task.list', $params, ['log' => true]);
+
+            if (!isset($resultado['result']['tasks'])) {
+                return [
+                    'success' => false,
+                    'debug' => $resultado,
+                    'error' => $resultado['error_description'] ?? 'Erro desconhecido ao listar tarefas.'
+                ];
+            }
+
+            $tarefasPagina = $resultado['result']['tasks'];
+            $quantidadePagina = count($tarefasPagina);
+            
+            $todasTarefas = array_merge($todasTarefas, $tarefasPagina);
+            $totalProcessados += $quantidadePagina;
+            $pagina++;
+
+            if ($quantidadePagina > 0) {
+                \Helpers\LogHelper::logBitrixHelpers(
+                    "Página {$pagina} processada - {$quantidadePagina} tarefas encontradas. Total acumulado: {$totalProcessados}",
+                    "BitrixTaskHelper::listarTarefas"
+                );
+            }
+
+            if ($quantidadePagina < 50) {
+                $continuarPaginacao = false;
+            }
+        }
+
+        return [
+            'success' => true,
+            'tasks' => $todasTarefas,
+            'total' => $totalProcessados,
+            'paginas_processadas' => $pagina
+        ];
+    }
+
+    // Consulta os campos disponíveis para tarefas no Bitrix24
+    public static function consultarCamposTask(): array
+    {
+        $resultado = BitrixHelper::chamarApi('tasks.task.getFields', [], [
+            'log' => true
+        ]);
+
+        if (isset($resultado['result'])) {
+            return [
+                'success' => true,
+                'result' => $resultado['result']  // Mantém a estrutura original
+            ];
+        }
+
+        return [
+            'success' => false,
+            'debug' => $resultado,
+            'error' => $resultado['error_description'] ?? 'Erro ao consultar campos de tarefas.'
+        ];
+    }
+
+    // Mapeia valores enumerados de campos de tarefas para seus textos correspondentes
+    public static function mapearValoresEnumeradosTask($dados, $fields)
+    {
+        foreach ($fields as $campo => $definicaoCampo) {
+            if (!isset($dados[$campo])) {
+                continue;
+            }
+            
+            // Para tarefas, verifica se existe 'values' (estrutura diferente dos SPAs)
+            if (isset($definicaoCampo['values']) && is_array($definicaoCampo['values'])) {
+                // Estrutura: "PRIORITY": {"values": {"2": "Alta", "1": "Normal"}}
+                $mapa = $definicaoCampo['values'];
+                
+                // Troca os valores numéricos por textos
+                if (is_array($dados[$campo])) {
+                    $dados[$campo] = array_map(function($v) use ($mapa) {
+                        return $mapa[$v] ?? $v;
+                    }, $dados[$campo]);
+                } else {
+                    $dados[$campo] = $mapa[$dados[$campo]] ?? $dados[$campo];
+                }
+            }
+            // Se não tem 'values', mantém o valor original (pode ser um campo só com 'title')
+        }
+        return $dados;
+    }
+
+    
 }

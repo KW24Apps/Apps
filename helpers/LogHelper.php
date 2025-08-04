@@ -142,4 +142,23 @@ class LogHelper
         file_put_contents($arquivoLog, $linha, FILE_APPEND);
     }
 
+    // Registra uma mensagem de log para Sincronização Bitrix
+    public static function logSincronizacaoBitrix(string $mensagem, string $contexto = ''): void
+    {
+        $arquivoLog = __DIR__ . '/../logs/sincronizacao_bitrix.log';
+        $timestamp = date('Y-m-d H:i:s');
+        $traceId = defined('TRACE_ID') ? TRACE_ID : 'sem_trace';
+        $aplicacao = defined('NOME_APLICACAO') ? NOME_APLICACAO : 'desconhecida';
+
+        if (!$contexto) {
+            $bt = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+            $classe = $bt[1]['class'] ?? '';
+            $funcao = $bt[1]['function'] ?? 'desconhecido';
+            $contexto = $classe ? ($classe . '::' . $funcao) : $funcao;
+        }
+
+        $linha = "[$timestamp] [$traceId] [$aplicacao] [$contexto] - $mensagem" . PHP_EOL;
+        file_put_contents($arquivoLog, $linha, FILE_APPEND);
+    }
+
 }

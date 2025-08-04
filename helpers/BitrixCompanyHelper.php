@@ -101,4 +101,11 @@ class BitrixCompanyHelper
 
     }
 
+    // Consulta os campos de empresas no Bitrix24
+    public static function consultarCamposCompany()
+    {
+        $respostaApi = BitrixHelper::chamarApi('crm.company.fields', []);
+        return $respostaApi['result'] ?? [];
+    }
+
 }

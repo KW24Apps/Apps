@@ -10,9 +10,7 @@ class BitrixHelper
     // Envia requisição para API Bitrix com endpoint e parâmetros fornecidos
     public static function chamarApi($endpoint, $params, $opcoes = [])
     {
-
         $webhookBase = trim($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? '');
-        file_put_contents(__DIR__ . '/../logs/01.log', date('c') . " | WEBHOOK:$webhookBase | ENDPOINT:$endpoint | PARAMS:" . json_encode($params) . "\n", FILE_APPEND);
 
         if (!$webhookBase) {
             LogHelper::logBitrixHelpers("Webhook não informado para chamada do endpoint: $endpoint", __CLASS__ . '::' . __FUNCTION__);
@@ -48,18 +46,21 @@ class BitrixHelper
         return $respostaJson;
     }
 
-    // Consulta os campos de uma SPA (Single Page Application) no Bitrix24
+    // Consulta os campos de uma entidade CRM (SPA, Deals, etc.) no Bitrix24
     public static function consultarCamposSpa($entityTypeId)
     {
-        // Monta parâmetros
+        // Para deals, usa endpoint específico
+        if ($entityTypeId === 'crm.deal.fields') {
+            $respostaApi = BitrixHelper::chamarApi('crm.deal.fields', []);
+            return $respostaApi['result'] ?? [];
+        }
+        
+        // Para SPAs, usa endpoint genérico
         $params = [
             'entityTypeId' => $entityTypeId,
         ];
 
-        // Chama a API do Bitrix para buscar os campos da SPA
         $respostaApi = BitrixHelper::chamarApi('crm.item.fields', $params);
-
-        // Retorna o resultado bruto dos campos da SPA
         return $respostaApi['result']['fields'] ?? [];
     }
     
@@ -148,4 +149,66 @@ class BitrixHelper
         }
         return $stageId; // Se não encontrar, retorna o próprio ID
     }
+
+    // Lista todos os itens de uma entidade CRM (genérico para Company, Deal, SPA, Contact) com paginação
+    public static function listarItensCrm($entityTypeId, $filtros = [], $campos = ['*'], $limite = null)
+    {
+        $todosItens = [];
+        $start = 0;
+        $totalGeral = 0;
+        $paginaAtual = 1;
+
+        do {
+            $params = [
+                'entityTypeId' => $entityTypeId,
+                'select' => $campos,
+                'filter' => $filtros,
+                'start' => $start
+            ];
+
+            $resultado = self::chamarApi('crm.item.list', $params, [
+                'log' => true
+            ]);
+
+            if (!isset($resultado['result']['items'])) {
+                return [
+                    'success' => false,
+                    'debug' => $resultado,
+                    'error' => $resultado['error_description'] ?? 'Erro desconhecido ao listar itens CRM.'
+                ];
+            }
+
+            $itensPagina = $resultado['result']['items'];
+            $totalPagina = count($itensPagina);
+            
+            // Adiciona os itens desta página ao array total
+            $todosItens = array_merge($todosItens, $itensPagina);
+            $totalGeral += $totalPagina;
+
+            // Verifica se há próxima página - o 'next' vem diretamente no resultado
+            $temProximaPagina = isset($resultado['next']) && $resultado['next'] > 0;
+            
+            // Se há limite definido e já atingiu, para
+            if ($limite && $totalGeral >= $limite) {
+                $todosItens = array_slice($todosItens, 0, $limite);
+                break;
+            }
+
+            // Prepara próxima página
+            $start += 50; // Bitrix sempre retorna 50 por página
+            $paginaAtual++;
+
+            // Log de progresso
+            LogHelper::logSincronizacaoBitrix("Página {$paginaAtual} processada - {$totalPagina} itens encontrados. Total acumulado: {$totalGeral}");
+
+        } while ($temProximaPagina && $totalPagina === 50); // Para quando não há mais páginas ou página incompleta
+
+        return [
+            'success' => true,
+            'items' => $todosItens,
+            'total' => count($todosItens),
+            'paginas_processadas' => $paginaAtual
+        ];
+    }
+
 }
