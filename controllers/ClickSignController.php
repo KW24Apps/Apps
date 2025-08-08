@@ -347,7 +347,11 @@ class ClickSignController
             $fields[$campoIdClickSign] = $documentKey;
         }
 
+        LogHelper::logClickSign("atualizarRetornoBitrix | spa: $spa | dealId: $dealId | fields: " . json_encode($fields), 'atualizarRetornoBitrix');
+
         $response = BitrixDealHelper::editarDeal($spa, $dealId, $fields);
+
+        LogHelper::logClickSign("atualizarRetornoBitrix response | response: " . json_encode($response), 'atualizarRetornoBitrix');
 
         return $response;
 
@@ -596,10 +600,13 @@ class ClickSignController
                             'retorno' => $campoRetorno
                         ], $spa, $dealId, true, null, 'Documento assinado e arquivo enviado para o Bitrix.');
 
+                        LogHelper::logClickSign("Tentativa de atualizar mensagem final | campoRetorno: $campoRetorno | spa: $spa | dealId: $dealId", 'documentoDisponivel');
+
                         if (isset($resultadoMensagem['success']) && $resultadoMensagem['success']) {
                             return ['success' => true, 'mensagem' => 'Arquivo baixado, anexado e mensagem atualizada no Bitrix.'];
                         } else {
-                            LogHelper::logClickSign("ERRO: Falha ao atualizar mensagem no Bitrix | erro: " . ($resultadoMensagem['error'] ?? 'desconhecido'), 'documentoDisponivel');
+                            $erroDetalhado = isset($resultadoMensagem['error']) ? $resultadoMensagem['error'] : json_encode($resultadoMensagem);
+                            LogHelper::logClickSign("ERRO: Falha ao atualizar mensagem final no Bitrix | erro: $erroDetalhado", 'documentoDisponivel');
                             return ['success' => false, 'mensagem' => 'Arquivo anexado, mas falha ao atualizar mensagem no Bitrix.'];
                         }
                     } else {
