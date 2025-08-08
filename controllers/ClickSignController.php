@@ -492,7 +492,6 @@ class ClickSignController
             );
 
             if (isset($resultado['success']) && $resultado['success']) {
-                LogHelper::logClickSign("Mensagem atualizada no Bitrix: $mensagem", 'assinaturaRealizada');
                 return ['success' => true, 'mensagem' => 'Assinatura processada e retorno atualizado.'];
             } else {
                 $erroDetalhado = isset($resultado['error']) ? $resultado['error'] : json_encode($resultado);
