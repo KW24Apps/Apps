@@ -349,6 +349,8 @@ class ClickSignController
 
         $response = BitrixDealHelper::editarDeal($spa, $dealId, $fields);
 
+        return $response;
+
     }
 
     // Novo nome e organização: retornoClickSign
@@ -564,29 +566,46 @@ class ClickSignController
                         'data'     => str_replace('data:' . $arquivoBase64['mime'] . ';base64,', '', $arquivoBase64['base64'])
                     ]];
 
-                    // 3.3. Monta estrutura de update e envia para o Bitrix
+                    // 3.3. Tenta anexar arquivo com retry
                     $fields = [
                         $campoArquivoAssinado => $arquivoParaBitrix
                     ];
 
-                    LogHelper::logClickSign("Preparando para anexar arquivo | spa: $spa | dealId: $dealId | campoArquivo: $campoArquivoAssinado | nomeArquivo: $nomeArquivo | Fields: " . json_encode($fields), 'documentoDisponivel');
+                    $tentativasAnexo = 3;
+                    $sucessoAnexo = false;
+                    $ultimoErro = '';
 
-                    $resultado = BitrixDealHelper::editarDeal($spa, $dealId, $fields);
-
-                    LogHelper::logClickSign("Retorno do editarNegociacao após tentativa de anexo | dealId: $dealId | Resultado: " . json_encode($resultado), 'documentoDisponivel');
+                    for ($k = 0; $k < $tentativasAnexo; $k++) {
+                        $resultado = BitrixDealHelper::editarDeal($spa, $dealId, $fields);
 
                         if (isset($resultado['success']) && $resultado['success']) {
-                            // 3.4. Atualiza campo de retorno com mensagem de sucesso
-                            self::atualizarRetornoBitrix([
-                                'retorno' => $campoRetorno
-                            ], $spa, $dealId, true, null, 'Documento assinado e arquivo enviado para o Bitrix.');
+                            $sucessoAnexo = true;
+                            break;
+                        } else {
+                            $ultimoErro = $resultado['error'] ?? json_encode($resultado);
+                            if ($k < $tentativasAnexo - 1) sleep(10); // Aguarda antes da próxima tentativa
+                        }
+                    }
 
+                    if ($sucessoAnexo) {
+                        // 3.4. Aguarda processamento do arquivo no Bitrix (30s)
+                        sleep(30);
+
+                        // 3.5. Atualiza campo de retorno com mensagem de sucesso
+                        $resultadoMensagem = self::atualizarRetornoBitrix([
+                            'retorno' => $campoRetorno
+                        ], $spa, $dealId, true, null, 'Documento assinado e arquivo enviado para o Bitrix.');
+
+                        if (isset($resultadoMensagem['success']) && $resultadoMensagem['success']) {
                             return ['success' => true, 'mensagem' => 'Arquivo baixado, anexado e mensagem atualizada no Bitrix.'];
                         } else {
-                            $erroBitrix = $resultado['error'] ?? json_encode($resultado);
-                            LogHelper::logClickSign("Erro ao anexar arquivo no Bitrix: " . $erroBitrix, 'documentoDisponivel');
-                            return ['success' => false, 'mensagem' => 'Erro ao anexar arquivo no Bitrix: ' . $erroBitrix];
+                            LogHelper::logClickSign("ERRO: Falha ao atualizar mensagem no Bitrix | erro: " . ($resultadoMensagem['error'] ?? 'desconhecido'), 'documentoDisponivel');
+                            return ['success' => false, 'mensagem' => 'Arquivo anexado, mas falha ao atualizar mensagem no Bitrix.'];
                         }
+                    } else {
+                        LogHelper::logClickSign("ERRO: Falha ao anexar arquivo após $tentativasAnexo tentativas | último erro: $ultimoErro", 'documentoDisponivel');
+                        return ['success' => false, 'mensagem' => "Erro ao anexar arquivo no Bitrix após $tentativasAnexo tentativas: $ultimoErro"];
+                    }
                 }
                 sleep($esperaDownload);
             }
