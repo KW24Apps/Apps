@@ -443,18 +443,29 @@ class ClickSignController
     // Método para tratar eventos assinatura de Signatario
     private static function assinaturaRealizada($requestData, $spa, $dealId, $campoRetorno)
     {
-        // 1. Extrai signatário do evento
+        // 1. Validação de parâmetros obrigatórios
+        if (empty($spa) || empty($dealId) || empty($campoRetorno)) {
+            LogHelper::logClickSign("ERRO: Parâmetros obrigatórios ausentes para assinatura | spa: $spa | dealId: $dealId | campoRetorno: $campoRetorno", 'assinaturaRealizada');
+            return ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes para processar assinatura.'];
+        }
+
+        // 2. Extrai signatário do evento
         $signer = $requestData['event']['data']['signer'] ?? null;
 
-        // 2. Se encontrou signatário, monta mensagem
+        // 3. Se encontrou signatário, monta mensagem
         if ($signer) {
             $nome  = $signer['name']  ?? '';
             $email = $signer['email'] ?? '';
 
+            if (empty($nome) || empty($email)) {
+                LogHelper::logClickSign("ERRO: Dados do signatário incompletos | nome: $nome | email: $email", 'assinaturaRealizada');
+                return ['success' => false, 'mensagem' => 'Dados do signatário incompletos.'];
+            }
+
             $mensagem = "Assinatura feita por $nome - $email";
 
-            // 3. Atualiza status no Bitrix (NÃO retorna arquivo)
-            self::atualizarRetornoBitrix(
+            // 4. Atualiza status no Bitrix (NÃO retorna arquivo)
+            $resultado = self::atualizarRetornoBitrix(
                 ['retorno' => $campoRetorno],
                 $spa,
                 $dealId,
@@ -463,12 +474,18 @@ class ClickSignController
                 $mensagem
             );
 
-            LogHelper::logClickSign("Mensagem atualizada no Bitrix: $mensagem", 'controller');
-
-            return ['success' => true, 'mensagem' => 'Assinatura processada e retorno atualizado.'];
+            if (isset($resultado['success']) && $resultado['success']) {
+                LogHelper::logClickSign("Mensagem atualizada no Bitrix: $mensagem", 'assinaturaRealizada');
+                return ['success' => true, 'mensagem' => 'Assinatura processada e retorno atualizado.'];
+            } else {
+                $erroDetalhado = isset($resultado['error']) ? $resultado['error'] : json_encode($resultado);
+                LogHelper::logClickSign("ERRO: Falha ao atualizar mensagem de assinatura no Bitrix | erro: $erroDetalhado", 'assinaturaRealizada');
+                return ['success' => false, 'mensagem' => 'Erro ao atualizar mensagem de assinatura no Bitrix.'];
+            }
         }
 
-        // 4. Caso falte dados
+        // 5. Caso falte dados
+        LogHelper::logClickSign("ERRO: Dados do signatário não encontrados no evento", 'assinaturaRealizada');
         return ['success' => false, 'mensagem' => 'Dados do signatário não encontrados.'];
     }
 
@@ -515,7 +532,18 @@ class ClickSignController
     // Método para tratar eventos Documento disponível para download
     private static function documentoDisponivel($requestData, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey)
     {
-        // 1. Buscar status fechado no banco
+        // 1. Validação de parâmetros obrigatórios ANTES de qualquer processamento
+        if (empty($spa) || empty($dealId) || empty($documentKey)) {
+            LogHelper::logClickSign("ERRO: Parâmetros básicos obrigatórios ausentes | spa: $spa | dealId: $dealId | documentKey: $documentKey", 'documentoDisponivel');
+            return ['success' => false, 'mensagem' => 'Parâmetros básicos obrigatórios ausentes.'];
+        }
+
+        if (empty($campoRetorno)) {
+            LogHelper::logClickSign("ERRO: Campo retorno obrigatório ausente | campoRetorno: $campoRetorno", 'documentoDisponivel');
+            return ['success' => false, 'mensagem' => 'Campo retorno obrigatório ausente.'];
+        }
+
+        // 2. Buscar status fechado no banco
         $tentativasStatus = 15;
         $esperaStatus = 10;
         $statusClosed = null;
@@ -527,38 +555,54 @@ class ClickSignController
         }
 
         if ($statusClosed === null) {
+            LogHelper::logClickSign("ERRO: StatusClosed não encontrado após $tentativasStatus tentativas | documentKey: $documentKey", 'documentoDisponivel');
             return ['success' => false, 'mensagem' => 'StatusClosed não encontrado.'];
         }
 
-        // Validação de parâmetros obrigatórios
-        if (empty($campoArquivoAssinado) || empty($campoRetorno) || empty($spa) || empty($dealId)) {
-            LogHelper::logClickSign("Parâmetros obrigatórios ausentes para anexar arquivo | campoArquivoAssinado: $campoArquivoAssinado | campoRetorno: $campoRetorno | spa: $spa | dealId: $dealId", 'documentoDisponivel');
-            return ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes para anexar arquivo.'];
-        }
-
-        // 2. Se for deadline ou cancel, ignora
+        // 3. Se for deadline ou cancel, ignora (documento cancelado)
         if (in_array($statusClosed['status_closed'] ?? '', ['deadline', 'cancel'])) {
+            LogHelper::logClickSign("Documento cancelado, evento ignorado | status: {$statusClosed['status_closed']}", 'documentoDisponivel');
             return ['success' => true, 'mensagem' => "Evento {$statusClosed['status_closed']} ignorado."];
         }
 
-        // 3. Se for auto_close, baixar e anexar o arquivo assinado
+        // 4. Se for auto_close, baixar e anexar o arquivo assinado
         if (($statusClosed['status_closed'] ?? '') === 'auto_close') {
+            
+            // 4.1. Validação do campo arquivo assinado apenas quando necessário
+            if (empty($campoArquivoAssinado)) {
+                LogHelper::logClickSign("AVISO: Campo arquivo assinado não configurado, enviando apenas mensagem final | campoArquivoAssinado: $campoArquivoAssinado", 'documentoDisponivel');
+                
+                // Envia apenas mensagem final sem anexar arquivo
+                $resultadoMensagem = self::atualizarRetornoBitrix([
+                    'retorno' => $campoRetorno
+                ], $spa, $dealId, true, null, 'Documento assinado com sucesso.');
+
+                if (isset($resultadoMensagem['success']) && $resultadoMensagem['success']) {
+                    return ['success' => true, 'mensagem' => 'Mensagem final enviada (sem anexo de arquivo).'];
+                } else {
+                    $erroDetalhado = isset($resultadoMensagem['error']) ? $resultadoMensagem['error'] : json_encode($resultadoMensagem);
+                    LogHelper::logClickSign("ERRO: Falha ao enviar mensagem final | erro: $erroDetalhado", 'documentoDisponivel');
+                    return ['success' => false, 'mensagem' => 'Falha ao enviar mensagem final.'];
+                }
+            }
+
+            // 4.2. Processar download e anexo do arquivo
             $tentativasDownload = 15;
             $esperaDownload = 30;
 
-
             $token = $GLOBALS['ACESSO_AUTENTICADO']['clicksign_token'] ?? null;
-                if (empty($token)) {
-                    LogHelper::logClickSign("Token ClickSign ausente ao tentar baixar o arquivo assinado", 'documentoDisponivel');
-                    return ['success' => false, 'mensagem' => 'Token ClickSign ausente. Não é possível baixar o arquivo assinado.'];
-                }
+            if (empty($token)) {
+                LogHelper::logClickSign("ERRO: Token ClickSign ausente ao tentar baixar o arquivo assinado", 'documentoDisponivel');
+                return ['success' => false, 'mensagem' => 'Token ClickSign ausente. Não é possível baixar o arquivo assinado.'];
+            }
+
             for ($j = 0; $j < $tentativasDownload; $j++) {
                 $retDoc = ClickSignHelper::buscarDocumento($token, $documentKey);
                 $url = $retDoc['document']['downloads']['signed_file_url'] ?? null;
                 $nomeArquivo = $retDoc['document']['filename'] ?? "documento_assinado.pdf";
 
                 if ($url) {
-                    // 3.1. Baixa e converte o arquivo para base64
+                    // 4.2.1. Baixa e converte o arquivo para base64
                     $arquivoInfo = [
                         'urlMachine' => $url,
                         'name' => $nomeArquivo
@@ -566,17 +610,17 @@ class ClickSignController
                     $arquivoBase64 = UtilHelpers::baixarArquivoBase64($arquivoInfo);
 
                     if (!$arquivoBase64) {
-                        LogHelper::logClickSign("Erro ao baixar/converter arquivo para anexo no negócio", 'documentoDisponivel');
+                        LogHelper::logClickSign("ERRO: Erro ao baixar/converter arquivo para anexo no negócio", 'documentoDisponivel');
                         return ['success' => false, 'mensagem' => 'Falha ao converter o arquivo.'];
                     }
 
-                    // 3.2. Prepara estrutura do campo para o Bitrix
+                    // 4.2.2. Prepara estrutura do campo para o Bitrix
                     $arquivoParaBitrix = [[
                         'filename' => $arquivoBase64['nome'],
                         'data'     => str_replace('data:' . $arquivoBase64['mime'] . ';base64,', '', $arquivoBase64['base64'])
                     ]];
 
-                    // 3.3. Tenta anexar arquivo com retry
+                    // 4.2.3. Tenta anexar arquivo com retry
                     $fields = [
                         $campoArquivoAssinado => $arquivoParaBitrix
                     ];
@@ -598,10 +642,10 @@ class ClickSignController
                     }
 
                     if ($sucessoAnexo) {
-                        // 3.4. Aguarda processamento do arquivo no Bitrix (30s)
+                        // 4.2.4. Aguarda processamento do arquivo no Bitrix (30s)
                         sleep(30);
 
-                        // 3.5. Atualiza campo de retorno com mensagem de sucesso
+                        // 4.2.5. Atualiza campo de retorno com mensagem de sucesso
                         $resultadoMensagem = self::atualizarRetornoBitrix([
                             'retorno' => $campoRetorno
                         ], $spa, $dealId, true, null, 'Documento assinado e arquivo enviado para o Bitrix.');
@@ -621,10 +665,12 @@ class ClickSignController
                 sleep($esperaDownload);
             }
 
+            LogHelper::logClickSign("ERRO: Não foi possível baixar/anexar o arquivo assinado após $tentativasDownload tentativas", 'documentoDisponivel');
             return ['success' => false, 'mensagem' => 'Não foi possível baixar/anexar o arquivo assinado.'];
         }
 
-        // 4. Status inesperado
+        // 5. Status inesperado
+        LogHelper::logClickSign("AVISO: Status inesperado encontrado | status: " . ($statusClosed['status_closed'] ?? 'null'), 'documentoDisponivel');
         return ['success' => true, 'mensagem' => 'StatusClosed não tratado.'];
     }
 
