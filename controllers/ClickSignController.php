@@ -347,7 +347,12 @@ class ClickSignController
             $fields[$campoIdClickSign] = $documentKey;
         }
 
-        LogHelper::logClickSign("atualizarRetornoBitrix | spa: $spa | dealId: $dealId | fields: " . json_encode($fields), 'atualizarRetornoBitrix');
+        LogHelper::logClickSign("atualizarRetornoBitrix | spa: $spa | dealId: $dealId | params: " . json_encode($params) . " | fields: " . json_encode($fields), 'atualizarRetornoBitrix');
+
+        if (empty($fields)) {
+            LogHelper::logClickSign("ERRO: Nenhum campo para atualizar - fields está vazio", 'atualizarRetornoBitrix');
+            return ['success' => false, 'error' => 'Nenhum campo para atualizar'];
+        }
 
         $response = BitrixDealHelper::editarDeal($spa, $dealId, $fields);
 
@@ -596,11 +601,11 @@ class ClickSignController
                         sleep(30);
 
                         // 3.5. Atualiza campo de retorno com mensagem de sucesso
+                        LogHelper::logClickSign("Tentativa de atualizar mensagem final | campoRetorno: $campoRetorno | spa: $spa | dealId: $dealId", 'documentoDisponivel');
+
                         $resultadoMensagem = self::atualizarRetornoBitrix([
                             'retorno' => $campoRetorno
                         ], $spa, $dealId, true, null, 'Documento assinado e arquivo enviado para o Bitrix.');
-
-                        LogHelper::logClickSign("Tentativa de atualizar mensagem final | campoRetorno: $campoRetorno | spa: $spa | dealId: $dealId", 'documentoDisponivel');
 
                         if (isset($resultadoMensagem['success']) && $resultadoMensagem['success']) {
                             return ['success' => true, 'mensagem' => 'Arquivo baixado, anexado e mensagem atualizada no Bitrix.'];
