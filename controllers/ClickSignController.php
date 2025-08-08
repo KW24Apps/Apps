@@ -22,6 +22,9 @@ class ClickSignController
     // Método para gerar assinatura na ClickSign
     public static function GerarAssinatura()
     {
+        // Define headers para resposta JSON
+        header('Content-Type: application/json; charset=utf-8');
+        
         $params = $_GET;
         $entityId = $params['spa'] ?? $params['entityId'] ?? null;
         $id = $params['deal'] ?? $params['id'] ?? null;
@@ -37,14 +40,18 @@ class ClickSignController
 
         if (empty($id) || empty($entityId)) {
             LogHelper::logClickSign("Parâmetros obrigatórios ausentes", 'controller');
-            return ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes.'];
+            $response = ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes.'];
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            return $response;
         }
 
         $tokenClicksign = $GLOBALS['ACESSO_AUTENTICADO']['clicksign_token'] ?? null;
 
         if (!$tokenClicksign) {
             LogHelper::logClickSign("Token ClickSign ausente", 'controller');
-            return ['success' => false, 'mensagem' => 'Acesso não autorizado ou incompleto.'];
+            $response = ['success' => false, 'mensagem' => 'Acesso não autorizado ou incompleto.'];
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            return $response;
         }
 
         $registro = BitrixDealHelper::consultarDeal($entityId, $id, $fields);
@@ -151,7 +158,9 @@ class ClickSignController
         if ($erroSignatario) {
             LogHelper::logClickSign("Erro: $erroMensagem", 'controller');
             self::atualizarRetornoBitrix($params, $entityId, $id,false, null);
-            return ['success' => false, 'mensagem' => $erroMensagem];
+            $response = ['success' => false, 'mensagem' => $erroMensagem];
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            return $response;
         }
 
         LogHelper::logClickSign("Signatários validados | Total: $qtdSignatarios", 'controller');
@@ -185,7 +194,9 @@ class ClickSignController
         if (!$arquivoConvertido) {
             LogHelper::logClickSign("Erro ao converter o arquivo", 'controller');
             self::atualizarRetornoBitrix($params, $entityId, $id,false, null);
-            return ['success' => false, 'mensagem' => 'Erro ao converter o arquivo.'];
+            $response = ['success' => false, 'mensagem' => 'Erro ao converter o arquivo.'];
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            return $response;
         }
 
         // Monta o payload para ClickSign
@@ -300,30 +311,36 @@ class ClickSignController
             if ($gravado) {
                 self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, 'Documento enviado para assinatura');
                 LogHelper::logClickSign("Documento enviado para assinatura e dados atualizados no Bitrix com sucesso", 'controller');
-                return [
+                $response = [
                     'success' => true,
                     'mensagem' => 'Documento enviado para assinatura',
                     'document_key' => $documentKey,
                     'qtd_signatarios' => $qtdSignatarios,
                     'qtd_vinculos' => $qtdVinculos
                 ];
+                echo json_encode($response, JSON_UNESCAPED_UNICODE);
+                return $response;
             } else {
                 self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, 'Assinatura criada, mas falha ao gravar no banco');
                 LogHelper::logClickSign("Documento finalizado, mas erro ao gravar controle de assinatura", 'controller');
-                return [
+                $response = [
                     'success' => false,
                     'mensagem' => 'Assinatura criada, mas falha ao gravar controle de assinatura.',
                     'document_key' => $documentKey
                 ];
+                echo json_encode($response, JSON_UNESCAPED_UNICODE);
+                return $response;
             }
         } else {
-            return [
+            $response = [
                 'success' => false,
                 'mensagem' => 'Documento criado, mas houve falha em um ou mais vínculos de signatários.',
                 'document_key' => $documentKey,
                 'qtd_signatarios' => $qtdSignatarios,
                 'qtd_vinculos' => $qtdVinculos
             ];
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            return $response;
             }
         }
     }
