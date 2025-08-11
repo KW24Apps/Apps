@@ -47,15 +47,9 @@ class BitrixHelper
     }
 
     // Consulta os campos de uma entidade CRM (SPA, Deals, etc.) no Bitrix24
-    public static function consultarCamposSpa($entityTypeId)
+    public static function consultarCamposCrm($entityTypeId)
     {
-        // Para deals, usa endpoint específico
-        if ($entityTypeId === 'crm.deal.fields') {
-            $respostaApi = BitrixHelper::chamarApi('crm.deal.fields', []);
-            return $respostaApi['result'] ?? [];
-        }
-        
-        // Para SPAs, usa endpoint genérico
+        // Usa endpoint genérico para todas as entidades (deals=2, contacts=3, companies=4, SPAs=outros números)
         $params = [
             'entityTypeId' => $entityTypeId,
         ];

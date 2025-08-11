@@ -227,15 +227,12 @@ class ClickSignController
 
         LogHelper::logClickSign("Signatários validados | Total: $qtdSignatarios", 'controller');
 
-
         // Valida arquivo
         $campoArquivo = null;
         $urlMachine = null;
         if (isset($mapCampos['arquivoaserassinado']) && isset($dados[$mapCampos['arquivoaserassinado']])) {
             $campoArquivo = $dados[$mapCampos['arquivoaserassinado']];
         }
-
-
 
         if (is_array($campoArquivo)) {
             // Se vier no formato esperado do Bitrix (com 'valor' => [ { ... } ])

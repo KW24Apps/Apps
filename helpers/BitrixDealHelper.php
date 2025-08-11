@@ -99,7 +99,7 @@ class BitrixDealHelper
         $dadosBrutos = $respostaApi['result']['item'] ?? [];
 
         // 3. Consulta os campos da SPA
-        $camposSpa = BitrixHelper::consultarCamposSpa($entityId);
+        $camposSpa = BitrixHelper::consultarCamposCrm($entityId);
 
         // 4. Consulta as etapas do tipo
         $etapas = BitrixHelper::consultarEtapasPorTipo($entityId);
