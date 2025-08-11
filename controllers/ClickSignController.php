@@ -44,6 +44,9 @@ class ClickSignController
         $fields = $configJson[$spaKey]['campos'] ?? [];
         $tokenClicksign = $configJson[$spaKey]['clicksign_token'] ?? null;
 
+        // Adiciona os campos do config ao params
+        $params = array_merge($params, $fields);
+
         if (!$tokenClicksign) {
             LogHelper::logClickSign("Token ClickSign ausente", 'controller');
             $response = ['success' => false, 'mensagem' => 'Acesso não autorizado ou incompleto.'];
