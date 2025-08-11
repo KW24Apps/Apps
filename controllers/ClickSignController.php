@@ -49,6 +49,7 @@ class ClickSignController
 
         if (!$tokenClicksign) {
             LogHelper::logClickSign("Token ClickSign ausente", 'controller');
+            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, 'Acesso não autorizado ou incompleto');
             $response = ['success' => false, 'mensagem' => 'Acesso não autorizado ou incompleto.'];
             echo json_encode($response, JSON_UNESCAPED_UNICODE);
             return $response;
@@ -57,7 +58,12 @@ class ClickSignController
         $registro = BitrixDealHelper::consultarDeal($entityId, $id, $fields);
         $dados = $registro['result'] ?? [];
 
-
+        // Validar se o deal foi encontrado
+        if (!isset($dados['id']) || (is_array($dados['id']) && (!isset($dados['id']['valor']) || $dados['id']['valor'] === null))) {
+            LogHelper::logClickSign("ERRO - Deal não encontrado | ID: $entityId", 'controller');
+            echo json_encode(['success' => false, 'error' => 'Deal não encontrado']);
+            return;
+        }
 
         // Lista de todos os campos que dependem do mapeamento
         $camposNecessarios = [
@@ -78,6 +84,62 @@ class ClickSignController
                 $normalizado = BitrixHelper::formatarCampos([$params[$campo] => null]);
                 $mapCampos[$campo] = array_key_first($normalizado);
             }
+        }
+
+        // Validar campos essenciais vazios
+        $errosValidacao = [];
+
+        // 1. Validar arquivo a ser assinado (obrigatório)
+        $arquivoParaAssinar = null;
+        if (isset($mapCampos['arquivoaserassinado']) && isset($dados[$mapCampos['arquivoaserassinado']])) {
+            $campoArquivo = $dados[$mapCampos['arquivoaserassinado']];
+            if (isset($campoArquivo['valor']) && is_array($campoArquivo['valor']) && !empty($campoArquivo['valor'])) {
+                $arquivoParaAssinar = $campoArquivo['valor'];
+            }
+        }
+        if (empty($arquivoParaAssinar)) {
+            $errosValidacao[] = 'Arquivo a ser assinado é obrigatório';
+        }
+
+        // 2. Validar data limite (obrigatória e futura)
+        $dataLimite = null;
+        if (isset($mapCampos['data']) && isset($dados[$mapCampos['data']])) {
+            $dataLimite = $dados[$mapCampos['data']]['valor'] ?? null;
+        }
+        if (empty($dataLimite)) {
+            $errosValidacao[] = 'Data limite de assinatura é obrigatória';
+        } else {
+            // Extrair apenas a data (remover hora e fuso)
+            $dataLimiteFormatada = substr($dataLimite, 0, 10);
+            $dataAtual = date('Y-m-d');
+            if ($dataLimiteFormatada <= $dataAtual) {
+                $errosValidacao[] = 'Data limite deve ser posterior à data atual';
+            }
+        }
+
+        // 3. Validar pelo menos um signatário (contratante, contratada ou testemunha)
+        $temSignatario = false;
+        $signatariosCampos = ['contratante', 'contratada', 'testemunhas'];
+        foreach ($signatariosCampos as $campo) {
+            if (isset($mapCampos[$campo]) && isset($dados[$mapCampos[$campo]])) {
+                $valor = $dados[$mapCampos[$campo]]['valor'] ?? null;
+                if (!empty($valor) && is_array($valor) && count($valor) > 0) {
+                    $temSignatario = true;
+                    break;
+                }
+            }
+        }
+        if (!$temSignatario) {
+            $errosValidacao[] = 'Pelo menos um signatário deve estar configurado (contratante, contratada ou testemunha)';
+        }
+
+        // Se há erros de validação, reportar e parar
+        if (!empty($errosValidacao)) {
+            $mensagemErro = 'Campos obrigatórios ausentes ou inválidos: ' . implode(', ', $errosValidacao);
+            LogHelper::logClickSign("ERRO - $mensagemErro", 'controller');
+            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagemErro);
+            echo json_encode(['success' => false, 'error' => $mensagemErro]);
+            return;
         }
 
         // Extração dos dados (acessando sempre o índice 'valor')
@@ -157,7 +219,7 @@ class ClickSignController
 
         if ($erroSignatario) {
             LogHelper::logClickSign("Erro: $erroMensagem", 'controller');
-            self::atualizarRetornoBitrix($params, $entityId, $id,false, null);
+            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $erroMensagem);
             $response = ['success' => false, 'mensagem' => $erroMensagem];
             echo json_encode($response, JSON_UNESCAPED_UNICODE);
             return $response;
@@ -193,7 +255,7 @@ class ClickSignController
 
         if (!$arquivoConvertido) {
             LogHelper::logClickSign("Erro ao converter o arquivo", 'controller');
-            self::atualizarRetornoBitrix($params, $entityId, $id,false, null);
+            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, 'Erro ao converter o arquivo');
             $response = ['success' => false, 'mensagem' => 'Erro ao converter o arquivo.'];
             echo json_encode($response, JSON_UNESCAPED_UNICODE);
             return $response;
@@ -212,7 +274,7 @@ class ClickSignController
         ];
 
         // Criação do documento só após todas as validações
-        $retornoClickSign = ClickSignHelper::criarDocumento($payloadClickSign, $tokenClicksign);
+        $retornoClickSign = ClickSignHelper::criarDocumento($payloadClickSign);
 
         if (isset($retornoClickSign['document']['key'])) {
             $documentKey = $retornoClickSign['document']['key'];
@@ -235,7 +297,7 @@ class ClickSignController
                     $email = $signatario['email'] ?? '';
                     $signAs = $mapSignAs[$papel] ?? 'sign';
 
-                    $retornoSignatario = ClickSignHelper::criarSignatario($tokenClicksign, [
+                    $retornoSignatario = ClickSignHelper::criarSignatario([
                         'name'  => $nomeCompleto,
                         'email' => $email,
                         'auths' => ['email']
@@ -249,7 +311,7 @@ class ClickSignController
 
                     $signerKey = $retornoSignatario['signer']['key'];
 
-                    $vinculo = ClickSignHelper::vincularSignatario($tokenClicksign, [
+                    $vinculo = ClickSignHelper::vincularSignatario([
                         'document_key' => $documentKey,
                         'signer_key'   => $signerKey,
                         'sign_as'      => $signAs,
@@ -259,7 +321,7 @@ class ClickSignController
                     
                     if (!empty($vinculo['list']['request_signature_key'])) {
                         $mensagem = "Prezado(a), segue documento para assinatura.";
-                        ClickSignHelper::enviarNotificacao($tokenClicksign, $vinculo['list']['request_signature_key'], $mensagem);
+                        ClickSignHelper::enviarNotificacao($vinculo['list']['request_signature_key'], $mensagem);
                     }
 
                     if (empty($vinculo['list']['key'])) {
@@ -351,13 +413,14 @@ class ClickSignController
         $campoRetorno = $params['retorno'] ?? null;
         $campoIdClickSign = $params['idclicksign'] ?? null;
 
-        $mensagemRetorno = $mensagemCustomizada ?? "Documento enviado para assinatura";
-        $mensagemErro = "Erro no envio do documento para assinatura";
+        $mensagemRetorno = $sucesso ? 
+            ($mensagemCustomizada ?? "Documento enviado para assinatura") : 
+            ($mensagemCustomizada ?? "Erro no envio do documento para assinatura");
 
         $fields = [];
 
         if ($campoRetorno) {
-            $fields[$campoRetorno] = $sucesso ? $mensagemRetorno : $mensagemErro;
+            $fields[$campoRetorno] = $mensagemRetorno;
         }
 
         if ($sucesso && $campoIdClickSign && $documentKey) {
@@ -618,7 +681,7 @@ class ClickSignController
             }
 
             for ($j = 0; $j < $tentativasDownload; $j++) {
-                $retDoc = ClickSignHelper::buscarDocumento($token, $documentKey);
+                $retDoc = ClickSignHelper::buscarDocumento($documentKey);
                 $url = $retDoc['document']['downloads']['signed_file_url'] ?? null;
                 $nomeArquivo = $retDoc['document']['filename'] ?? "documento_assinado.pdf";
 

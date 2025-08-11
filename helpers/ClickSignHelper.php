@@ -6,14 +6,23 @@ require_once __DIR__ . '/../helpers/LogHelper.php';
 class ClickSignHelper
 {
     // Método genérico para enviar requisições à API ClickSign
-    private static function enviarRequisicao($metodo, $endpoint, $token, $dados = [])
+    private static function enviarRequisicao($metodo, $endpoint, $dados = [], $versao = 'v1')
     {
         if (!is_string($endpoint)) {
             LogHelper::logClickSign('[ERRO] Endpoint não é string: ' . json_encode($endpoint), 'ClickSignHelper');
             return null;
         }
 
-        $url = 'https://app.clicksign.com/api/v1' . $endpoint . '?access_token=' . $token;
+        // Busca token da variável global (mesmo padrão do BitrixHelper)
+        $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
+        $configJson = $configExtra ? json_decode($configExtra, true) : [];
+        
+        // Para ClickSign, precisa especificar qual SPA (entityId)
+        $entityId = $_GET['spa'] ?? $_GET['entityId'] ?? null;
+        $spaKey = 'SPA_' . $entityId;
+        $token = $configJson[$spaKey]['clicksign_token'] ?? null;
+
+        $url = "https://app.clicksign.com/api/$versao" . $endpoint . '?access_token=' . $token;
 
         $ch = curl_init($url);
 
@@ -42,23 +51,21 @@ class ClickSignHelper
     }
 
     // DOCUMENTO — Criação
-    public static function criarDocumento($payload, $token)
+    public static function criarDocumento($payload)
     {
-        return self::enviarRequisicao('POST', '/documents', $token, $payload);
+        return self::enviarRequisicao('POST', '/documents', $payload);
     }
 
     // DOCUMENTO — Consulta (útil para debug de erros de vínculo)
-    public static function buscarDocumento($token, $documentKey)
+    public static function buscarDocumento($documentKey)
     {
-        return self::enviarRequisicao('GET', "/documents/$documentKey", $token);
+        return self::enviarRequisicao('GET', "/documents/$documentKey");
     }
 
-    // SIGNATÁRIO — Criação (utilizando V2 — endpoint externo, não pelo helper genérico)
-    public static function criarSignatario($token, $dados)
+    // SIGNATÁRIO — Criação (agora usando método unificado)
+    public static function criarSignatario($dados)
     {
-        // Atenção: endpoint V2 direto!
-        $url = 'https://app.clicksign.com/api/v2/signers?access_token=' . $token;
-        $ch = curl_init($url);
+        // Constrói payload específico para signatários V2
         $signerPayload = [
             "signer" => [
                 "name" => $dados["name"],
@@ -66,41 +73,25 @@ class ClickSignHelper
                 "auths" => $dados["auths"] ?? ["email"]
             ]
         ];
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            CURLOPT_POSTFIELDS => json_encode($signerPayload),
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        ]);
-        $resposta = curl_exec($ch);
-        if ($resposta === false) {
-            $curlError = curl_error($ch);
-            LogHelper::logClickSign('[ClickSignHelper][criarSignatario] - Erro cURL: ' . $curlError, 'ClickSignHelper');
-        }
-        curl_close($ch);
-        return json_decode($resposta, true);
+        
+        return self::enviarRequisicao('POST', '/signers', $signerPayload, 'v2');
     }
 
     // SIGNATÁRIO — Vínculo ao documento (sempre V1/lists)
-    public static function vincularSignatario($token, $dados)
+    public static function vincularSignatario($dados)
     {
         // Aqui, 'list' já deve ser o array padrão esperado pela API
-        return self::enviarRequisicao('POST', '/lists', $token, ['list' => $dados]);
+        return self::enviarRequisicao('POST', '/lists', ['list' => $dados]);
     }
 
     // Envia notificação ao signatário (com lembrete automático de 2 em 2 dias)
-    public static function enviarNotificacao($token, $requestSignatureKey, $mensagem)
+    public static function enviarNotificacao($requestSignatureKey, $mensagem)
     {
         $payload = [
             "request_signature_key" => $requestSignatureKey,
             "message" => $mensagem
         ];
-        return self::enviarRequisicao('POST', '/notifications', $token, $payload);
+        return self::enviarRequisicao('POST', '/notifications', $payload);
     }
 
     // DOCUMENTO — Assinatura (sempre V1/signatures)
