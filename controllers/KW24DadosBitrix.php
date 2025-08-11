@@ -236,7 +236,7 @@ class KW24DadosBitrix
                 LogHelper::logSincronizacaoBitrix('Atualizando tabela dicionário existente', __CLASS__ . '::' . __FUNCTION__);
                 
                 // Sincronizar campos existentes (adicionar novos, remover obsoletos)
-                $camposAtuaisBanco = $dao->consultarCamposAtuaisDicionario();
+                $camposAtuaisBanco = $dao->consultarDicionario();
                 
                 $ufsExistentes = [];
                 foreach ($camposAtuaisBanco as $campo) {

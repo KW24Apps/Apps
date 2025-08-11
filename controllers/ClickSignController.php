@@ -29,13 +29,6 @@ class ClickSignController
         $entityId = $params['spa'] ?? $params['entityId'] ?? null;
         $id = $params['deal'] ?? $params['id'] ?? null;
 
-        $fields = [];
-        foreach ($params as $campo => $valor) {
-            if (!in_array($campo, ['spa', 'entityId', 'deal', 'id']) && $valor) {
-                $fields[$campo] = $valor;
-            }
-        }
-
         LogHelper::logClickSign("Início do processo de assinatura", 'controller');
 
         if (empty($id) || empty($entityId)) {
@@ -45,7 +38,11 @@ class ClickSignController
             return $response;
         }
 
-        $tokenClicksign = $GLOBALS['ACESSO_AUTENTICADO']['clicksign_token'] ?? null;
+        $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
+        $configJson = $configExtra ? json_decode($configExtra, true) : [];
+        $spaKey = 'SPA_' . $entityId;
+        $fields = $configJson[$spaKey]['campos'] ?? [];
+        $tokenClicksign = $configJson[$spaKey]['clicksign_token'] ?? null;
 
         if (!$tokenClicksign) {
             LogHelper::logClickSign("Token ClickSign ausente", 'controller');
@@ -393,8 +390,13 @@ class ClickSignController
             return ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes.'];
         }
 
-        // 3. Validação HMAC
-        $secret = $GLOBALS['ACESSO_AUTENTICADO']['clicksign_secret'] ?? null;
+        // 3. Validação HMAC - busca secret do config_extra
+        $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
+        $configJson = $configExtra ? json_decode($configExtra, true) : [];
+        $dadosAssinatura = AplicacaoAcessoDAO::obterAssinaturaClickSign($documentKey);
+        $spa = $dadosAssinatura['spa'] ?? null;
+        $spaKey = 'SPA_' . $spa;
+        $secret = $configJson[$spaKey]['clicksign_secret'] ?? null;
         $headerSignature = $_SERVER['HTTP_CONTENT_HMAC'] ?? null;
 
         if (!ClickSignHelper::validarHmac($rawBody, $secret, $headerSignature)) {
