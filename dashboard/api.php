@@ -13,7 +13,7 @@ try {
     );
     
     // Buscar jobs recentes
-    $stmt = $pdo->prepare("SELECT * FROM batch_jobs ORDER BY created_at DESC LIMIT 10");
+    $stmt = $pdo->prepare("SELECT * FROM batch_jobs ORDER BY criado_em DESC LIMIT 10");
     $stmt->execute();
     $jobs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -26,7 +26,7 @@ try {
     }
     
     // Verificar última execução (CRON)
-    $stmt = $pdo->prepare("SELECT updated_at FROM batch_jobs ORDER BY updated_at DESC LIMIT 1");
+    $stmt = $pdo->prepare("SELECT concluido_em FROM batch_jobs WHERE concluido_em IS NOT NULL ORDER BY concluido_em DESC LIMIT 1");
     $stmt->execute();
     $ultimaExecucao = $stmt->fetchColumn();
     
@@ -43,17 +43,20 @@ try {
     
     // Formatar jobs
     $jobsFormatados = array_map(function($job) {
-        $dados = json_decode($job['dados_deals'], true);
-        $totalSolicitado = is_array($dados) ? count($dados) : 0;
+        $dados = json_decode($job['dados_entrada'], true);
+        $totalSolicitado = 0;
+        if (isset($dados['deals']) && is_array($dados['deals'])) {
+            $totalSolicitado = count($dados['deals']);
+        }
         
         return [
             'job_id' => $job['job_id'],
             'status' => $job['status'],
             'total_solicitado' => $totalSolicitado,
-            'deals_processados' => $job['deals_processados'] ?? 0,
-            'deals_sucesso' => $job['deals_sucesso'] ?? 0,
-            'created_at' => $job['created_at'],
-            'updated_at' => $job['updated_at']
+            'deals_processados' => $job['items_processados'] ?? 0,
+            'deals_sucesso' => $job['items_sucesso'] ?? 0,
+            'created_at' => $job['criado_em'],
+            'updated_at' => $job['concluido_em']
         ];
     }, $jobs);
     
