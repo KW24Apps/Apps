@@ -8,10 +8,10 @@ class BatchJobDAO
     public function __construct()
     {
         $logPath = __DIR__ . '/../../logs/batch_debug.log';
-        file_put_contents($logPath, date('Y-m-d H:i:s') . " | DEBUG | BatchJobDAO: Antes do require config.php\n", FILE_APPEND);
+        file_put_contents($logPath, date('Y-m-d H:i:s') . " | DEBUG | BatchJobDAO: Antes do require configdashboard.php\n", FILE_APPEND);
         try {
-            $config = require __DIR__ . '/../config/config.php';
-            file_put_contents($logPath, date('Y-m-d H:i:s') . " | DEBUG | BatchJobDAO: Config carregado\n", FILE_APPEND);
+            $config = require __DIR__ . '/../config/configdashboard.php';
+            file_put_contents($logPath, date('Y-m-d H:i:s') . " | DEBUG | BatchJobDAO: Configdashboard carregado\n", FILE_APPEND);
             $this->pdo = new \PDO(
                 "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8mb4",
                 $config['usuario'],
