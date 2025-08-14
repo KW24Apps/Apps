@@ -1,5 +1,5 @@
 <?php
-
+date_default_timezone_set('America/Sao_Paulo');
 require_once __DIR__ . '/helpers/UtilHelpers.php';
 require_once __DIR__ . '/helpers/LogHelper.php';
 require_once __DIR__ . '/dao/AplicacaoAcessoDAO.php';
