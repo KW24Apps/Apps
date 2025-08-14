@@ -1,4 +1,3 @@
-// Exibir as últimas 30 linhas do batch_debug.log no final do dashboard
 $logPath = __DIR__ . '/../logs/batch_debug.log';
 if (file_exists($logPath)) {
     $lines = file($logPath);

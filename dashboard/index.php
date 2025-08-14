@@ -54,6 +54,25 @@
             <button onclick="atualizar()">🔄 Atualizar</button>
             <span style="margin-left: 20px;">Última atualização: <span id="ultima-atualizacao">-</span></span>
         </div>
+
+        <div class="card">
+            <h2>Log de Debug do Batch</h2>
+            <?php
+            $logPath = __DIR__ . '/../../batch_debug.log';
+            if (!file_exists($logPath)) {
+                $logPath = __DIR__ . '/../../logs/batch_jobs.log';
+            }
+            if (file_exists($logPath)) {
+                $lines = @file($logPath);
+                $ultimas = array_slice($lines, -30);
+                echo "<pre style='background:#222;color:#0f0;padding:10px;font-size:12px;overflow-x:auto;'>";
+                echo htmlspecialchars(implode('', $ultimas));
+                echo "</pre>";
+            } else {
+                echo "<pre style='background:#222;color:#f00;padding:10px;'>Log batch_debug.log não encontrado.</pre>";
+            }
+            ?>
+        </div>
     </div>
 
     <script>
