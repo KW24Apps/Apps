@@ -58,8 +58,13 @@
 
     <script>
         function atualizar() {
-            fetch('api.php')
-                .then(response => response.json())
+            fetch('dashboard/api.php')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
                         // Atualizar contadores
