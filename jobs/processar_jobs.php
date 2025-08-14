@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('America/Sao_Paulo');
 /**
  * Processador de Jobs em Batch - Bitrix24
  * 
