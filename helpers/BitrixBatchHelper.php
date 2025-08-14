@@ -135,10 +135,15 @@ class BitrixBatchHelper
             // LOG: início do método
             file_put_contents(__DIR__ . '/../../logs/batch_debug.log', date('Y-m-d H:i:s') . " | DEBUG | Entrou em processarJobsPendentes\n", FILE_APPEND);
 
-            // Usa DAO para buscar job pendente
+            // Antes de instanciar DAO
+            file_put_contents(__DIR__ . '/../../logs/batch_debug.log', date('Y-m-d H:i:s') . " | DEBUG | Antes de instanciar BatchJobDAO\n", FILE_APPEND);
             $dao = new BatchJobDAO();
-            file_put_contents(__DIR__ . '/../../logs/batch_debug.log', date('Y-m-d H:i:s') . " | DEBUG | Chamou buscarJobPendente\n", FILE_APPEND);
+            file_put_contents(__DIR__ . '/../../logs/batch_debug.log', date('Y-m-d H:i:s') . " | DEBUG | Instanciou BatchJobDAO\n", FILE_APPEND);
+
+            // Antes de buscar job pendente
+            file_put_contents(__DIR__ . '/../../logs/batch_debug.log', date('Y-m-d H:i:s') . " | DEBUG | Antes de buscarJobPendente\n", FILE_APPEND);
             $job = $dao->buscarJobPendente();
+            file_put_contents(__DIR__ . '/../../logs/batch_debug.log', date('Y-m-d H:i:s') . " | DEBUG | Resultado buscarJobPendente: " . var_export($job, true) . "\n", FILE_APPEND);
 
             if (!$job) {
                 file_put_contents(__DIR__ . '/../../logs/batch_debug.log', date('Y-m-d H:i:s') . " | DEBUG | NENHUM JOB PENDENTE ENCONTRADO\n", FILE_APPEND);
@@ -150,26 +155,30 @@ class BitrixBatchHelper
             }
 
             // Marca job como processando
+            file_put_contents(__DIR__ . '/../../logs/batch_debug.log', date('Y-m-d H:i:s') . " | DEBUG | Antes de marcarComoProcessando\n", FILE_APPEND);
             $dao->marcarComoProcessando($job['job_id']);
+            file_put_contents(__DIR__ . '/../../logs/batch_debug.log', date('Y-m-d H:i:s') . " | DEBUG | Depois de marcarComoProcessando\n", FILE_APPEND);
 
             // Log inicial
             $logInicial = date('Y-m-d H:i:s') . " | BITRIX BATCH | Iniciando processamento: {$job['job_id']} | Tipo: {$job['tipo']}\n";
             file_put_contents(__DIR__ . '/../../logs/batch_processor.log', $logInicial, FILE_APPEND);
 
             // Delega processamento baseado no tipo
+            file_put_contents(__DIR__ . '/../../logs/batch_debug.log', date('Y-m-d H:i:s') . " | DEBUG | Antes de processarPorTipo\n", FILE_APPEND);
             $resultado = self::processarPorTipo($job, $dao);
+            file_put_contents(__DIR__ . '/../../logs/batch_debug.log', date('Y-m-d H:i:s') . " | DEBUG | Depois de processarPorTipo\n", FILE_APPEND);
 
             return $resultado;
 
         } catch (\Exception $e) {
+            // Logar stack trace detalhado
+            $logErro = date('Y-m-d H:i:s') . " | BITRIX BATCH | EXCEPTION: " . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n";
+            file_put_contents(__DIR__ . '/../../logs/batch_debug.log', $logErro, FILE_APPEND);
+            file_put_contents(__DIR__ . '/../../logs/batch_processor.log', $logErro, FILE_APPEND);
             // Em caso de erro, marca job como erro
             if (isset($job['job_id']) && isset($dao)) {
                 $dao->marcarComoErro($job['job_id'], $e->getMessage());
             }
-
-            $logErro = date('Y-m-d H:i:s') . " | BITRIX BATCH | ERRO: " . $e->getMessage() . "\n";
-            file_put_contents(__DIR__ . '/../../logs/batch_processor.log', $logErro, FILE_APPEND);
-
             return [
                 'status' => 'erro',
                 'mensagem' => 'Erro no processamento: ' . $e->getMessage(),
