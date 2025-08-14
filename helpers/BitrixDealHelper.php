@@ -7,10 +7,10 @@ use Helpers\BitrixHelper;
 
 class BitrixDealHelper
 {
-    // Cria um ou vários negócios no Bitrix24 via API (método genérico com batch)
+    // Cria um ou vários negócios no Bitrix24 via API (método genérico com batch automático)
     public static function criarDeal($entityId, $categoryId, $fields): array
     {
-        // Se $fields não é array de arrays, transforma em array único para batch
+        // Se $fields não é array de arrays, transforma em array único
         if (!isset($fields[0]) || !is_array($fields[0])) {
             $fields = [$fields];
         }
@@ -34,63 +34,103 @@ class BitrixDealHelper
 
             if (isset($resultado['result']['item']['id'])) {
                 return [
-                    'success' => true,
-                    'id' => $resultado['result']['item']['id']
+                    'status' => 'sucesso',
+                    'quantidade' => 1,
+                    'ids' => $resultado['result']['item']['id'],
+                    'mensagem' => '1 deal criado com sucesso'
                 ];
             }
 
             return [
-                'success' => false,
-                'debug' => $resultado,
-                'error' => $resultado['error_description'] ?? 'Erro desconhecido ao criar negócio.'
+                'status' => 'erro',
+                'quantidade' => 0,
+                'ids' => '',
+                'mensagem' => $resultado['error_description'] ?? 'Erro desconhecido ao criar negócio.'
             ];
         }
 
-        // Múltiplos deals - usa batch
-        $batchCommands = [];
-        
-        foreach ($fields as $index => $dealFields) {
-            $formattedFields = BitrixHelper::formatarCampos($dealFields);
-            
-            if ($categoryId) {
-                $formattedFields['categoryId'] = $categoryId;
-            }
-            
-            $params = [
-                'entityTypeId' => $entityId,
-                'fields' => $formattedFields
-            ];
-            
-            $batchCommands["deal$index"] = 'crm.item.add?' . http_build_query($params);
-        }
-        
-        $resultado = BitrixHelper::chamarApi('batch', ['cmd' => $batchCommands], [
-            'log' => true
-        ]);
+        // MÚLTIPLOS DEALS - Divisão automática em chunks de 50 + rate limiting
+        $chunks = array_chunk($fields, 50);
+        $todosIds = [];
+        $totalSucessos = 0;
+        $totalErros = 0;
+        $debugInfo = [];
 
-        // Retorna resultado do batch com estatísticas
-        $sucessos = 0;
-        $erros = 0;
-        $ids = [];
-        
-        if (isset($resultado['result']['result'])) {
-            foreach ($resultado['result']['result'] as $key => $res) {
-                if (isset($res['item']['id'])) {
-                    $sucessos++;
-                    $ids[] = $res['item']['id'];
-                } else {
-                    $erros++;
+        foreach ($chunks as $chunkIndex => $chunk) {
+            // Log do progresso
+            $batchAtual = $chunkIndex + 1;
+            $totalBatches = count($chunks);
+            
+            // Monta batch commands para este chunk
+            $batchCommands = [];
+            
+            foreach ($chunk as $index => $dealFields) {
+                $formattedFields = BitrixHelper::formatarCampos($dealFields);
+                
+                if ($categoryId) {
+                    $formattedFields['categoryId'] = $categoryId;
                 }
+                
+                $params = [
+                    'entityTypeId' => $entityId,
+                    'fields' => $formattedFields
+                ];
+                
+                $batchCommands["deal$index"] = 'crm.item.add?' . http_build_query($params);
+            }
+            
+            // Executa o batch para este chunk
+            $resultado = BitrixHelper::chamarApi('batch', ['cmd' => $batchCommands], [
+                'log' => true
+            ]);
+
+            // Processa resultado do chunk
+            $sucessosChunk = 0;
+            $errosChunk = 0;
+            $idsChunk = [];
+            
+            if (isset($resultado['result']['result'])) {
+                foreach ($resultado['result']['result'] as $key => $res) {
+                    if (isset($res['item']['id'])) {
+                        $sucessosChunk++;
+                        $idsChunk[] = $res['item']['id'];
+                        $todosIds[] = $res['item']['id'];
+                    } else {
+                        $errosChunk++;
+                    }
+                }
+            } else {
+                $errosChunk = count($chunk); // Se não há result, todos falharam
+            }
+
+            $totalSucessos += $sucessosChunk;
+            $totalErros += $errosChunk;
+            
+            // Debug info para este chunk
+            $debugInfo["batch_$batchAtual"] = [
+                'chunk_size' => count($chunk),
+                'sucessos' => $sucessosChunk,
+                'erros' => $errosChunk,
+                'ids' => $idsChunk,
+                'api_response' => $resultado
+            ];
+
+            // Rate limiting: aguarda 2 segundos entre batches (exceto no último)
+            if ($batchAtual < $totalBatches) {
+                sleep(2);
             }
         }
 
+        // Retorna resultado consolidado de todos os batches - FORMATO LIMPO
+        $idsString = implode(', ', $todosIds);
+        
         return [
-            'success' => $sucessos > 0,
-            'total_enviados' => count($fields),
-            'sucessos' => $sucessos,
-            'erros' => $erros,
-            'ids' => $ids,
-            'debug' => $resultado
+            'status' => $totalSucessos > 0 ? 'sucesso' : 'erro',
+            'quantidade' => $totalSucessos,
+            'ids' => $idsString,
+            'mensagem' => $totalSucessos > 0 
+                ? "$totalSucessos deals criados com sucesso" . ($totalErros > 0 ? " ($totalErros falharam)" : "")
+                : "Falha ao criar deals: $totalErros erros"
         ];
     }
 
