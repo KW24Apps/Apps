@@ -7,13 +7,22 @@ class BatchJobDAO
 
     public function __construct()
     {
-        $config = require __DIR__ . '/../config/config.php';
-        $this->pdo = new \PDO(
-            "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8mb4",
-            $config['usuario'],
-            $config['senha'],
-            [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
-        );
+        $logPath = __DIR__ . '/../../logs/batch_debug.log';
+        file_put_contents($logPath, date('Y-m-d H:i:s') . " | DEBUG | BatchJobDAO: Antes do require config.php\n", FILE_APPEND);
+        try {
+            $config = require __DIR__ . '/../config/config.php';
+            file_put_contents($logPath, date('Y-m-d H:i:s') . " | DEBUG | BatchJobDAO: Config carregado\n", FILE_APPEND);
+            $this->pdo = new \PDO(
+                "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8mb4",
+                $config['usuario'],
+                $config['senha'],
+                [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
+            );
+            file_put_contents($logPath, date('Y-m-d H:i:s') . " | DEBUG | BatchJobDAO: PDO instanciado com sucesso\n", FILE_APPEND);
+        } catch (\Throwable $e) {
+            file_put_contents($logPath, date('Y-m-d H:i:s') . " | DEBUG | BatchJobDAO: EXCEPTION: " . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n", FILE_APPEND);
+            throw $e;
+        }
     }
 
     /**
