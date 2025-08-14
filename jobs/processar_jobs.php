@@ -13,9 +13,12 @@ require_once __DIR__ . '/../helpers/BitrixBatchHelper.php';
 use Helpers\BitrixBatchHelper;
 
 try {
-    // Log de execução
-    $logExecucao = date('Y-m-d H:i:s') . " | CRON JOB | Verificando jobs pendentes...\n";
+    // Log de execução explícito
+    $logExecucao = date('Y-m-d H:i:s') . " | CRON JOB | INÍCIO da execução do processar_jobs.php\n";
     file_put_contents(__DIR__ . '/../../logs/cron_batch.log', $logExecucao, FILE_APPEND);
+    // Log de verificação de jobs pendentes
+    $logVerificacao = date('Y-m-d H:i:s') . " | CRON JOB | Verificando jobs pendentes...\n";
+    file_put_contents(__DIR__ . '/../../logs/cron_batch.log', $logVerificacao, FILE_APPEND);
 
     // Processa jobs pendentes
     $resultado = BitrixBatchHelper::processarJobsPendentes();
