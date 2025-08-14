@@ -134,98 +134,160 @@ class BitrixDealHelper
         ];
     }
 
-    // Edita um ou vários negócios existentes no Bitrix24 via API (método genérico com batch)
+    // Edita um ou vários negócios existentes no Bitrix24 via API (método genérico com batch automático)
     public static function editarDeal($entityId, $dealId, array $fields): array
     {
-        // Se $dealId é array = múltiplas edições, $fields deve ser array de arrays
-        if (is_array($dealId)) {
+        // Detecta se é edição individual ou múltipla
+        $isMultiple = is_array($dealId);
+        
+        if ($isMultiple) {
+            // MÚLTIPLAS EDIÇÕES - Validações
             if (empty($dealId) || empty($fields)) {
                 return [
-                    'success' => false,
-                    'error' => 'Arrays de IDs e fields não podem estar vazios para edição em batch.'
+                    'status' => 'erro',
+                    'quantidade' => 0,
+                    'ids' => '',
+                    'mensagem' => 'Arrays de IDs e fields não podem estar vazios para edição em batch.'
                 ];
             }
 
             if (count($dealId) !== count($fields)) {
                 return [
-                    'success' => false,
-                    'error' => 'Número de IDs deve ser igual ao número de arrays de fields.'
+                    'status' => 'erro',
+                    'quantidade' => 0,
+                    'ids' => '',
+                    'mensagem' => 'Número de IDs deve ser igual ao número de arrays de fields.'
                 ];
             }
 
-            // Batch de edições
+            // Prepara dados para processamento em chunks
+            $editData = [];
+            foreach ($dealId as $index => $id) {
+                $editData[] = [
+                    'id' => $id,
+                    'fields' => $fields[$index]
+                ];
+            }
+        } else {
+            // EDIÇÃO INDIVIDUAL - Converte para formato múltiplo para processamento uniforme
+            if (!$entityId || !$dealId || empty($fields)) {
+                return [
+                    'status' => 'erro',
+                    'quantidade' => 0,
+                    'ids' => '',
+                    'mensagem' => 'Parâmetros obrigatórios não informados.'
+                ];
+            }
+
+            $editData = [[
+                'id' => $dealId,
+                'fields' => $fields
+            ]];
+        }
+
+        // Se é apenas 1 edição, usa método individual para manter compatibilidade
+        if (count($editData) === 1) {
+            $fieldsFormatados = BitrixHelper::formatarCampos($editData[0]['fields']);
+
+            $params = [
+                'entityTypeId' => $entityId,
+                'id' => (int)$editData[0]['id'],
+                'fields' => $fieldsFormatados
+            ];
+
+            $resultado = BitrixHelper::chamarApi('crm.item.update', $params, [
+                'log' => true
+            ]);
+
+            if (isset($resultado['result'])) {
+                return [
+                    'status' => 'sucesso',
+                    'quantidade' => 1,
+                    'ids' => $editData[0]['id'],
+                    'mensagem' => '1 deal editado com sucesso'
+                ];
+            }
+
+            return [
+                'status' => 'erro',
+                'quantidade' => 0,
+                'ids' => '',
+                'mensagem' => $resultado['error_description'] ?? 'Erro desconhecido ao editar negócio.'
+            ];
+        }
+
+        // MÚLTIPLAS EDIÇÕES - Divisão automática em chunks de 50 + rate limiting
+        $chunks = array_chunk($editData, 50);
+        $todosIds = [];
+        $totalSucessos = 0;
+        $totalErros = 0;
+
+        foreach ($chunks as $chunkIndex => $chunk) {
+            // Log do progresso
+            $batchAtual = $chunkIndex + 1;
+            $totalBatches = count($chunks);
+            
+            // Monta batch commands para este chunk
             $batchCommands = [];
             
-            foreach ($dealId as $index => $id) {
-                $fieldsFormatados = BitrixHelper::formatarCampos($fields[$index]);
+            foreach ($chunk as $index => $editItem) {
+                $fieldsFormatados = BitrixHelper::formatarCampos($editItem['fields']);
                 
                 $params = [
                     'entityTypeId' => $entityId,
-                    'id' => (int)$id,
+                    'id' => (int)$editItem['id'],
                     'fields' => $fieldsFormatados
                 ];
                 
                 $batchCommands["edit$index"] = 'crm.item.update?' . http_build_query($params);
             }
             
+            // Executa o batch para este chunk
             $resultado = BitrixHelper::chamarApi('batch', ['cmd' => $batchCommands], [
                 'log' => true
             ]);
 
-            // Retorna resultado do batch com estatísticas
-            $sucessos = 0;
-            $erros = 0;
+            // Processa resultado do chunk
+            $sucessosChunk = 0;
+            $errosChunk = 0;
+            $idsChunk = [];
             
             if (isset($resultado['result']['result'])) {
                 foreach ($resultado['result']['result'] as $key => $res) {
+                    $chunkItemIndex = (int)str_replace('edit', '', $key);
+                    $dealId = $chunk[$chunkItemIndex]['id'];
+                    
                     if (isset($res['item']) || (isset($res['result']) && $res['result'] === true)) {
-                        $sucessos++;
+                        $sucessosChunk++;
+                        $idsChunk[] = $dealId;
+                        $todosIds[] = $dealId;
                     } else {
-                        $erros++;
+                        $errosChunk++;
                     }
                 }
+            } else {
+                $errosChunk = count($chunk); // Se não há result, todos falharam
             }
 
-            return [
-                'success' => $sucessos > 0,
-                'total_enviados' => count($dealId),
-                'sucessos' => $sucessos,
-                'erros' => $erros,
-                'debug' => $resultado
-            ];
+            $totalSucessos += $sucessosChunk;
+            $totalErros += $errosChunk;
+
+            // Rate limiting: aguarda 2 segundos entre batches (exceto no último)
+            if ($batchAtual < $totalBatches) {
+                sleep(2);
+            }
         }
 
-        // Edição individual (comportamento original)
-        if (!$entityId || !$dealId || empty($fields)) {
-            return [
-                'success' => false,
-                'error' => 'Parâmetros obrigatórios não informados.'
-            ];
-        }
-
-        $fields = BitrixHelper::formatarCampos($fields);
-
-        $params = [
-            'entityTypeId' => $entityId,
-            'id' => (int)$dealId,
-            'fields' => $fields
-        ];
-
-        $resultado = BitrixHelper::chamarApi('crm.item.update', $params, [
-            'log' => true
-        ]);
-
-        if (isset($resultado['result'])) {
-            return [
-                'success' => true,
-                'id' => $dealId
-            ];
-        }
-
+        // Retorna resultado consolidado de todos os batches - FORMATO LIMPO
+        $idsString = implode(', ', $todosIds);
+        
         return [
-            'success' => false,
-            'debug' => $resultado,
-            'error' => $resultado['error_description'] ?? 'Erro desconhecido ao editar negócio.'
+            'status' => $totalSucessos > 0 ? 'sucesso' : 'erro',
+            'quantidade' => $totalSucessos,
+            'ids' => $idsString,
+            'mensagem' => $totalSucessos > 0 
+                ? "$totalSucessos deals editados com sucesso" . ($totalErros > 0 ? " ($totalErros falharam)" : "")
+                : "Falha ao editar deals: $totalErros erros"
         ];
     }
 
