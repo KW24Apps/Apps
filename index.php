@@ -36,6 +36,9 @@ if ($cliente && $slugAplicacao && NOME_APLICACAO !== 'bitrix-sync') {
 // Direcionamento com base no prefixo
 switch (NOME_APLICACAO) {
 
+    case 'dashboard':
+        require_once __DIR__ . '/dashboard/index.php';
+        break;
     case 'scheduler':
         require_once __DIR__ . '/routers/SchedulerRoutes.php';
         break;
