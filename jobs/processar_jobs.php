@@ -21,13 +21,21 @@ try {
     $logVerificacao = date('Y-m-d H:i:s') . " | CRON JOB | Verificando jobs pendentes...\n";
     file_put_contents(__DIR__ . '/../../logs/cron_batch.log', $logVerificacao, FILE_APPEND);
 
-    // Processa jobs pendentes
-    $resultado = BitrixBatchHelper::processarJobsPendentes();
+
+    // Log: início da chamada do helper
+    file_put_contents(__DIR__ . '/../../logs/cron_batch.log', date('Y-m-d H:i:s') . " | CRON JOB | Chamando BitrixBatchHelper::processarJobsPendentes()\n", FILE_APPEND);
+    $resultado = null;
+    try {
+        $resultado = BitrixBatchHelper::processarJobsPendentes();
+        file_put_contents(__DIR__ . '/../../logs/cron_batch.log', date('Y-m-d H:i:s') . " | CRON JOB | Retorno do helper: " . json_encode($resultado, JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND);
+    } catch (\Throwable $e) {
+        file_put_contents(__DIR__ . '/../../logs/cron_batch_error.log', date('Y-m-d H:i:s') . " | CRON JOB | EXCEÇÃO AO CHAMAR HELPER: " . $e->getMessage() . "\n", FILE_APPEND);
+        throw $e;
+    }
 
     // Log do resultado
     $status = $resultado['status'] ?? 'unknown';
     $logResultado = date('Y-m-d H:i:s') . " | CRON JOB | Resultado: $status\n";
-    
     if ($status === 'processado') {
         $jobId = $resultado['job_id'] ?? 'unknown';
         $logResultado .= date('Y-m-d H:i:s') . " | CRON JOB | Job processado: $jobId\n";
@@ -37,7 +45,6 @@ try {
         $mensagem = $resultado['mensagem'] ?? 'Erro desconhecido';
         $logResultado .= date('Y-m-d H:i:s') . " | CRON JOB | ERRO: $mensagem\n";
     }
-
     file_put_contents(__DIR__ . '/../../logs/cron_batch.log', $logResultado, FILE_APPEND);
 
     // Se executado via linha de comando, mostra resultado
@@ -48,7 +55,7 @@ try {
 } catch (Exception $e) {
     $logErro = date('Y-m-d H:i:s') . " | CRON JOB | EXCEÇÃO: " . $e->getMessage() . "\n";
     file_put_contents(__DIR__ . '/../../logs/cron_batch.log', $logErro, FILE_APPEND);
-    
+    file_put_contents(__DIR__ . '/../../logs/cron_batch_error.log', date('Y-m-d H:i:s') . " | CRON JOB | EXCEÇÃO GERAL: " . $e->getMessage() . "\n", FILE_APPEND);
     if (php_sapi_name() === 'cli') {
         echo "ERRO: " . $e->getMessage() . "\n";
     }
