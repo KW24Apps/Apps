@@ -7,42 +7,155 @@ use Helpers\BitrixHelper;
 
 class BitrixDealHelper
 {
-    // Cria um negócio no Bitrix24 via API
+    // Cria um ou vários negócios no Bitrix24 via API (método genérico com batch)
     public static function criarDeal($entityId, $categoryId, $fields): array
     {
-        // Formata os campos recebidos
-        $formattedFields = BitrixHelper::formatarCampos($fields);
-
-        if ($categoryId) {
-            $formattedFields['categoryId'] = $categoryId;
+        // Se $fields não é array de arrays, transforma em array único para batch
+        if (!isset($fields[0]) || !is_array($fields[0])) {
+            $fields = [$fields];
         }
 
-        $params = [
-            'entityTypeId' => $entityId,
-            'fields' => $formattedFields
-        ];
+        // Se é apenas 1 deal, usa método individual para manter compatibilidade de resposta
+        if (count($fields) === 1) {
+            $formattedFields = BitrixHelper::formatarCampos($fields[0]);
 
-        $resultado = BitrixHelper::chamarApi('crm.item.add', $params, [
-            'log' => true
-        ]);
+            if ($categoryId) {
+                $formattedFields['categoryId'] = $categoryId;
+            }
 
-        if (isset($resultado['result']['item']['id'])) {
+            $params = [
+                'entityTypeId' => $entityId,
+                'fields' => $formattedFields
+            ];
+
+            $resultado = BitrixHelper::chamarApi('crm.item.add', $params, [
+                'log' => true
+            ]);
+
+            if (isset($resultado['result']['item']['id'])) {
+                return [
+                    'success' => true,
+                    'id' => $resultado['result']['item']['id']
+                ];
+            }
+
             return [
-                'success' => true,
-                'id' => $resultado['result']['item']['id']
+                'success' => false,
+                'debug' => $resultado,
+                'error' => $resultado['error_description'] ?? 'Erro desconhecido ao criar negócio.'
             ];
         }
 
+        // Múltiplos deals - usa batch
+        $batchCommands = [];
+        
+        foreach ($fields as $index => $dealFields) {
+            $formattedFields = BitrixHelper::formatarCampos($dealFields);
+            
+            if ($categoryId) {
+                $formattedFields['categoryId'] = $categoryId;
+            }
+            
+            $params = [
+                'entityTypeId' => $entityId,
+                'fields' => $formattedFields
+            ];
+            
+            $batchCommands["deal$index"] = 'crm.item.add?' . http_build_query($params);
+        }
+        
+        $resultado = BitrixHelper::chamarApi('batch', ['cmd' => $batchCommands], [
+            'log' => true
+        ]);
+
+        // Retorna resultado do batch com estatísticas
+        $sucessos = 0;
+        $erros = 0;
+        $ids = [];
+        
+        if (isset($resultado['result']['result'])) {
+            foreach ($resultado['result']['result'] as $key => $res) {
+                if (isset($res['item']['id'])) {
+                    $sucessos++;
+                    $ids[] = $res['item']['id'];
+                } else {
+                    $erros++;
+                }
+            }
+        }
+
         return [
-            'success' => false,
-            'debug' => $resultado,
-            'error' => $resultado['error_description'] ?? 'Erro desconhecido ao criar negócio.'
+            'success' => $sucessos > 0,
+            'total_enviados' => count($fields),
+            'sucessos' => $sucessos,
+            'erros' => $erros,
+            'ids' => $ids,
+            'debug' => $resultado
         ];
     }
 
-    // Edita um negócio existente no Bitrix24 via API
+    // Edita um ou vários negócios existentes no Bitrix24 via API (método genérico com batch)
     public static function editarDeal($entityId, $dealId, array $fields): array
     {
+        // Se $dealId é array = múltiplas edições, $fields deve ser array de arrays
+        if (is_array($dealId)) {
+            if (empty($dealId) || empty($fields)) {
+                return [
+                    'success' => false,
+                    'error' => 'Arrays de IDs e fields não podem estar vazios para edição em batch.'
+                ];
+            }
+
+            if (count($dealId) !== count($fields)) {
+                return [
+                    'success' => false,
+                    'error' => 'Número de IDs deve ser igual ao número de arrays de fields.'
+                ];
+            }
+
+            // Batch de edições
+            $batchCommands = [];
+            
+            foreach ($dealId as $index => $id) {
+                $fieldsFormatados = BitrixHelper::formatarCampos($fields[$index]);
+                
+                $params = [
+                    'entityTypeId' => $entityId,
+                    'id' => (int)$id,
+                    'fields' => $fieldsFormatados
+                ];
+                
+                $batchCommands["edit$index"] = 'crm.item.update?' . http_build_query($params);
+            }
+            
+            $resultado = BitrixHelper::chamarApi('batch', ['cmd' => $batchCommands], [
+                'log' => true
+            ]);
+
+            // Retorna resultado do batch com estatísticas
+            $sucessos = 0;
+            $erros = 0;
+            
+            if (isset($resultado['result']['result'])) {
+                foreach ($resultado['result']['result'] as $key => $res) {
+                    if (isset($res['item']) || (isset($res['result']) && $res['result'] === true)) {
+                        $sucessos++;
+                    } else {
+                        $erros++;
+                    }
+                }
+            }
+
+            return [
+                'success' => $sucessos > 0,
+                'total_enviados' => count($dealId),
+                'sucessos' => $sucessos,
+                'erros' => $erros,
+                'debug' => $resultado
+            ];
+        }
+
+        // Edição individual (comportamento original)
         if (!$entityId || !$dealId || empty($fields)) {
             return [
                 'success' => false,

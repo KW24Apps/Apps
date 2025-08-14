@@ -21,7 +21,8 @@ class DealController
             return strpos($key, 'UF_CRM_') === 0;
         }, ARRAY_FILTER_USE_KEY);
 
-        // Loga o payload enviado para criar negócio
+        // Método agora é genérico - funciona para 1 ou múltiplos deals
+        // Para 1 deal, passa o $fields direto (será convertido internamente para array)
         $resultado = BitrixDealHelper::criarDeal($spa, $categoryId, $fields);
 
         header('Content-Type: application/json');
