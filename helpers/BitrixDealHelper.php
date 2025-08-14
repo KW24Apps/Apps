@@ -2,8 +2,10 @@
 namespace Helpers;
 
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
+require_once __DIR__ . '/../helpers/BitrixBatchHelper.php';
 
 use Helpers\BitrixHelper;
+use Helpers\BitrixBatchHelper;
 
 class BitrixDealHelper
 {
@@ -13,6 +15,29 @@ class BitrixDealHelper
         // Se $fields não é array de arrays, transforma em array único
         if (!isset($fields[0]) || !is_array($fields[0])) {
             $fields = [$fields];
+        }
+
+        $totalDeals = count($fields);
+
+        // REGRA DOS 50: Volumes grandes precisam de processamento assíncrono
+        if ($totalDeals > 50) {
+            // Cria job assíncrono usando BitrixBatchHelper
+            $dados = [
+                'spa' => $entityId,
+                'category_id' => $categoryId,
+                'deals' => $fields
+            ];
+            
+            $jobId = BitrixBatchHelper::criarJob('criar_deals', $dados);
+            
+            return [
+                'status' => 'aceito_para_processamento',
+                'job_id' => $jobId,
+                'total_solicitado' => $totalDeals,
+                'limite_sincrono' => 50,
+                'mensagem' => "Volume de $totalDeals deals enviado para processamento assíncrono.",
+                'consultar_status' => "Use BitrixBatchHelper::consultarStatus('$jobId') para acompanhar o progresso."
+            ];
         }
 
         // Se é apenas 1 deal, usa método individual para manter compatibilidade de resposta
@@ -49,12 +74,16 @@ class BitrixDealHelper
             ];
         }
 
-        // MÚLTIPLOS DEALS - Divisão automática em chunks de 50 + rate limiting
-        $chunks = array_chunk($fields, 50);
+        // MÚLTIPLOS DEALS - Divisão automática em chunks de 25 + rate limiting
+        $chunks = array_chunk($fields, 25);
         $todosIds = [];
         $totalSucessos = 0;
         $totalErros = 0;
         $debugInfo = [];
+
+        // LOG INICIAL
+        $logInicial = date('Y-m-d H:i:s') . " | INICIANDO CRIAÇÃO BATCH | TOTAL DEALS: " . count($fields) . " | CHUNKS: " . count($chunks) . "\n";
+        file_put_contents(__DIR__ . '/../../logs/debug_batch.log', $logInicial, FILE_APPEND);
 
         foreach ($chunks as $chunkIndex => $chunk) {
             // Log do progresso
@@ -91,33 +120,58 @@ class BitrixDealHelper
             
             if (isset($resultado['result']['result'])) {
                 foreach ($resultado['result']['result'] as $key => $res) {
+                    // Verifica múltiplas formas de sucesso
                     if (isset($res['item']['id'])) {
+                        // Formato padrão de sucesso
                         $sucessosChunk++;
                         $idsChunk[] = $res['item']['id'];
                         $todosIds[] = $res['item']['id'];
+                    } elseif (isset($res['result']['item']['id'])) {
+                        // Formato alternativo de sucesso
+                        $sucessosChunk++;
+                        $idsChunk[] = $res['result']['item']['id'];
+                        $todosIds[] = $res['result']['item']['id'];
+                    } elseif (isset($res['result']) && is_numeric($res['result'])) {
+                        // Sucesso retornando apenas ID numérico
+                        $sucessosChunk++;
+                        $idsChunk[] = $res['result'];
+                        $todosIds[] = $res['result'];
                     } else {
                         $errosChunk++;
                     }
                 }
+            } elseif (isset($resultado['result']) && is_array($resultado['result'])) {
+                // Formato de resposta diferente - tenta interpretar
+                $errosChunk = 0; // Reset para recontagem
+                foreach ($chunk as $index => $item) {
+                    // Se chegou aqui, assume que pode ter sido criado
+                    // Mas não conseguimos extrair o ID
+                    $errosChunk++;
+                }
             } else {
-                $errosChunk = count($chunk); // Se não há result, todos falharam
+                $errosChunk = count($chunk); // Se não há result válido, todos falharam
             }
 
             $totalSucessos += $sucessosChunk;
             $totalErros += $errosChunk;
             
-            // Debug info para este chunk
+            // LOG POR BATCH
+            $logBatch = date('Y-m-d H:i:s') . " | BATCH $batchAtual FINALIZADO | SUCESSOS: $sucessosChunk | ERROS: $errosChunk | IDS: " . implode(',', $idsChunk) . "\n";
+            file_put_contents(__DIR__ . '/../../logs/debug_batch.log', $logBatch, FILE_APPEND);
+            
+            // Debug info DETALHADO para este chunk
             $debugInfo["batch_$batchAtual"] = [
                 'chunk_size' => count($chunk),
                 'sucessos' => $sucessosChunk,
                 'erros' => $errosChunk,
                 'ids' => $idsChunk,
-                'api_response' => $resultado
+                'raw_response' => $resultado, // RESPOSTA COMPLETA para debug
+                'batch_index' => $batchAtual
             ];
 
-            // Rate limiting: aguarda 2 segundos entre batches (exceto no último)
+            // Rate limiting: aguarda 1 segundo entre batches (exceto no último)
             if ($batchAtual < $totalBatches) {
-                sleep(2);
+                sleep(1);
             }
         }
 
@@ -148,6 +202,29 @@ class BitrixDealHelper
                     'quantidade' => 0,
                     'ids' => '',
                     'mensagem' => 'Arrays de IDs e fields não podem estar vazios para edição em batch.'
+                ];
+            }
+
+            $totalDeals = count($dealId);
+
+            // REGRA DOS 50: Volumes grandes precisam de processamento assíncrono
+            if ($totalDeals > 50) {
+                // Cria job assíncrono usando BitrixBatchHelper
+                $dados = [
+                    'spa' => $entityId,
+                    'deal_ids' => $dealId,
+                    'fields_array' => $fields
+                ];
+                
+                $jobId = BitrixBatchHelper::criarJob('editar_deals', $dados);
+                
+                return [
+                    'status' => 'aceito_para_processamento',
+                    'job_id' => $jobId,
+                    'total_solicitado' => $totalDeals,
+                    'limite_sincrono' => 50,
+                    'mensagem' => "Volume de $totalDeals edições enviado para processamento assíncrono.",
+                    'consultar_status' => "Use BitrixBatchHelper::consultarStatus('$jobId') para acompanhar o progresso."
                 ];
             }
 
@@ -272,9 +349,9 @@ class BitrixDealHelper
             $totalSucessos += $sucessosChunk;
             $totalErros += $errosChunk;
 
-            // Rate limiting: aguarda 2 segundos entre batches (exceto no último)
+            // Rate limiting: aguarda 1 segundo entre batches (exceto no último)
             if ($batchAtual < $totalBatches) {
-                sleep(2);
+                sleep(1);
             }
         }
 
