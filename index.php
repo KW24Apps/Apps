@@ -37,7 +37,12 @@ if ($cliente && $slugAplicacao && NOME_APLICACAO !== 'bitrix-sync') {
 switch (NOME_APLICACAO) {
 
     case 'dashboard':
-        require_once __DIR__ . '/dashboard/index.php';
+        // Verificar se é requisição da API
+        if (strpos($_SERVER['REQUEST_URI'], '/dashboard/api') !== false) {
+            require_once __DIR__ . '/dashboard/api.php';
+        } else {
+            require_once __DIR__ . '/dashboard/index.php';
+        }
         break;
     case 'scheduler':
         require_once __DIR__ . '/routers/SchedulerRoutes.php';

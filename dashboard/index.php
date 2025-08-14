@@ -58,7 +58,7 @@
 
     <script>
         function atualizar() {
-            fetch('dashboard/api.php')
+            fetch('/dashboard/api.php')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('HTTP ' + response.status);
