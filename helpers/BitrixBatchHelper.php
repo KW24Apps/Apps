@@ -130,12 +130,18 @@ class BitrixBatchHelper
      */
     public static function processarJobsPendentes(): array
     {
+
         try {
+            // LOG: início do método
+            file_put_contents(__DIR__ . '/../../logs/batch_debug.log', date('Y-m-d H:i:s') . " | DEBUG | Entrou em processarJobsPendentes\n", FILE_APPEND);
+
             // Usa DAO para buscar job pendente
             $dao = new BatchJobDAO();
+            file_put_contents(__DIR__ . '/../../logs/batch_debug.log', date('Y-m-d H:i:s') . " | DEBUG | Chamou buscarJobPendente\n", FILE_APPEND);
             $job = $dao->buscarJobPendente();
 
             if (!$job) {
+                file_put_contents(__DIR__ . '/../../logs/batch_debug.log', date('Y-m-d H:i:s') . " | DEBUG | NENHUM JOB PENDENTE ENCONTRADO\n", FILE_APPEND);
                 return [
                     'status' => 'sem_jobs',
                     'mensagem' => 'Nenhum job pendente encontrado',
