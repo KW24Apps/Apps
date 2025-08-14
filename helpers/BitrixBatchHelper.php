@@ -293,7 +293,9 @@ class BitrixBatchHelper
         foreach ($fields as $index => $fieldData) {
             $formattedFields = BitrixHelper::formatarCampos($fieldData);
             
-            if ($categoryId) {
+            // CORREÇÃO: Só adiciona categoryId se for compatível com o entityId
+            // Para evitar erro "Pipeline incorreto"
+            if ($categoryId && $entityId != 1092) {
                 $formattedFields['categoryId'] = $categoryId;
             }
 
