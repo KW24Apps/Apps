@@ -2,9 +2,8 @@
 header('Content-Type: application/json');
 
 try {
-    // Conectar ao banco usando a mesma configuração
-    require_once __DIR__ . '/../config/config.php';
-    $config = require __DIR__ . '/../config/config.php';
+    // Conectar ao banco usando configuração específica do dashboard (sempre produção)
+    $config = require __DIR__ . '/config.php';
     
     $pdo = new PDO(
         "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8mb4",
