@@ -13,18 +13,20 @@ if (!$bitrixWebhook && file_exists(__DIR__ . '/config_secure.php')) {
 }
 
 // Valida se o webhook é válido
-if (!WebhookHelper::validarWebhook($bitrixWebhook)) {
-    // Em produção, lança erro. Em desenvolvimento, permite continuar com warning
+$webhookValido = WebhookHelper::validarWebhook($bitrixWebhook);
+
+// Se não é válido, define como null mas não impede o carregamento da página
+if (!$webhookValido) {
     if (getenv('APP_ENV') === 'development') {
         error_log("WARNING: Webhook do Bitrix não configurado corretamente");
-        $bitrixWebhook = null;
     } else {
-        throw new Exception('Webhook do Bitrix não configurado. Verifique a configuração do cliente/aplicação.');
+        error_log("ERROR: Webhook do Bitrix não configurado para cliente: " . ($_GET['cliente'] ?? 'não informado'));
     }
+    $bitrixWebhook = null;
 }
 
-// Define a constante apenas se webhook foi encontrado
-if ($bitrixWebhook) {
+// Define a constante apenas se webhook foi encontrado e é válido
+if ($bitrixWebhook && $webhookValido) {
     define('BITRIX_WEBHOOK', $bitrixWebhook);
 }
 

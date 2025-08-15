@@ -11,9 +11,14 @@ try {
     $cliente = $_GET['cliente'] ?? null;
     $webhook_configurado = defined('BITRIX_WEBHOOK') && BITRIX_WEBHOOK;
     
+    // Debug: verifica se config foi carregado corretamente
+    $config_carregado = is_array($config) && isset($config['funis']) && is_array($config['funis']);
+    
 } catch (Exception $e) {
     $webhook_configurado = false;
     $erro_configuracao = $e->getMessage();
+    $config = ['funis' => []]; // Config fallback
+    $config_carregado = false;
 }
 
 // Não limpar a sessão ao acessar via GET
@@ -38,12 +43,15 @@ try {
         <select id="funil" name="funil" required>
             <option value="">Selecione...</option>
             <?php 
-            if (isset($config['funis']) && is_array($config['funis'])): 
+            if ($config_carregado): 
                 foreach ($config['funis'] as $id => $nome): ?>
                     <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($nome); ?></option>
                 <?php endforeach; 
             else: ?>
-                <option disabled>Erro: Funis não carregados</option>
+                <option disabled>❌ Config não carregado</option>
+                <?php if (isset($erro_configuracao)): ?>
+                    <option disabled>Erro: <?php echo htmlspecialchars($erro_configuracao); ?></option>
+                <?php endif; ?>
             <?php endif; ?>
         </select>
         <label for="identificador">Identificador da Importação:</label>
