@@ -37,7 +37,12 @@ class DealController
 
             // Se quantidade = 1, usa campos como vieram
             if ($quantidade == 1) {
-                $resultado = BitrixDealHelper::criarJobParaFila($spa, $categoryId, [$camposBase], $tipoJob);
+                \Helpers\LogHelper::logDealBatchController('DealController::criar - Array enviado para criarDeal: ' . var_export([
+                    'entityId' => $spa,
+                    'categoryId' => $categoryId,
+                    'fields' => $camposBase
+                ], true));
+                $resultado = BitrixDealHelper::criarDeal($spa, $categoryId, $camposBase);
             } else {
                 // Para testes: cria array com N deals
                 $fieldsArray = [];
@@ -51,9 +56,12 @@ class DealController
                     }
                     $fieldsArray[] = $fieldsCopia;
                 }
-                $logTeste = date('Y-m-d H:i:s') . " | DEAL CONTROLLER | TESTE INICIADO: $quantidade deals\n";
-                file_put_contents(__DIR__ . '/../../logs/deal_teste.log', $logTeste, FILE_APPEND);
-                $resultado = BitrixDealHelper::criarJobParaFila($spa, $categoryId, $fieldsArray, $tipoJob);
+                \Helpers\LogHelper::logDealBatchController('DealController::criar - Array enviado para criarDeal: ' . var_export([
+                    'entityId' => $spa,
+                    'categoryId' => $categoryId,
+                    'fields' => $fieldsArray
+                ], true));
+                $resultado = BitrixDealHelper::criarDeal($spa, $categoryId, $fieldsArray);
                 $logResultado = date('Y-m-d H:i:s') . " | DEAL CONTROLLER | RESULTADO: " . json_encode($resultado, JSON_UNESCAPED_UNICODE) . "\n";
                 file_put_contents(__DIR__ . '/../../logs/deal_teste.log', $logResultado, FILE_APPEND);
             }
