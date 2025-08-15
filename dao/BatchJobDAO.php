@@ -53,29 +53,6 @@ class BatchJobDAO
     }
 
     /**
-     * Busca job por ID
-     */
-    public function buscarJobPorId(string $jobId): ?array
-    {
-        $sql = "SELECT * FROM batch_jobs WHERE job_id = ?";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$jobId]);
-        
-        $job = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $job ?: null;
-    }
-
-    /**
-     * Atualiza status do job
-     */
-    public function atualizarStatus(string $jobId, string $status): bool
-    {
-        $sql = "UPDATE batch_jobs SET status = ? WHERE job_id = ?";
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([$status, $jobId]);
-    }
-
-    /**
      * Marca job como processando
      */
     public function marcarComoProcessando(string $jobId): bool
@@ -83,16 +60,6 @@ class BatchJobDAO
         $sql = "UPDATE batch_jobs SET status = 'processando', iniciado_em = NOW() WHERE job_id = ?";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([$jobId]);
-    }
-
-    /**
-     * Atualiza progresso do job
-     */
-    public function atualizarProgresso(string $jobId, int $processados, int $sucessos, int $erros): bool
-    {
-        $sql = "UPDATE batch_jobs SET items_processados = ?, items_sucesso = ?, items_erro = ? WHERE job_id = ?";
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([$processados, $sucessos, $erros, $jobId]);
     }
 
     /**
@@ -116,39 +83,4 @@ class BatchJobDAO
         return $stmt->execute([$mensagemErro, $jobId]);
     }
 
-    /**
-     * Busca jobs por status (para relatórios)
-     */
-    public function buscarJobsPorStatus(string $status, int $limit = 10): array
-    {
-        $sql = "SELECT * FROM batch_jobs WHERE status = ? ORDER BY criado_em DESC LIMIT ?";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$status, $limit]);
-        
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    }
-
-    /**
-     * Conta jobs por status
-     */
-    public function contarJobsPorStatus(string $status): int
-    {
-        $sql = "SELECT COUNT(*) FROM batch_jobs WHERE status = ?";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$status]);
-        
-        return (int)$stmt->fetchColumn();
-    }
-
-    /**
-     * Remove jobs antigos (limpeza)
-     */
-    public function limparJobsAntigos(int $diasAtras = 30): int
-    {
-        $sql = "DELETE FROM batch_jobs WHERE criado_em < DATE_SUB(NOW(), INTERVAL ? DAY) AND status IN ('concluido', 'erro')";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$diasAtras]);
-        
-        return $stmt->rowCount();
-    }
 }
