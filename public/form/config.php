@@ -30,8 +30,8 @@ if ($bitrixWebhook) {
 
 // Funis disponíveis
 $FUNIS_DISPONIVEIS = [
-    '2' => 'Negócios',
     '84' => 'Postagens e Avisos',
+    '208' => 'KW24',
     // Adicione mais funis conforme necessário
 ];
 
@@ -43,7 +43,7 @@ define('ALLOWED_EXTENSIONS', ['.csv', '.xlsx']);
 define('BATCH_SIZE', 25); // Tamanho do lote para processamento
 
 return [
-    'bitrix_webhook' => BITRIX_WEBHOOK,
+    'bitrix_webhook' => $bitrixWebhook ?? null,
     'funis' => $FUNIS_DISPONIVEIS,
     'upload' => [
         'max_size' => UPLOAD_MAX_SIZE,

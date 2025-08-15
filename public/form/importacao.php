@@ -37,9 +37,14 @@ try {
         <label for="funil">Qual Funil:</label>
         <select id="funil" name="funil" required>
             <option value="">Selecione...</option>
-            <?php foreach ($config['funis'] as $id => $nome): ?>
-                <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($nome); ?></option>
-            <?php endforeach; ?>
+            <?php 
+            if (isset($config['funis']) && is_array($config['funis'])): 
+                foreach ($config['funis'] as $id => $nome): ?>
+                    <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($nome); ?></option>
+                <?php endforeach; 
+            else: ?>
+                <option disabled>Erro: Funis não carregados</option>
+            <?php endif; ?>
         </select>
         <label for="identificador">Identificador da Importação:</label>
         <input type="text" id="identificador" name="identificador" required>
