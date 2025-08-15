@@ -28,16 +28,21 @@ class DealBatchController
             $dados = json_decode($job['dados_entrada'], true);
             $tipo = $job['tipo'];
             $resultado = null;
-            \Helpers\LogHelper::logDealBatchController('Antes de processar deals: tipo=' . $tipo . ' | dados=' . var_export($dados, true));
+            // Padroniza variáveis
+            $spa = $dados['spa'] ?? $dados['entityId'] ?? null;
+            $categoryId = $dados['category_id'] ?? $dados['categoryId'] ?? null;
+            $fields = $dados['deals'] ?? $dados['fields'] ?? [];
+            \Helpers\LogHelper::logDealBatchController('Antes de processar deals: tipo=' . $tipo . ' | spa=' . var_export($spa, true) . ' | categoryId=' . var_export($categoryId, true) . ' | fields=' . var_export($fields, true));
             if ($tipo === 'criar_deals') {
-                $resultado = BitrixDealHelper::criarDeal($dados['spa'], $dados['category_id'], $dados['deals']);
+                $resultado = BitrixDealHelper::criarDeal($spa, $categoryId, $fields);
             } elseif ($tipo === 'editar_deals') {
-                $resultado = BitrixDealHelper::editarDeal($dados['spa'], $dados['deal_ids'], $dados['deals']);
+                $dealIds = $dados['deal_ids'] ?? $dados['dealIds'] ?? null;
+                $resultado = BitrixDealHelper::editarDeal($spa, $dealIds, $fields);
             } else {
                 throw new \Exception('Tipo de job não suportado: ' . $tipo);
             }
             \Helpers\LogHelper::logDealBatchController('Resultado do processamento: ' . var_export($resultado, true));
-            $dao->marcarComoConcluido($job['job_id'], json_encode($resultado, JSON_UNESCAPED_UNICODE));
+            $dao->marcarComoConcluido($job['job_id'], $resultado);
             return [
                 'status' => 'processado',
                 'job_id' => $job['job_id'],
