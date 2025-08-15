@@ -1,5 +1,9 @@
 <?php
 date_default_timezone_set('America/Sao_Paulo');
+require_once __DIR__ . '/../helpers/LogHelper.php';
+use Helpers\LogHelper;
+// Gera traceId para toda execução do job
+LogHelper::gerarTraceId();
 /**
  * Processador de Jobs em Batch - Bitrix24
  * 

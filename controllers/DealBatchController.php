@@ -13,7 +13,9 @@ class DealBatchController
     public static function processarProximoJob(): array
     {
         $dao = new BatchJobDAO();
+        \Helpers\LogHelper::logDealBatchController('Antes de consultar o banco: buscarJobPendente()');
         $job = $dao->buscarJobPendente();
+        \Helpers\LogHelper::logDealBatchController('Retorno do banco (buscarJobPendente): ' . var_export($job, true));
         if (!$job) {
             return [
                 'status' => 'sem_jobs',
