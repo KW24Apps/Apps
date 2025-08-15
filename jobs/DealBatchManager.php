@@ -9,9 +9,8 @@ date_default_timezone_set('America/Sao_Paulo');
  * Processa jobs pendentes da tabela batch_jobs
  */
 
-require_once __DIR__ . '/../helpers/BitrixBatchHelper.php';
-
-use Helpers\BitrixBatchHelper;
+require_once __DIR__ . '/../controllers/DealBatchController.php';
+use Controllers\DealBatchController;
 
 try {
     // Log de execução explícito
@@ -22,14 +21,14 @@ try {
     file_put_contents(__DIR__ . '/../../logs/cron_batch.log', $logVerificacao, FILE_APPEND);
 
 
-    // Log: início da chamada do helper
-    file_put_contents(__DIR__ . '/../../logs/cron_batch.log', date('Y-m-d H:i:s') . " | CRON JOB | Chamando BitrixBatchHelper::processarJobsPendentes()\n", FILE_APPEND);
+    // Log: início da chamada do controller
+    file_put_contents(__DIR__ . '/../../logs/cron_batch.log', date('Y-m-d H:i:s') . " | CRON JOB | Chamando DealBatchController::processarProximoJob()\n", FILE_APPEND);
     $resultado = null;
     try {
-        $resultado = BitrixBatchHelper::processarJobsPendentes();
-        file_put_contents(__DIR__ . '/../../logs/cron_batch.log', date('Y-m-d H:i:s') . " | CRON JOB | Retorno do helper: " . json_encode($resultado, JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND);
+        $resultado = DealBatchController::processarProximoJob();
+        file_put_contents(__DIR__ . '/../../logs/cron_batch.log', date('Y-m-d H:i:s') . " | CRON JOB | Retorno do controller: " . json_encode($resultado, JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND);
     } catch (\Throwable $e) {
-        file_put_contents(__DIR__ . '/../../logs/cron_batch_error.log', date('Y-m-d H:i:s') . " | CRON JOB | EXCEÇÃO AO CHAMAR HELPER: " . $e->getMessage() . "\n", FILE_APPEND);
+        file_put_contents(__DIR__ . '/../../logs/cron_batch_error.log', date('Y-m-d H:i:s') . " | CRON JOB | EXCEÇÃO AO CHAMAR CONTROLLER: " . $e->getMessage() . "\n", FILE_APPEND);
         throw $e;
     }
 
