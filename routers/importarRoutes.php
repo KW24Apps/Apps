@@ -8,8 +8,10 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 LogHelper::registrarEntradaGlobal($uri, $method);
 
-// Remove o prefixo 'importar' da URI para facilitar o roteamento interno
-$uriSemPrefixo = preg_replace('/^importar\/?/', '', $uri);
+// Remove os prefixos 'Apps/' e 'importar' da URI para facilitar o roteamento interno  
+$uriLimpa = ltrim($uri, '/');
+$uriLimpa = preg_replace('/^Apps\//', '', $uriLimpa);
+$uriSemPrefixo = preg_replace('/^importar\/?/', '', $uriLimpa);
 
 // Rotas da API
 if (strpos($uriSemPrefixo, 'api/') === 0) {

@@ -178,6 +178,9 @@ class UtilHelpers
     public static function detectarAplicacaoPorUri($uri)
     {
         $uri = ltrim($uri, '/');
+        // Remove o prefixo 'Apps/' se estiver presente
+        $uri = preg_replace('/^Apps\//', '', $uri);
+        
         $slug = null;
         if (strpos($uri, 'geraroportunidades') === 0) {
             $slug = 'geraroptnd';
