@@ -27,7 +27,7 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Demo - Sistema de Importação</title>
-    <link rel="stylesheet" href="assets/css/importacao.css">
+    <link rel="stylesheet" href="/Apps/public/form/assets/css/importacao.css">
     <style>
         .demo-section {
             background: #fff;
@@ -160,7 +160,7 @@ try {
         
         <h3>📝 Como Usar</h3>
         <ol>
-            <li><a href="index.php">Acesse a página inicial</a></li>
+            <li><a href="/Apps/importar/<?php echo isset($_GET['cliente']) ? '?cliente=' . urlencode($_GET['cliente']) : ''; ?>">Acesse a página inicial</a></li>
             <li>Clique em "Iniciar Importação"</li>
             <li>Faça upload do arquivo CSV/Excel</li>
             <li>Mapeie os campos conforme necessário</li>

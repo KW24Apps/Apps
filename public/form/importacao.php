@@ -24,10 +24,10 @@ try {
 <head>
     <meta charset="UTF-8">
     <title>Importação de Leads</title>
-    <link rel="stylesheet" href="assets/css/importacao.css">
+    <link rel="stylesheet" href="/Apps/public/form/assets/css/importacao.css">
 </head>
 <body>
-    <form id="importacaoForm" class="import-form" method="POST" action="api/importacao.php" enctype="multipart/form-data">
+    <form id="importacaoForm" class="import-form" method="POST" action="/Apps/importar/api/importacao" enctype="multipart/form-data">
         <div class="import-form-title">Importação de Leads</div>
         <div class="file-upload">
             <label for="arquivo" class="file-upload-label">Escolher arquivo</label>
@@ -56,6 +56,6 @@ try {
         <button type="submit">Enviar</button>
     </form>
     <div id="mensagem"></div>
-    <script src="assets/js/importacao.js" defer></script>
+    <script src="/Apps/public/form/assets/js/importacao.js" defer></script>
 </body>
 </html>

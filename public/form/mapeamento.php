@@ -52,8 +52,8 @@ $php_warnings = ob_get_clean();
 <head>
     <meta charset="UTF-8">
     <title>Mapeamento de Campos</title>
-    <link rel="stylesheet" href="assets/css/importacao.css">
-    <script src="assets/js/confirmacao.js" defer></script>
+    <link rel="stylesheet" href="/Apps/public/form/assets/css/importacao.css">
+    <script src="/Apps/public/form/assets/js/confirmacao.js" defer></script>
 </head>
 <body>
     <?php if (!$webhook_configurado): ?>
@@ -67,8 +67,8 @@ $php_warnings = ob_get_clean();
                     <li>✅ Passar parâmetro <code>?cliente=CHAVE_ACESSO</code> na URL</li>
                 </ul>
                 <p><strong>Erro:</strong> <?php echo htmlspecialchars($erro_configuracao ?? 'Configuração não encontrada'); ?></p>
-                <a href="demo.php" class="back-btn">🧪 Ir para Demo</a>
-                <a href="importacao.php" class="back-btn">← Voltar</a>
+                <a href="/Apps/importar/demo<?php echo isset($_GET['cliente']) ? '?cliente=' . urlencode($_GET['cliente']) : ''; ?>" class="back-btn">🧪 Ir para Demo</a>
+                <a href="/Apps/importar/importacao<?php echo isset($_GET['cliente']) ? '?cliente=' . urlencode($_GET['cliente']) : ''; ?>" class="back-btn">← Voltar</a>
             </div>
         </div>
     <?php elseif ($colunas && count($colunas) > 0 && $colunas[0] !== null && $colunas[0] !== ''): ?>
@@ -110,7 +110,7 @@ $php_warnings = ob_get_clean();
         <div class="import-form">
             <div class="import-form-title">Erro</div>
             <p>Não foi possível ler o arquivo CSV ou o arquivo está vazio.</p>
-            <a href="importacao.php">Voltar</a>
+            <a href="/Apps/importar/importacao<?php echo isset($_GET['cliente']) ? '?cliente=' . urlencode($_GET['cliente']) : ''; ?>">Voltar</a>
         </div>
     <?php endif; ?>
 

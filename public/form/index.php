@@ -74,7 +74,7 @@
             Importe dados de planilhas CSV/Excel diretamente para o Bitrix24 com processamento em segundo plano.
         </div>
         
-        <a href="importacao.php" class="start-btn">Iniciar Importação</a>
+        <a href="/Apps/importar/importacao<?php echo isset($_GET['cliente']) ? '?cliente=' . urlencode($_GET['cliente']) : ''; ?>" class="start-btn">Iniciar Importação</a>
         
         <div class="features">
             <div class="feature">Sistema de jobs assíncrono</div>
