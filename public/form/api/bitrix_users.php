@@ -8,11 +8,26 @@ $q = $_GET['q'] ?? '';
 require_once __DIR__ . '/../../../helpers/BitrixHelper.php';
 use Helpers\BitrixHelper;
 
-// Carrega configurações
-$config = require_once __DIR__ . '/../config.php';
-
-// Defina o webhook globalmente para o helper
-$GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $config['bitrix_webhook'];
+try {
+    // Carrega configurações
+    $config = require_once __DIR__ . '/../config.php';
+    
+    // Verifica se o webhook foi carregado
+    if (!defined('BITRIX_WEBHOOK') || !BITRIX_WEBHOOK) {
+        throw new Exception('Webhook do Bitrix não configurado para este cliente/aplicação');
+    }
+    
+    // Defina o webhook globalmente para o helper
+    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = BITRIX_WEBHOOK;
+    
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode([
+        'erro' => 'Configuração inválida',
+        'detalhes' => $e->getMessage()
+    ]);
+    exit;
+}
 
 // Busca todos os usuários do Bitrix, paginando
 $usuarios = [];

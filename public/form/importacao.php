@@ -3,8 +3,18 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-// Carrega configurações
-$config = require_once __DIR__ . '/config.php';
+try {
+    // Carrega configurações
+    $config = require_once __DIR__ . '/config.php';
+    
+    // Verifica se há parâmetro de cliente para mostrar informações
+    $cliente = $_GET['cliente'] ?? null;
+    $webhook_configurado = defined('BITRIX_WEBHOOK') && BITRIX_WEBHOOK;
+    
+} catch (Exception $e) {
+    $webhook_configurado = false;
+    $erro_configuracao = $e->getMessage();
+}
 
 // Não limpar a sessão ao acessar via GET
 // O preenchimento dos campos será feito apenas pelo JavaScript (sessionStorage)

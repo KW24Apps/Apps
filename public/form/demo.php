@@ -1,12 +1,24 @@
 <?php
 // demo.php - Arquivo de demonstração e teste
 
-// Carrega configurações
-$config = require_once __DIR__ . '/config.php';
-$webhook_config = require_once __DIR__ . '/config_secure.php';
-
-// Define o webhook para teste
-$GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $config['bitrix_webhook'];
+try {
+    // Carrega configurações
+    $config = require_once __DIR__ . '/config.php';
+    
+    // Define o webhook para teste se foi carregado
+    if (defined('BITRIX_WEBHOOK') && BITRIX_WEBHOOK) {
+        $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = BITRIX_WEBHOOK;
+        $webhook_configurado = true;
+        $webhook_url = BITRIX_WEBHOOK;
+    } else {
+        $webhook_configurado = false;
+        $webhook_url = null;
+    }
+    
+} catch (Exception $e) {
+    $webhook_configurado = false;
+    $erro_configuracao = $e->getMessage();
+}
 
 ?>
 <!DOCTYPE html>
@@ -70,15 +82,27 @@ $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $config['bitrix_webhook'];
         </div>
         
         <h3>🔧 Configurações Atuais</h3>
-        <div class="status info">
-            <strong>Webhook:</strong> <?php echo substr($config['bitrix_webhook'], 0, 25) . '.../' . substr($config['bitrix_webhook'], -10); ?><br>
-            <strong>Ambiente:</strong> <?php echo $webhook_config['ambiente'] ?? 'não definido'; ?><br>
+        <div class="status <?php echo $webhook_configurado ? 'success' : 'error'; ?>">
+            <?php if ($webhook_configurado): ?>
+                <strong>Webhook:</strong> <?php echo substr($webhook_url, 0, 25) . '.../' . substr($webhook_url, -10); ?><br>
+                <strong>Origem:</strong> <?php echo isset($chaveAcesso) && $chaveAcesso ? 'Banco de dados' : 'Arquivo local'; ?><br>
+            <?php else: ?>
+                <strong>Webhook:</strong> ❌ Não configurado<br>
+                <?php if (isset($erro_configuracao)): ?>
+                    <strong>Erro:</strong> <?php echo htmlspecialchars($erro_configuracao); ?><br>
+                <?php endif; ?>
+            <?php endif; ?>
+            <strong>Cliente:</strong> <?php echo $_GET['cliente'] ?? 'não informado'; ?><br>
             <strong>Funis Disponíveis:</strong> <?php echo implode(', ', $config['funis']); ?><br>
             <strong>Tamanho do Lote:</strong> <?php echo $config['batch_size']; ?> registros
         </div>
         
         <h3>🧪 Testes Disponíveis</h3>
-        <a href="?test=webhook" class="test-btn">Testar Webhook Bitrix</a>
+        <?php if ($webhook_configurado): ?>
+            <a href="?test=webhook" class="test-btn">Testar Webhook Bitrix</a>
+        <?php else: ?>
+            <span class="test-btn disabled">Webhook não configurado</span>
+        <?php endif; ?>
         <a href="?test=database" class="test-btn">Testar Conexão BD</a>
         <a href="?test=helpers" class="test-btn">Testar Helpers</a>
         

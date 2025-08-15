@@ -1,11 +1,32 @@
 <?php
 // config.php - Configurações do formulário de importação
 
-// Carrega configurações seguras (webhook)
-$webhook_config = require_once __DIR__ . '/config_secure.php';
+require_once __DIR__ . '/WebhookHelper.php';
 
-// Configurações do Bitrix
-define('BITRIX_WEBHOOK', $webhook_config['bitrix_webhook']);
+// Tenta obter webhook do banco de dados primeiro
+$bitrixWebhook = WebhookHelper::obterWebhookBitrix();
+
+// Se não conseguiu obter do banco, usa fallback do arquivo local
+if (!$bitrixWebhook && file_exists(__DIR__ . '/config_secure.php')) {
+    $webhook_config = require_once __DIR__ . '/config_secure.php';
+    $bitrixWebhook = $webhook_config['bitrix_webhook'] ?? null;
+}
+
+// Valida se o webhook é válido
+if (!WebhookHelper::validarWebhook($bitrixWebhook)) {
+    // Em produção, lança erro. Em desenvolvimento, permite continuar com warning
+    if (getenv('APP_ENV') === 'development') {
+        error_log("WARNING: Webhook do Bitrix não configurado corretamente");
+        $bitrixWebhook = null;
+    } else {
+        throw new Exception('Webhook do Bitrix não configurado. Verifique a configuração do cliente/aplicação.');
+    }
+}
+
+// Define a constante apenas se webhook foi encontrado
+if ($bitrixWebhook) {
+    define('BITRIX_WEBHOOK', $bitrixWebhook);
+}
 
 // Funis disponíveis
 $FUNIS_DISPONIVEIS = [
