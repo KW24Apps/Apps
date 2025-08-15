@@ -41,6 +41,14 @@ class BitrixDealHelper
             $resultado = BitrixHelper::chamarApi('batch', ['cmd' => $batchCommands], [
                 'log' => true
             ]);
+                // LOG DETALHADO DO ENVIO E RESPOSTA DA API
+                \Helpers\LogHelper::logDealBatchController('[BitrixDealHelper::criarDeal] ENVIO PARA API: ' . var_export([
+                    'entityId' => $entityId,
+                    'categoryId' => $categoryId,
+                    'fields' => $chunk,
+                    'batchCommands' => $batchCommands
+                ], true));
+                \Helpers\LogHelper::logDealBatchController('[BitrixDealHelper::criarDeal] RESPOSTA API: ' . var_export($resultado, true));
             $sucessosChunk = 0;
             $idsChunk = [];
             if (isset($resultado['result']['result'])) {
