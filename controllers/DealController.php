@@ -19,9 +19,11 @@ class DealController
     {
         $params = $_GET;
 
-        $spa = $params['spa'] ?? null;
-        $categoryId = $params['CATEGORY_ID'] ?? null;
-        $quantidade = (int)($params['quantidade'] ?? 1); // Parâmetro para teste
+    $spa = $params['spa'] ?? null;
+    $categoryId = $params['CATEGORY_ID'] ?? null;
+    $quantidade = (int)($params['quantidade'] ?? 1); // Parâmetro para teste
+    $tipoJob = $params['tipo_job'] ?? 'criar_deals';
+
 
         if (!$spa || !$categoryId) {
             $resultado = [
@@ -35,34 +37,23 @@ class DealController
 
             // Se quantidade = 1, usa campos como vieram
             if ($quantidade == 1) {
-                $resultado = BitrixDealHelper::criarDeal($spa, $categoryId, $camposBase);
+                $resultado = BitrixDealHelper::criarJobParaFila($spa, $categoryId, [$camposBase], $tipoJob);
             } else {
                 // Para testes: cria array com N deals
                 $fieldsArray = [];
                 $timestamp = date('Y-m-d H:i:s');
-                
                 for ($i = 1; $i <= $quantidade; $i++) {
                     $fieldsCopia = $camposBase;
-                    
-                    // Adiciona título único para cada deal
                     $fieldsCopia['title'] = "Teste Batch Deal #$i - $timestamp";
-                    
-                    // Se tem email, torna único
                     if (isset($fieldsCopia['UF_CRM_EMAIL'])) {
                         $email = $fieldsCopia['UF_CRM_EMAIL'];
                         $fieldsCopia['UF_CRM_EMAIL'] = str_replace('@', "+$i@", $email);
                     }
-                    
                     $fieldsArray[] = $fieldsCopia;
                 }
-                
-                // Log do teste
                 $logTeste = date('Y-m-d H:i:s') . " | DEAL CONTROLLER | TESTE INICIADO: $quantidade deals\n";
                 file_put_contents(__DIR__ . '/../../logs/deal_teste.log', $logTeste, FILE_APPEND);
-                
-                $resultado = BitrixDealHelper::criarDeal($spa, $categoryId, $fieldsArray);
-                
-                // Log do resultado
+                $resultado = BitrixDealHelper::criarJobParaFila($spa, $categoryId, $fieldsArray, $tipoJob);
                 $logResultado = date('Y-m-d H:i:s') . " | DEAL CONTROLLER | RESULTADO: " . json_encode($resultado, JSON_UNESCAPED_UNICODE) . "\n";
                 file_put_contents(__DIR__ . '/../../logs/deal_teste.log', $logResultado, FILE_APPEND);
             }

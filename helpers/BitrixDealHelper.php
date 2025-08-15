@@ -2,10 +2,10 @@
 namespace Helpers;
 
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
-require_once __DIR__ . '/../helpers/BitrixBatchHelper.php';
+require_once __DIR__ . '/../dao/BatchJobDAO.php';
 
 use Helpers\BitrixHelper;
-use Helpers\BitrixBatchHelper;
+use dao\BatchJobDAO;
 
 class BitrixDealHelper
 {
@@ -109,6 +109,8 @@ class BitrixDealHelper
         $totalSucessos = 0;
         $totalErros = 0;
 
+        $startTime = microtime(true);
+
         foreach ($chunks as $chunk) {
             $batchCommands = [];
             foreach ($chunk as $index => $editItem) {
@@ -139,6 +141,13 @@ class BitrixDealHelper
             $totalSucessos += $sucessosChunk;
             $totalErros += count($chunk) - $sucessosChunk;
         }
+
+        $endTime = microtime(true);
+        $totalTime = $endTime - $startTime;
+        $totalTimeSeconds = round($totalTime, 2);
+        $totalTimeMinutes = round($totalTime / 60, 2);
+        $mediaPorDeal = $totalSucessos > 0 ? round($totalTime / $totalSucessos, 2) : 0;
+
         $idsString = implode(', ', $todosIds);
         return [
             'status' => $totalSucessos > 0 ? 'sucesso' : 'erro',
@@ -146,7 +155,10 @@ class BitrixDealHelper
             'ids' => $idsString,
             'mensagem' => $totalSucessos > 0 
                 ? "$totalSucessos deals editados com sucesso" . ($totalErros > 0 ? " ($totalErros falharam)" : "")
-                : "Falha ao editar deals: $totalErros erros"
+                : "Falha ao editar deals: $totalErros erros",
+            'tempo_total_segundos' => $totalTimeSeconds,
+            'tempo_total_minutos' => $totalTimeMinutes,
+            'media_tempo_por_deal_segundos' => $mediaPorDeal
         ];
     }
 
@@ -235,29 +247,30 @@ class BitrixDealHelper
     }
 
     // Cria um job para a fila de processamento
-    public static function criarJobParaFila($entityId, $categoryId, array $deals): array
+    public static function criarJobParaFila($entityId, $categoryId, array $deals, $tipoJob): array
     {
         try {
-            require_once __DIR__ . '/BitrixBatchHelper.php';
-            
             // Prepara dados para o job
             $dados = [
                 'spa' => $entityId,
                 'category_id' => $categoryId,
                 'deals' => $deals
             ];
-            
-            // Cria job no banco usando BitrixBatchHelper
-            $jobId = \Helpers\BitrixBatchHelper::criarJob('criar_deals', $dados);
-            
+            $totalItens = count($deals);
+            $jobId = uniqid('job_', true);
+            $dao = new BatchJobDAO();
+            $ok = $dao->criarJob($jobId, $tipoJob, $dados, $totalItens);
+            if (!$ok) {
+                throw new \Exception('Falha ao inserir job no banco.');
+            }
             return [
                 'status' => 'job_criado',
                 'job_id' => $jobId,
-                'total_deals' => count($deals),
-                'mensagem' => count($deals) . ' deals enviados para processamento assíncrono.',
+                'total_deals' => $totalItens,
+                'tipo_job' => $tipoJob,
+                'mensagem' => $totalItens . ' deals enviados para processamento assíncrono.',
                 'consultar_status' => "Use /deal/status?job_id=$jobId para acompanhar o progresso."
             ];
-            
         } catch (\Exception $e) {
             return [
                 'status' => 'erro',
