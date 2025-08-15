@@ -258,11 +258,13 @@ class BitrixDealHelper
     public static function criarJobParaFila($entityId, $categoryId, array $deals, $tipoJob): array
     {
         try {
-            // Prepara dados para o job
+            // Prepara dados para o job, incluindo o webhook
+            $webhook = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? '';
             $dados = [
                 'spa' => $entityId,
                 'category_id' => $categoryId,
-                'deals' => $deals
+                'deals' => $deals,
+                'webhook' => $webhook
             ];
             $totalItens = count($deals);
             $jobId = uniqid('job_', true);

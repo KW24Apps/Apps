@@ -28,6 +28,10 @@ class DealBatchController
             $dados = json_decode($job['dados_entrada'], true);
             $tipo = $job['tipo'];
             $resultado = null;
+            // Restaura o webhook salvo no job
+            if (!empty($dados['webhook'])) {
+                $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $dados['webhook'];
+            }
             // Padroniza variáveis
             $spa = $dados['spa'] ?? $dados['entityId'] ?? null;
             $categoryId = $dados['category_id'] ?? $dados['categoryId'] ?? null;
