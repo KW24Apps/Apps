@@ -28,6 +28,7 @@ class DealBatchController
             $dados = json_decode($job['dados_entrada'], true);
             $tipo = $job['tipo'];
             $resultado = null;
+            \Helpers\LogHelper::logDealBatchController('Antes de processar deals: tipo=' . $tipo . ' | dados=' . var_export($dados, true));
             if ($tipo === 'criar_deals') {
                 $resultado = BitrixDealHelper::criarDeal($dados['spa'], $dados['category_id'], $dados['deals']);
             } elseif ($tipo === 'editar_deals') {
@@ -35,6 +36,7 @@ class DealBatchController
             } else {
                 throw new \Exception('Tipo de job não suportado: ' . $tipo);
             }
+            \Helpers\LogHelper::logDealBatchController('Resultado do processamento: ' . var_export($resultado, true));
             $dao->marcarComoConcluido($job['job_id'], json_encode($resultado, JSON_UNESCAPED_UNICODE));
             return [
                 'status' => 'processado',
@@ -43,6 +45,7 @@ class DealBatchController
             ];
         } catch (\Throwable $e) {
             $dao->marcarComoErro($job['job_id'], $e->getMessage());
+            \Helpers\LogHelper::logDealBatchController('Erro no processamento: ' . $e->getMessage());
             return [
                 'status' => 'erro',
                 'job_id' => $job['job_id'],
