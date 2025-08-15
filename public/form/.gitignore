@@ -1,0 +1,32 @@
+# Arquivo .gitignore para o sistema de importação
+
+# Configurações sensíveis
+config_secure.php
+
+# Arquivos de upload temporários
+uploads/*
+!uploads/.gitkeep
+
+# Logs
+logs/*
+!logs/.gitkeep
+
+# Cache e sessões
+*.cache
+sessions/*
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos temporários
+*.tmp
+*.temp
+
+# Backups
+*.bak
+*.backup
+
+# Arquivos de configuração local
+.env
+.env.local
