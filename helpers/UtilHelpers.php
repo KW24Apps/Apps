@@ -199,6 +199,8 @@ class UtilHelpers
             $slug = 'omie';
         } elseif (strpos($uri, 'bitrix-sync') === 0) {
             $slug = 'bitrix-sync';
+        } elseif (strpos($uri, 'importar') === 0) {
+            $slug = 'importar';
         }
         if (!defined('NOME_APLICACAO')) {
             define('NOME_APLICACAO', $slug ?: 'desconhecida');
