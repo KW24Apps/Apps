@@ -15,8 +15,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             timeout = setTimeout(() => {
-                // ...autocomplete remoto permanece igual...
-                fetch('api/bitrix_users.php?q=' + encodeURIComponent(query))
+                // Busca usuários via API do sistema de rotas
+                fetch('/Apps/importar/api/bitrix_users?q=' + encodeURIComponent(query))
                     .then(res => res.json())
                     .then(users => {
                         // ...existing code...

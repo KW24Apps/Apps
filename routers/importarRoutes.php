@@ -28,6 +28,7 @@ if (strpos($uriSemPrefixo, 'api/') === 0) {
             break;
             
         case 'bitrix_users':
+        case 'bitrix_users.php':
             if ($method === 'GET') {
                 require_once __DIR__ . '/../public/form/api/bitrix_users.php';
             } else {
