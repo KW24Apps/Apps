@@ -23,6 +23,8 @@ class BitrixDealHelper
         $totalSucessos = 0;
         $totalErros = 0;
 
+        $startTime = microtime(true);
+
         foreach ($chunks as $chunk) {
             $batchCommands = [];
             foreach ($chunk as $index => $dealFields) {
@@ -61,6 +63,13 @@ class BitrixDealHelper
             $totalSucessos += $sucessosChunk;
             $totalErros += count($chunk) - $sucessosChunk;
         }
+
+        $endTime = microtime(true);
+        $totalTime = $endTime - $startTime;
+        $totalTimeSeconds = round($totalTime, 2);
+        $totalTimeMinutes = round($totalTime / 60, 2);
+        $mediaPorDeal = $totalSucessos > 0 ? round($totalTime / $totalSucessos, 2) : 0;
+
         $idsString = implode(', ', $todosIds);
         return [
             'status' => $totalSucessos > 0 ? 'sucesso' : 'erro',
@@ -68,7 +77,10 @@ class BitrixDealHelper
             'ids' => $idsString,
             'mensagem' => $totalSucessos > 0 
                 ? "$totalSucessos deals criados com sucesso" . ($totalErros > 0 ? " ($totalErros falharam)" : "")
-                : "Falha ao criar deals: $totalErros erros"
+                : "Falha ao criar deals: $totalErros erros",
+            'tempo_total_segundos' => $totalTimeSeconds,
+            'tempo_total_minutos' => $totalTimeMinutes,
+            'media_tempo_por_deal_segundos' => $mediaPorDeal
         ];
     }
 
