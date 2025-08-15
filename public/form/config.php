@@ -4,7 +4,8 @@
 require_once __DIR__ . '/WebhookHelper.php';
 
 // Tenta obter webhook do banco de dados primeiro
-$bitrixWebhook = WebhookHelper::obterWebhookBitrix();
+$webhookHelper = new WebhookHelper();
+$bitrixWebhook = $webhookHelper->obterWebhookBitrix();
 
 // Se não conseguiu obter do banco, usa fallback do arquivo local
 if (!$bitrixWebhook && file_exists(__DIR__ . '/config_secure.php')) {

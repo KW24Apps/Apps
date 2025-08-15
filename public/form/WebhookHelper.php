@@ -6,7 +6,7 @@ class WebhookHelper
     /**
      * Busca o webhook do Bitrix no banco de dados baseado no cliente e slug da aplicação
      */
-    public static function obterWebhookBitrix($chaveAcesso = null, $slugAplicacao = 'importar'): ?string
+    public function obterWebhookBitrix($chaveAcesso = null, $slugAplicacao = 'importar'): ?string
     {
         // Se não passou chave de acesso, tenta pegar dos parâmetros
         if (!$chaveAcesso) {

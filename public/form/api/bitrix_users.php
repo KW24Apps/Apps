@@ -12,13 +12,20 @@ try {
     // Carrega configurações
     $config = require_once __DIR__ . '/../config.php';
     
-    // Verifica se o webhook foi carregado
-    if (!defined('BITRIX_WEBHOOK') || !BITRIX_WEBHOOK) {
-        throw new Exception('Webhook do Bitrix não configurado para este cliente/aplicação');
+    // Tenta obter webhook (do banco ou fallback local)
+    $webhook = null;
+    if (defined('BITRIX_WEBHOOK') && BITRIX_WEBHOOK) {
+        $webhook = BITRIX_WEBHOOK;
+    } elseif (isset($config['bitrix_webhook']) && $config['bitrix_webhook']) {
+        $webhook = $config['bitrix_webhook'];
+    }
+    
+    if (!$webhook) {
+        throw new Exception('Webhook do Bitrix não configurado. Configure no banco de dados ou arquivo local.');
     }
     
     // Defina o webhook globalmente para o helper
-    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = BITRIX_WEBHOOK;
+    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
     
 } catch (Exception $e) {
     http_response_code(500);
