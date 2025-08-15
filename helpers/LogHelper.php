@@ -180,4 +180,50 @@ class LogHelper
         file_put_contents($arquivoLog, $linha, FILE_APPEND);
     }
 
+    // Log simples para monitoramento do CRON (3 estados apenas)
+    public static function logCronMonitor(string $status, string $jobId = null): void
+    {
+        $arquivoLog = __DIR__ . '/../../logs/cron_monitor.log';
+        $timestamp = date('Y-m-d H:i:s');
+        
+        // Log ultra-simples para monitoramento
+        $linha = "$timestamp | CRON_ATIVO | $status";
+        if ($jobId) {
+            $linha .= " | $jobId";
+        }
+        $linha .= PHP_EOL;
+        
+        file_put_contents($arquivoLog, $linha, FILE_APPEND);
+        
+        // Rotação automática: manter apenas últimos 5 dias
+        self::rotacionarLogCron($arquivoLog);
+    }
+
+    // Rotação automática do log de CRON (manter 5 dias)
+    private static function rotacionarLogCron(string $arquivoLog): void
+    {
+        if (!file_exists($arquivoLog)) return;
+        
+        // Se arquivo tem mais de 1MB, rotaciona
+        if (filesize($arquivoLog) > 1048576) { // 1MB
+            $linhas = file($arquivoLog, FILE_IGNORE_NEW_LINES);
+            $agora = time();
+            $cincodiasAtras = $agora - (5 * 24 * 60 * 60); // 5 dias em segundos
+            
+            $linhasValidas = [];
+            foreach ($linhas as $linha) {
+                // Extrai timestamp da linha (formato: 2025-08-15 14:30:01)
+                if (preg_match('/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/', $linha, $matches)) {
+                    $timestampLinha = strtotime($matches[1]);
+                    if ($timestampLinha >= $cincodiasAtras) {
+                        $linhasValidas[] = $linha;
+                    }
+                }
+            }
+            
+            // Reescreve arquivo apenas com linhas válidas
+            file_put_contents($arquivoLog, implode(PHP_EOL, $linhasValidas) . PHP_EOL);
+        }
+    }
+
 }
