@@ -38,15 +38,22 @@ class BitrixDealHelper
             
             $batchCommands = [];
             foreach ($chunk as $index => $dealFields) {
+                error_log("DEBUG: Deal $index campos originais: " . print_r($dealFields, true));
+                
                 $formattedFields = BitrixHelper::formatarCampos($dealFields);
                 if ($categoryId) {
                     $formattedFields['categoryId'] = $categoryId;
                 }
+                
+                error_log("DEBUG: Deal $index campos formatados: " . print_r($formattedFields, true));
+                
                 $params = [
                     'entityTypeId' => $entityId,
                     'fields' => $formattedFields
                 ];
                 $batchCommands["deal$index"] = 'crm.item.add?' . http_build_query($params);
+                
+                error_log("DEBUG: Deal $index comando: " . $batchCommands["deal$index"]);
             }
             
             error_log("Batch commands preparados: " . count($batchCommands));
@@ -56,8 +63,11 @@ class BitrixDealHelper
             ]);
             
             error_log("Resultado do chunk " . ($chunkIndex + 1) . ": " . print_r($resultado, true));
+            
             $sucessosChunk = 0;
             $idsChunk = [];
+            $errosChunk = [];
+            
             if (isset($resultado['result']['result'])) {
                 foreach ($resultado['result']['result'] as $key => $res) {
                     if (isset($res['item']['id'])) {
@@ -72,9 +82,26 @@ class BitrixDealHelper
                         $sucessosChunk++;
                         $idsChunk[] = $res['result'];
                         $todosIds[] = $res['result'];
+                    } else {
+                        // Log de erro detalhado
+                        $erro = isset($res['error']) ? $res['error'] : 'Erro desconhecido';
+                        $errosChunk[] = [
+                            'key' => $key,
+                            'erro' => $erro,
+                            'response' => $res
+                        ];
+                        error_log("ERRO no deal $key: " . print_r($res, true));
                     }
                 }
+            } else {
+                error_log("ERRO: Resposta da API não tem estrutura esperada");
+                error_log("Resposta completa: " . print_r($resultado, true));
             }
+            
+            if (!empty($errosChunk)) {
+                error_log("ERROS encontrados no chunk " . ($chunkIndex + 1) . ": " . print_r($errosChunk, true));
+            }
+            
             $totalSucessos += $sucessosChunk;
             $totalErros += count($chunk) - $sucessosChunk;
         }
