@@ -152,7 +152,7 @@ class GeraroptndController
         // Passo 2: Se processType == 3, buscar vinculados existentes
         $vinculadosList = [];
         if ($processType == 3) {
-            $vinculadosList = BitrixHelper::listarItems('deal', [
+            $vinculadosList = BitrixHelper::listarItensCrm('deal', [
                 'filter' => ['ufcrm_1707331568' => $dealId],
                 'select' => ['companyId', 'ufCrm_1646069163997']
             ]);
