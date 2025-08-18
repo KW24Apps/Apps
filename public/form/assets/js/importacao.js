@@ -22,18 +22,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Busca usuários via API do sistema de rotas
                 fetch('/Apps/importar/api/bitrix_users?q=' + encodeURIComponent(query) + clienteParam)
-                    .then(res => res.json())
+                    .then(res => {
+                        // Verifica se a resposta é válida
+                        if (!res.ok) {
+                            throw new Error(`Erro HTTP: ${res.status} - ${res.statusText}`);
+                        }
+                        return res.json();
+                    })
                     .then(users => {
-                        // ...existing code...
                         list.innerHTML = '';
-                        if (users.error) {
+                        
+                        // Verifica se há erro na resposta
+                        if (users.error || users.erro) {
                             const div = document.createElement('div');
-                            div.textContent = 'Erro: ' + users.error;
+                            div.textContent = 'Erro: ' + (users.error || users.erro || users.detalhes || 'Erro desconhecido');
                             div.style.color = 'red';
+                            div.style.padding = '5px';
                             list.appendChild(div);
                             list.classList.add('active');
                             return;
                         }
+                        
+                        // Verifica se users é um array válido
+                        if (!Array.isArray(users)) {
+                            const div = document.createElement('div');
+                            div.textContent = 'Erro: Resposta inválida da API (não é um array)';
+                            div.style.color = 'red';
+                            div.style.padding = '5px';
+                            list.appendChild(div);
+                            list.classList.add('active');
+                            console.error('Resposta da API não é um array:', users);
+                            return;
+                        }
+                        
+                        // Se não há usuários encontrados
+                        if (users.length === 0) {
+                            const div = document.createElement('div');
+                            div.textContent = 'Nenhum usuário encontrado';
+                            div.style.color = '#666';
+                            div.style.padding = '5px';
+                            list.appendChild(div);
+                            list.classList.add('active');
+                            return;
+                        }
+                        
+                        // Processa usuários encontrados
                         users.forEach(user => {
                             const div = document.createElement('div');
                             div.textContent = user.name;
@@ -52,6 +85,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         } else {
                             list.classList.remove('active');
                         }
+                    })
+                    .catch(error => {
+                        console.error('Erro na busca de usuários:', error);
+                        list.innerHTML = '';
+                        const div = document.createElement('div');
+                        div.textContent = 'Erro de conexão: ' + error.message;
+                        div.style.color = 'red';
+                        div.style.padding = '5px';
+                        div.style.fontSize = '12px';
+                        list.appendChild(div);
+                        list.classList.add('active');
                     });
             }, 300);
         });

@@ -3,26 +3,35 @@ ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
 header('Content-Type: application/json; charset=utf-8');
+
 $q = $_GET['q'] ?? '';
+$cliente = $_GET['cliente'] ?? null;
 
 require_once __DIR__ . '/../../../helpers/BitrixHelper.php';
 use Helpers\BitrixHelper;
 
 try {
+    // Se não tem cliente, tenta buscar de session ou define padrão
+    if (!$cliente) {
+        $cliente = $_SESSION['cliente'] ?? 'gnappC93jLq7RxKZVp28HswuAYMe1';
+        $_GET['cliente'] = $cliente;
+    }
+    
     // Carrega configurações (que já define o webhook globalmente)
     $config = require_once __DIR__ . '/../config.php';
     
     // Verifica se o webhook foi configurado
     if (!isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) || 
         !$GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) {
-        throw new Exception('Webhook do Bitrix não configurado. Configure no banco de dados para o cliente ou arquivo local.');
+        throw new Exception('Webhook do Bitrix não configurado. Configure no banco de dados para o cliente "' . $cliente . '" ou arquivo local.');
     }
     
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
         'erro' => 'Configuração inválida',
-        'detalhes' => $e->getMessage()
+        'detalhes' => $e->getMessage(),
+        'cliente' => $cliente ?? 'não informado'
     ]);
     exit;
 }
