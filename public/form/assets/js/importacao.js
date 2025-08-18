@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const clienteParam = cliente ? '&cliente=' + encodeURIComponent(cliente) : '';
                 
                 // Busca usuários via API do sistema de rotas
-                fetch('/Apps/importar/api/bitrix_users?q=' + encodeURIComponent(query) + clienteParam)
+                fetch('/Apps/public/form/api/bitrix_users.php?q=' + encodeURIComponent(query) + clienteParam)
                     .then(res => {
                         // Log para debug
                         console.log('Status da resposta:', res.status, res.statusText);
