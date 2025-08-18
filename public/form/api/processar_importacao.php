@@ -159,45 +159,52 @@ try {
     error_log("DEBUG: Primeiro deal: " . print_r($deals[0] ?? 'nenhum', true));
     error_log("DEBUG: Último deal: " . print_r($deals[count($deals)-1] ?? 'nenhum', true));
 
-    // Prepara dados para o importar_job.php
-    $jobData = [
-        'entityId' => 2, // CRM Deal entity
-        'categoryId' => (int)$spa,
-        'deals' => $deals,
-        'tipoJob' => 'criar_deals'
-    ];
+    // Divide os deals em chunks de até 50 itens cada
+    $maxDealsPerJob = 50;
+    $chunks = array_chunk($deals, $maxDealsPerJob);
+    $totalChunks = count($chunks);
+    
+    error_log("DEBUG: Dividindo " . count($deals) . " deals em " . $totalChunks . " jobs de até " . $maxDealsPerJob . " itens");
 
-    error_log("DEBUG: JobData preparado com " . count($jobData['deals']) . " deals");
+    $jobIds = [];
+    $totalDealsProcessados = 0;
 
-    // Em vez de usar curl, vamos chamar diretamente
-    $_POST['cliente'] = $cliente;
-    
-    // Simula input JSON para o importar_job.php
-    $tempInput = json_encode($jobData);
-    file_put_contents('php://temp', $tempInput);
-    
-    // Processa diretamente
-    $input = $jobData; // Usa os dados preparados diretamente
-    
-    $entityId = $input['entityId'];
-    $categoryId = $input['categoryId'];
-    $deals = $input['deals'];
-    $tipoJob = $input['tipoJob'];
+    // Processa diretamente cada chunk
+    foreach ($chunks as $chunkIndex => $chunk) {
+        $chunkNumber = $chunkIndex + 1;
+        error_log("DEBUG: Processando chunk $chunkNumber/" . $totalChunks . " com " . count($chunk) . " deals");
 
-    // Usa a função do BitrixDealHelper para criar job na fila
-    $resultado = BitrixDealHelper::criarJobParaFila($entityId, $categoryId, $deals, $tipoJob);
-    
-    if ($resultado['status'] === 'job_criado') {
-        // Redireciona para página de sucesso
-        $redirectUrl = "/Apps/public/form/sucesso.php?cliente=" . urlencode($cliente) . 
-                      "&job_id=" . ($resultado['job_id'] ?? 'unknown') . 
-                      "&total=" . count($deals);
+        // Prepara dados para o job atual
+        $jobData = [
+            'entityId' => 2, // CRM Deal entity
+            'categoryId' => (int)$spa,
+            'deals' => $chunk,
+            'tipoJob' => 'criar_deals'
+        ];
+
+        error_log("DEBUG: JobData chunk $chunkNumber preparado com " . count($jobData['deals']) . " deals");
+
+        // Usa a função do BitrixDealHelper para criar job na fila
+        $resultado = BitrixDealHelper::criarJobParaFila(2, (int)$spa, $chunk, 'criar_deals');
         
-        header("Location: $redirectUrl");
-        exit;
-    } else {
-        throw new Exception('Erro ao criar job: ' . ($resultado['mensagem'] ?? 'Erro desconhecido'));
+        if ($resultado['status'] === 'job_criado') {
+            $jobIds[] = $resultado['job_id'];
+            $totalDealsProcessados += count($chunk);
+            error_log("DEBUG: Job $chunkNumber criado com sucesso - ID: " . $resultado['job_id']);
+        } else {
+            error_log("ERRO: Falha ao criar job $chunkNumber: " . ($resultado['mensagem'] ?? 'Erro desconhecido'));
+            throw new Exception("Erro ao criar job $chunkNumber: " . ($resultado['mensagem'] ?? 'Erro desconhecido'));
+        }
     }
+
+    // Redireciona para página de sucesso com informações dos múltiplos jobs
+    $redirectUrl = "/Apps/public/form/sucesso.php?cliente=" . urlencode($cliente) . 
+                  "&jobs=" . urlencode(implode(',', $jobIds)) . 
+                  "&total=" . $totalDealsProcessados . 
+                  "&chunks=" . $totalChunks;
+    
+    header("Location: $redirectUrl");
+    exit;
 
 } catch (Exception $e) {
     // Redireciona para página de erro
