@@ -2,14 +2,14 @@
 // demo.php - Arquivo de demonstração e teste
 
 try {
-    // Carrega configurações
+    // Carrega configurações (que já define o webhook globalmente)
     $config = require_once __DIR__ . '/config.php';
     
-    // Define o webhook para teste se foi carregado
-    if (defined('BITRIX_WEBHOOK') && BITRIX_WEBHOOK) {
-        $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = BITRIX_WEBHOOK;
+    // Verifica se o webhook foi configurado
+    if (isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) && 
+        $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) {
         $webhook_configurado = true;
-        $webhook_url = BITRIX_WEBHOOK;
+        $webhook_url = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'];
     } else {
         $webhook_configurado = false;
         $webhook_url = null;

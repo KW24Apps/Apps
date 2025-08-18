@@ -28,13 +28,12 @@ try {
     // Carrega configurações
     $config = require_once __DIR__ . '/config.php';
     
-    // Verifica se o webhook foi carregado
-    if (!defined('BITRIX_WEBHOOK') || !BITRIX_WEBHOOK) {
-        throw new Exception('Webhook do Bitrix não configurado para este cliente/aplicação');
+    // Verifica se o webhook foi configurado no config.php
+    if (!isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) || 
+        !$GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) {
+        throw new Exception('Webhook do Bitrix não configurado. Configure no banco de dados para o cliente ou arquivo local.');
     }
     
-    // Define o webhook a partir da configuração
-    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = BITRIX_WEBHOOK;
     $camposBitrix = BitrixHelper::consultarCamposCrm(2); // 2 = Negócios
     $webhook_configurado = true;
     

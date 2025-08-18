@@ -3,9 +3,16 @@
 
 require_once __DIR__ . '/WebhookHelper.php';
 
+// Obtém dados do cliente a partir da URL
+$chaveAcesso = $_GET['cliente'] ?? null;
+$slugAplicacao = 'importar';
+
 // Tenta obter webhook do banco de dados primeiro
-$webhookHelper = new WebhookHelper();
-$bitrixWebhook = $webhookHelper->obterWebhookBitrix();
+$bitrixWebhook = null;
+if ($chaveAcesso) {
+    $webhookHelper = new WebhookHelper();
+    $bitrixWebhook = $webhookHelper->obterWebhookBitrix($chaveAcesso, $slugAplicacao);
+}
 
 // Se não conseguiu obter do banco, usa fallback do arquivo local
 if (!$bitrixWebhook && file_exists(__DIR__ . '/config_secure.php')) {
@@ -21,7 +28,7 @@ if (!$webhookValido) {
     if (getenv('APP_ENV') === 'development') {
         error_log("WARNING: Webhook do Bitrix não configurado corretamente");
     } else {
-        error_log("ERROR: Webhook do Bitrix não configurado para cliente: " . ($_GET['cliente'] ?? 'não informado'));
+        error_log("ERROR: Webhook do Bitrix não configurado para cliente: " . ($chaveAcesso ?? 'não informado'));
     }
     $bitrixWebhook = null;
 }
@@ -29,6 +36,8 @@ if (!$webhookValido) {
 // Define a constante apenas se webhook foi encontrado e é válido
 if ($bitrixWebhook && $webhookValido) {
     define('BITRIX_WEBHOOK', $bitrixWebhook);
+    // Define globalmente para uso no helpers
+    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $bitrixWebhook;
 }
 
 // Funis disponíveis

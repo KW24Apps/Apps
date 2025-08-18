@@ -9,7 +9,8 @@ try {
     
     // Verifica se há parâmetro de cliente para mostrar informações
     $cliente = $_GET['cliente'] ?? null;
-    $webhook_configurado = defined('BITRIX_WEBHOOK') && BITRIX_WEBHOOK;
+    $webhook_configurado = isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) && 
+                          $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'];
     
     // Debug: verifica se config foi carregado corretamente
     $config_carregado = is_array($config) && isset($config['funis']) && is_array($config['funis']);
