@@ -2,25 +2,31 @@
 namespace Controllers;
 
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
+require_once __DIR__ . '/../helpers/BitrixHelper.php';
 
 use Helpers\BitrixDealHelper;
+use Helpers\BitrixHelper;
 
 class GeraroptndController
 {
     public function executar()
     {
-        // Aumenta tempo limite para processar múltiplas chamadas à API
-        set_time_limit(300); // 5 minutos
+        // Aumenta tempo limite
+        set_time_limit(300);
         
-        // 1. Pega parâmetro do negócio (dealId)
+        // ============================================
+        // PARTE 1: COLETA DE DADOS
+        // ============================================
+        
+        // Passo 1: Obter dealId
         $dealId = $_GET['deal'] ?? $_GET['id'] ?? null;
         if (!$dealId) {
             header('Content-Type: application/json');
             echo json_encode(['erro' => 'Parâmetro deal/id é obrigatório']);
             return;
         }
-
-        // 2. Define campos fixos a consultar no deal
+        
+        // Passo 1: Definir campos a consultar (aproveitando do copy)
         $camposBitrix = [
             'ufCrm_1645475980', // Parceiro Comercial
             'ufCrm_1706634369', // Gerente Comercial
@@ -50,280 +56,131 @@ class GeraroptndController
             'stageId', // Fase do negócio
             'ufcrm_1707331568', // Negocio Closer
         ];
-
-        // 3. Consulta o deal no Bitrix (já retorna campos e valores amigáveis)
+        
+        // Passo 1: Consultar deal usando BitrixDealHelper
         $camposStr = implode(',', $camposBitrix);
         $resultado = BitrixDealHelper::consultarDeal(2, $dealId, $camposStr);
         $item = $resultado['result'] ?? [];
-
-        // Validação de etapa/funil permitida por ID
-        $etapasPermitidas = ['C53:UC_1PAPS7', 'C53:WON']; // Solicitar Diagnóstico e Concluído
-        $etapaAtualId = $item['stageId']['valor'] ?? '';
-        if (!in_array($etapaAtualId, $etapasPermitidas)) {
-            header('Content-Type: application/json');
-            echo json_encode(['erro' => 'Negócio está em etapa não permitida para criação de negócios.', 'etapaId' => $etapaAtualId, 'etapaNome' => $item['stageId']['texto'] ?? '']);
-            return;
+        
+        // Passo 2: Consultar metadados dos campos CRM
+        $crmFields = BitrixHelper::consultarCamposCrm(2);
+        
+        // Passo 3: Construir mapa $oportunidades
+        $oportunidades = [];
+        if (isset($crmFields['result'])) {
+            foreach ($crmFields['result'] as $campo => $info) {
+                if (in_array($campo, ['ufCrm_1688060696', 'ufCrm_1728327366', 'ufCrm_1646069163997']) && isset($info['items'])) {
+                    foreach ($info['items'] as $itemId => $itemData) {
+                        $nomeAmigavel = $itemData['VALUE'] ?? '';
+                        if (!empty($nomeAmigavel)) {
+                            if (!isset($oportunidades[$nomeAmigavel])) {
+                                $oportunidades[$nomeAmigavel] = [];
+                            }
+                            
+                            // Mapear subcampos baseado no campo de origem
+                            if ($campo == 'ufCrm_1688060696') { // Oferecidas
+                                $oportunidades[$nomeAmigavel]['oferecida'] = ['id' => $itemId, 'texto' => $nomeAmigavel];
+                            } elseif ($campo == 'ufCrm_1728327366') { // Convertidas
+                                $oportunidades[$nomeAmigavel]['convertida'] = ['id' => $itemId, 'texto' => $nomeAmigavel];
+                            } elseif ($campo == 'ufCrm_1646069163997') { // Oportunidade
+                                $oportunidades[$nomeAmigavel]['oportunidade'] = ['id' => $itemId, 'texto' => $nomeAmigavel];
+                            }
+                        }
+                    }
+                }
+            }
         }
-
-        // 4. Extrai empresas e oportunidades oferecidas/convertidas (usando texto)
+        
+        // Passo 4: Normalizar e extrair empresas, oferecidas, convertidas
         $empresas = [];
         if (!empty($item['ufCrm_1689718588']['texto'])) {
-            $empresas = is_array($item['ufCrm_1689718588']['texto']) ? $item['ufCrm_1689718588']['texto'] : explode(',', $item['ufCrm_1689718588']['texto']);
+            $empresas = is_array($item['ufCrm_1689718588']['texto']) 
+                ? $item['ufCrm_1689718588']['texto'] 
+                : explode(',', $item['ufCrm_1689718588']['texto']);
         }
+        
         $ofer = [];
         if (!empty($item['ufCrm_1688060696']['texto'])) {
-            $ofer = is_array($item['ufCrm_1688060696']['texto']) ? $item['ufCrm_1688060696']['texto'] : explode(',', $item['ufCrm_1688060696']['texto']);
+            $ofer = is_array($item['ufCrm_1688060696']['texto']) 
+                ? $item['ufCrm_1688060696']['texto'] 
+                : explode(',', $item['ufCrm_1688060696']['texto']);
         }
+        
         $conv = [];
         if (!empty($item['ufCrm_1728327366']['texto'])) {
-            $conv = is_array($item['ufCrm_1728327366']['texto']) ? $item['ufCrm_1728327366']['texto'] : explode(',', $item['ufCrm_1728327366']['texto']);
+            $conv = is_array($item['ufCrm_1728327366']['texto']) 
+                ? $item['ufCrm_1728327366']['texto'] 
+                : explode(',', $item['ufCrm_1728327366']['texto']);
         }
-        // Adiciona variável para oportunidades oferecidas
-        $oferecidas = $ofer;
-        $closerId = $dealId;
-
-        // 5. Define campos que NÃO devem ser copiados
+        
+        // Passo 5: Definir campos que não serão copiados
         $naoCopiar = [
             'ufCrm_1688060696', // Oportunidades Oferecidas
             'ufCrm_1728327366', // Oportunidades Convertidas
             'ufCrm_1670953245', // Negócios Vinculados à Negociação
             'stageId', // Fase do negócio
         ];
-
-        // 6. Monta os campos base para copiar usando metadados (type, isMultiple)
-        $camposBase = [];
-        foreach ($item as $campo => $dados) {
-            if (!in_array($campo, $naoCopiar)) {
-                $valor = $dados['texto'] ?? $dados['valor'] ?? null;
-                $tipo = $dados['type'] ?? null;
-                $isMultiple = $dados['isMultiple'] ?? false;
-
-                // Normalização automática baseada em metadados
-                if ($isMultiple) {
-                    // Sempre array, mesmo se valor único
-                    if (is_array($valor)) {
-                        $camposBase[$campo] = $valor;
-                    } else if ($valor === null || $valor === '' || $valor === false) {
-                        $camposBase[$campo] = [];
-                    } else {
-                        $camposBase[$campo] = [$valor];
-                    }
-                } else {
-                    // Valor único
-                    if (is_array($valor)) {
-                        // Se vier array, pega primeiro
-                        $camposBase[$campo] = count($valor) ? $valor[0] : '';
-                    } else {
-                        $camposBase[$campo] = $valor;
-                    }
-                }
-            }
-        }
-
-        // 7. Lógica principal: diagnóstico ou concluído
-        $resultadosCriacao = [];
-        $logDiagnostico = [
-            'dealId' => $dealId,
-            'etapaAtualId' => $etapaAtualId,
-            'etapaAtualNome' => $item['stageId']['texto'] ?? '',
-            'empresas' => $empresas,
-            'oportunidadesConvertidas' => $conv,
-            'oportunidadesOferecidas' => $oferecidas,
-            'vinculados' => $item['ufCrm_1670953245']['valor'] ?? null,
-        ];
         
+        // ============================================
+        // PARTE 2: DIAGNÓSTICO DE OPERAÇÃO
+        // ============================================
+        
+        // Passo 1: Definir $processType
+        $etapaAtualId = $item['stageId']['valor'] ?? '';
         $vinculados = $item['ufCrm_1670953245']['valor'] ?? null;
-        $dealsParaCriar = []; // Array para criação em massa
-
-        if ($etapaAtualId === 'C53:UC_1PAPS7') {
-            // Solicitar Diagnóstico: criar cruzando empresas × oportunidades oferecidas
-            $contador = 0;
-            $maxTentativas = 100; // Aumentado já que não há mais sleep
-            
-            foreach ($empresas as $empresa) {
-                foreach ($oferecidas as $oportunidade) {
-                    $contador++;
-                    if ($contador > $maxTentativas) {
-                        break 2; // Sai dos dois loops
-                    }
-                    
-                    // Prepara dados do novo negócio
-                    $novoNegocio = [];
-                    
-                    // CompanyId
-                    $companyIdMeta = $item['companyId'] ?? [];
-                    $companyIdIsMultiple = $companyIdMeta['isMultiple'] ?? false;
-                    if ($companyIdIsMultiple) {
-                        $novoNegocio['companyId'] = is_array($empresa) ? $empresa : [$empresa];
-                    } else {
-                        $novoNegocio['companyId'] = is_array($empresa) ? (count($empresa) ? $empresa[0] : '') : $empresa;
-                    }
-                    
-                    // Negocio Closer (ID do deal que solicitou)
-                    $closerMeta = $item['ufcrm_1707331568'] ?? [];
-                    $closerIsMultiple = $closerMeta['isMultiple'] ?? false;
-                    if ($closerIsMultiple) {
-                        $novoNegocio['ufcrm_1707331568'] = [$dealId];
-                    } else {
-                        $novoNegocio['ufcrm_1707331568'] = $dealId;
-                    }
-                    
-                    // Define categoria baseada no tipo de processo
-                    $tipoProcesso = trim($item['ufCrm_1650979003']['texto'] ?? '');
-                    $categoryId = 17; // Padrão: Relatório Preliminar
-                    
-                    $dealsParaCriar[] = $novoNegocio;
-                }
-            }
-            
-            // Criação em massa usando o novo sistema
-            if (!empty($dealsParaCriar)) {
-                $resultadoCriacao = BitrixDealHelper::criarDeal(2, $categoryId, $dealsParaCriar);
-                
-                // Extrai IDs criados do resultado
-                $idsCriados = [];
-                if (!empty($resultadoCriacao['ids'])) {
-                    $idsCriados = explode(', ', $resultadoCriacao['ids']);
-                }
-                
-                // Atualiza o negócio original (closer) com os ids criados
-                if (!empty($idsCriados)) {
-                    $dadosVinculo = [
-                        'ufCrm_1670953245' => $idsCriados
-                    ];
-                    BitrixDealHelper::editarDeal(2, $dealId, $dadosVinculo);
-                }
-                
-                $resultadosCriacao = [
-                    'tipo' => 'diagnostico',
-                    'empresas' => count($empresas),
-                    'oportunidades' => count($oferecidas),
-                    'deals_enviados' => count($dealsParaCriar),
-                    'deals_criados' => $resultadoCriacao['quantidade'] ?? 0,
-                    'tempo_total' => $resultadoCriacao['tempo_total_segundos'] ?? 0,
-                    'resultado_completo' => $resultadoCriacao
-                ];
-            }
-
-        } else if ($etapaAtualId === 'C53:WON') {
-            if (empty($vinculados)) {
-                // Concluído sem diagnóstico: criar cruzando empresas × oportunidades convertidas
-                foreach ($empresas as $empresa) {
-                    foreach ($conv as $oportunidade) {
-                        $novoNegocio = $camposBase;
-                        
-                        // Normalização companyId
-                        $companyIdMeta = $item['companyId'] ?? [];
-                        $companyIdIsMultiple = $companyIdMeta['isMultiple'] ?? false;
-                        if ($companyIdIsMultiple) {
-                            $novoNegocio['companyId'] = is_array($empresa) ? $empresa : [$empresa];
-                        } else {
-                            $novoNegocio['companyId'] = is_array($empresa) ? (count($empresa) ? $empresa[0] : '') : $empresa;
-                        }
-                        
-                        // Normalização ufCrm_1646069163997 (Oportunidade)
-                        $opMeta = $item['ufCrm_1646069163997'] ?? [];
-                        $opIsMultiple = $opMeta['isMultiple'] ?? false;
-                        if ($opIsMultiple) {
-                            $novoNegocio['ufCrm_1646069163997'] = is_array($oportunidade) ? $oportunidade : [$oportunidade];
-                        } else {
-                            $novoNegocio['ufCrm_1646069163997'] = is_array($oportunidade) ? (count($oportunidade) ? $oportunidade[0] : '') : $oportunidade;
-                        }
-                        
-                        $novoNegocio['ufcrm_1707331568'] = $dealId;
-                        $dealsParaCriar[] = $novoNegocio;
-                    }
-                }
-                
-                // Criação em massa
-                if (!empty($dealsParaCriar)) {
-                    $resultadoCriacao = BitrixDealHelper::criarDeal(2, null, $dealsParaCriar);
-                    
-                    $resultadosCriacao = [
-                        'tipo' => 'concluido_sem_diagnostico',
-                        'empresas' => count($empresas),
-                        'oportunidades' => count($conv),
-                        'deals_enviados' => count($dealsParaCriar),
-                        'deals_criados' => $resultadoCriacao['quantidade'] ?? 0,
-                        'tempo_total' => $resultadoCriacao['tempo_total_segundos'] ?? 0,
-                        'resultado_completo' => $resultadoCriacao
-                    ];
-                }
-                
+        
+        // Normalizar $vinculados
+        if ($vinculados) {
+            if (is_array($vinculados)) {
+                $vinculados = array_filter(array_map('trim', $vinculados));
             } else {
-                // Concluído após diagnóstico: consultar negócios vinculados e só criar o que falta
-                $idsVinculados = is_array($vinculados) ? $vinculados : explode(',', $vinculados);
-                $existentes = [];
-                
-                // Consulta todos os vinculados para verificar o que já existe
-                foreach ($idsVinculados as $idVinc) {
-                    $resVinc = BitrixDealHelper::consultarDeal(2, $idVinc, 'companyId,ufCrm_1646069163997');
-                    $dadosVinc = $resVinc['result'] ?? [];
-                    $empresaVinc = $dadosVinc['companyId']['texto'] ?? null;
-                    $oportunidadeVinc = $dadosVinc['ufCrm_1646069163997']['texto'] ?? null;
-                    if ($empresaVinc && $oportunidadeVinc) {
-                        $existentes[$empresaVinc][$oportunidadeVinc] = true;
-                    }
-                }
-                
-                // Cria apenas os que não existem
-                foreach ($empresas as $empresa) {
-                    foreach ($conv as $oportunidade) {
-                        if (empty($existentes[$empresa][$oportunidade])) {
-                            $novoNegocio = $camposBase;
-                            
-                            // Normalização companyId
-                            $companyIdMeta = $item['companyId'] ?? [];
-                            $companyIdIsMultiple = $companyIdMeta['isMultiple'] ?? false;
-                            if ($companyIdIsMultiple) {
-                                $novoNegocio['companyId'] = is_array($empresa) ? $empresa : [$empresa];
-                            } else {
-                                $novoNegocio['companyId'] = is_array($empresa) ? (count($empresa) ? $empresa[0] : '') : $empresa;
-                            }
-                            
-                            // Normalização ufCrm_1646069163997 (Oportunidade)
-                            $opMeta = $item['ufCrm_1646069163997'] ?? [];
-                            $opIsMultiple = $opMeta['isMultiple'] ?? false;
-                            if ($opIsMultiple) {
-                                $novoNegocio['ufCrm_1646069163997'] = is_array($oportunidade) ? $oportunidade : [$oportunidade];
-                            } else {
-                                $novoNegocio['ufCrm_1646069163997'] = is_array($oportunidade) ? (count($oportunidade) ? $oportunidade[0] : '') : $oportunidade;
-                            }
-                            
-                            $novoNegocio['ufcrm_1707331568'] = $dealId;
-                            $dealsParaCriar[] = $novoNegocio;
-                        }
-                    }
-                }
-                
-                // Criação em massa dos que faltam
-                if (!empty($dealsParaCriar)) {
-                    $resultadoCriacao = BitrixDealHelper::criarDeal(2, null, $dealsParaCriar);
-                    
-                    $resultadosCriacao = [
-                        'tipo' => 'concluido_apos_diagnostico',
-                        'empresas' => count($empresas),
-                        'oportunidades' => count($conv),
-                        'deals_existentes' => count($idsVinculados),
-                        'deals_enviados' => count($dealsParaCriar),
-                        'deals_criados' => $resultadoCriacao['quantidade'] ?? 0,
-                        'tempo_total' => $resultadoCriacao['tempo_total_segundos'] ?? 0,
-                        'resultado_completo' => $resultadoCriacao
-                    ];
-                } else {
-                    $resultadosCriacao = [
-                        'tipo' => 'concluido_apos_diagnostico',
-                        'mensagem' => 'Todos os deals já existem',
-                        'deals_existentes' => count($idsVinculados)
-                    ];
-                }
+                $vinculados = array_filter(array_map('trim', explode(',', $vinculados)));
             }
         }
-
+        
+        $processType = 0;
+        if ($etapaAtualId === 'C53:UC_1PAPS7') {
+            $processType = 1; // solicitar diagnóstico
+        } elseif ($etapaAtualId === 'C53:WON') {
+            if (empty($vinculados)) {
+                $processType = 2; // concluído sem diagnóstico
+            } else {
+                $processType = 3; // concluído com diagnóstico
+            }
+        }
+        
+        // Passo 2: Se processType == 3, buscar vinculados existentes
+        $vinculadosList = [];
+        if ($processType == 3) {
+            $vinculadosList = BitrixHelper::listarItensCrm('deal', [
+                'filter' => ['ufcrm_1707331568' => $dealId],
+                'select' => ['companyId', 'ufCrm_1646069163997']
+            ]);
+        }
+        
+        // ============================================
+        // DEBUG: ECHO DOS RESULTADOS
+        // ============================================
+        
         header('Content-Type: application/json');
         echo json_encode([
-            'result' => $resultadosCriacao,
-            'diagnostico' => $logDiagnostico
-        ]);
+            'dealId' => $dealId,
+            'processType' => $processType,
+            'etapaAtualId' => $etapaAtualId,
+            'empresas' => $empresas,
+            'ofer' => $ofer,
+            'conv' => $conv,
+            'vinculados' => $vinculados,
+            'oportunidades' => $oportunidades,
+            'vinculadosList' => $vinculadosList,
+            'item_completo' => $item,
+            'debug_info' => [
+                'total_empresas' => count($empresas),
+                'total_oferecidas' => count($ofer),
+                'total_convertidas' => count($conv),
+                'total_oportunidades_mapa' => count($oportunidades),
+                'campos_consultados' => count($camposBitrix)
+            ]
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 }
