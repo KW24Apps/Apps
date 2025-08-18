@@ -33,8 +33,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         return res.json();
                     })
                     .then(data => {
-                        // Log da resposta para debug
-                        console.log('Dados recebidos da API:', data);
+                        // 🔍 DEBUG: Log detalhado da resposta
+                        console.log('🔍 DADOS RECEBIDOS:', data);
+                        console.log('🔍 TIPO:', typeof data);
+                        console.log('🔍 É ARRAY?', Array.isArray(data));
+                        console.log('🔍 CONSTRUCTOR:', data?.constructor?.name);
+                        console.log('🔍 KEYS:', Object.keys(data || {}));
                         
                         list.innerHTML = '';
                         
