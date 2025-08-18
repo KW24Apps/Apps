@@ -46,15 +46,15 @@ try {
         exit;
     }
     
-    // 2. Verifica aplicação 'importar'
-    $stmt = $pdo->prepare("SELECT * FROM aplicacoes WHERE slug = 'importar'");
+    // 2. Verifica aplicação 'import'
+    $stmt = $pdo->prepare("SELECT * FROM aplicacoes WHERE slug = 'import'");
     $stmt->execute();
     $app = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($app) {
-        echo "✅ Aplicação 'importar' encontrada: ID " . $app['id'] . "<br>";
+        echo "✅ Aplicação 'import' encontrada: ID " . $app['id'] . "<br>";
     } else {
-        echo "❌ Aplicação 'importar' NÃO encontrada<br>";
+        echo "❌ Aplicação 'import' NÃO encontrada<br>";
         
         $stmt = $pdo->query("SELECT id, slug, nome FROM aplicacoes");
         $apps = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -71,7 +71,7 @@ try {
         FROM cliente_aplicacoes ca
         JOIN clientes c ON ca.cliente_id = c.id
         JOIN aplicacoes a ON ca.aplicacao_id = a.id
-        WHERE c.chave_acesso = ? AND a.slug = 'importar'
+        WHERE c.chave_acesso = ? AND a.slug = 'import'
     ");
     $stmt->execute([$cliente]);
     $relacao = $stmt->fetch(PDO::FETCH_ASSOC);
