@@ -39,8 +39,15 @@ if ($cliente) {
 
         $stmt = $pdo->prepare("
             SELECT ca.webhook_bitrix
-            FROM cliente_aplicacoes ca 
-            WHERE ca.chave_acesso = ? AND ca.ativo = 1
+            FROM clientes c
+            JOIN cliente_aplicacoes ca ON ca.cliente_id = c.id
+            JOIN aplicacoes a ON ca.aplicacao_id = a.id
+            WHERE c.chave_acesso = ?
+            AND a.slug = 'import'
+            AND ca.ativo = 1
+            AND ca.webhook_bitrix IS NOT NULL
+            AND ca.webhook_bitrix != ''
+            LIMIT 1
         ");
         $stmt->execute([$cliente]);
         $webhook = $stmt->fetch(PDO::FETCH_ASSOC);
