@@ -29,15 +29,15 @@ class WebhookHelper
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             $sql = "
-                SELECT aa.url_webhook
+                SELECT ca.webhook_bitrix
                 FROM clientes c
-                JOIN aplicacoes a ON a.cliente_id = c.id
-                JOIN aplicacao_acesso aa ON aa.aplicacao_id = a.id
+                JOIN cliente_aplicacoes ca ON ca.cliente_id = c.id
+                JOIN aplicacoes a ON ca.aplicacao_id = a.id
                 WHERE c.chave_acesso = :chave
                 AND a.slug = :slug
-                AND aa.ativo = 1
-                AND aa.url_webhook IS NOT NULL
-                AND aa.url_webhook != ''
+                AND ca.ativo = 1
+                AND ca.webhook_bitrix IS NOT NULL
+                AND ca.webhook_bitrix != ''
                 LIMIT 1
             ";
 
