@@ -62,8 +62,17 @@ class BitrixHelper
     public static function formatarCampos($dados)
     {
         $fields = [];
+        
+        // Campos que devem ser ignorados/removidos
+        $camposInvalidos = ['typeId'];
 
         foreach ($dados as $campo => $valor) {
+            // Pula campos inválidos
+            if (in_array($campo, $camposInvalidos)) {
+                error_log("DEBUG: Campo '$campo' ignorado (inválido para API Bitrix)");
+                continue;
+            }
+            
             // Se já está no padrão camelCase (ufCrm_ ou ufCrmXX_), não altera
             if (preg_match('/^ufCrm(\d+_)?\d+$/', $campo)) {
                 $fields[$campo] = $valor;
