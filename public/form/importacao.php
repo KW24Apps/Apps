@@ -9,8 +9,12 @@ try {
     
     // Verifica se há parâmetro de cliente para mostrar informações
     $cliente = $_GET['cliente'] ?? null;
+    
+    // Debug detalhado do webhook
     $webhook_configurado = isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) && 
                           $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'];
+    $bitrix_constant = defined('BITRIX_WEBHOOK') && BITRIX_WEBHOOK;
+    $webhook_value = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? 'NÃO DEFINIDO';
     
     // Debug: verifica se config foi carregado corretamente
     $config_carregado = is_array($config) && isset($config['funis']) && is_array($config['funis']);
@@ -78,9 +82,11 @@ try {
     <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 12px; color: #6c757d; border-left: 4px solid #28a745;">
         <strong>🔧 Info Técnica:</strong><br>
         • Cliente: <?php echo htmlspecialchars($cliente ?? 'Não informado'); ?><br>
-        • Webhook: <?php echo $webhook_configurado ? '✅ Configurado' : '❌ Não configurado'; ?><br>
+        • Webhook Global: <?php echo $webhook_configurado ? '✅ Configurado' : '❌ Não configurado'; ?><br>
+        • Constante BITRIX: <?php echo $bitrix_constant ? '✅ Definida' : '❌ Não definida'; ?><br>
+        • Valor Webhook: <?php echo htmlspecialchars(substr($webhook_value, 0, 50)) . (strlen($webhook_value) > 50 ? '...' : ''); ?><br>
         • Config: <?php echo $config_carregado ? '✅ Carregado' : '❌ Erro'; ?><br>
-        • Última atualização: 18/08/2025 - 16:30<br>
+        • Última atualização: 18/08/2025 - 16:45<br>
         <?php if (isset($erro_configuracao)): ?>
         • Erro: <?php echo htmlspecialchars($erro_configuracao); ?><br>
         <?php endif; ?>
