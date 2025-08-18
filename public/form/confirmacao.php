@@ -105,71 +105,73 @@ error_log("Mapeamento: " . print_r($mapeamento, true));
         <div class="import-form">
             <div class="import-form-title">Confirmação de Importação</div>
             
-            <div class="import-summary">
-                <h3>Resumo da Importação</h3>
-                <div class="summary-grid">
-                    <div class="summary-item">
-                        <label>SPA:</label>
-                        <span><?php echo htmlspecialchars($spa); ?></span>
-                    </div>
-                    <div class="summary-item">
-                        <label>Arquivo:</label>
-                        <span><?php echo htmlspecialchars($nomeArquivo); ?></span>
-                    </div>
-                    <div class="summary-item">
-                        <label>Total de linhas:</label>
-                        <span><?php echo number_format($totalLinhas, 0, ',', '.'); ?> registros</span>
+            <div class="content-container">
+                <div class="import-summary">
+                    <h3>Resumo da Importação</h3>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <label>SPA:</label>
+                            <span><?php echo htmlspecialchars($spa); ?></span>
+                        </div>
+                        <div class="summary-item">
+                            <label>Arquivo:</label>
+                            <span><?php echo htmlspecialchars($nomeArquivo); ?></span>
+                        </div>
+                        <div class="summary-item">
+                            <label>Total de linhas:</label>
+                            <span><?php echo number_format($totalLinhas, 0, ',', '.'); ?> registros</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="mapping-summary">
-                <h3>Mapeamento de Campos</h3>
-                <table class="mapping-table">
-                    <thead>
-                        <tr>
-                            <th>Coluna do CSV</th>
-                            <th>Campo do Bitrix</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($mapeamento as $coluna => $campo): ?>
+                <div class="mapping-summary">
+                    <h3>Mapeamento de Campos</h3>
+                    <table class="mapping-table">
+                        <thead>
                             <tr>
-                                <td><?php echo htmlspecialchars($coluna); ?></td>
-                                <td><?php echo htmlspecialchars(FieldMapper::getFieldName($campo)); ?></td>
+                                <th>Coluna do CSV</th>
+                                <th>Campo do Bitrix</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <?php if (!empty($primeiraLinhas)): ?>
-                <div class="preview-section">
-                    <h3>Pré-visualização dos Dados</h3>
-                    <div class="preview-note">Primeiras <?php echo count($primeiraLinhas); ?> linhas do arquivo:</div>
-                    
-                    <div class="preview-table-container">
-                        <table class="preview-table">
-                            <thead>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($mapeamento as $coluna => $campo): ?>
                                 <tr>
-                                    <?php foreach ($colunas as $coluna): ?>
-                                        <th><?php echo htmlspecialchars($coluna); ?></th>
-                                    <?php endforeach; ?>
+                                    <td><?php echo htmlspecialchars($coluna); ?></td>
+                                    <td><?php echo htmlspecialchars(FieldMapper::getFieldName($campo)); ?></td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($primeiraLinhas as $indice => $linha): ?>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <?php if (!empty($primeiraLinhas)): ?>
+                    <div class="preview-section">
+                        <h3>Pré-visualização dos Dados</h3>
+                        <div class="preview-note">Primeiras <?php echo count($primeiraLinhas); ?> linhas do arquivo:</div>
+                        
+                        <div class="preview-table-container">
+                            <table class="preview-table">
+                                <thead>
                                     <tr>
-                                        <?php foreach ($linha as $i => $valor): ?>
-                                            <td><?php echo htmlspecialchars($valor); ?></td>
+                                        <?php foreach ($colunas as $coluna): ?>
+                                            <th><?php echo htmlspecialchars($coluna); ?></th>
                                         <?php endforeach; ?>
                                     </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($primeiraLinhas as $indice => $linha): ?>
+                                        <tr>
+                                            <?php foreach ($linha as $i => $valor): ?>
+                                                <td><?php echo htmlspecialchars($valor); ?></td>
+                                            <?php endforeach; ?>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-            <?php endif; ?>
+                <?php endif; ?>
+            </div>
 
             <div class="confirmation-actions">
                 <form id="confirmForm" method="POST" action="/Apps/public/form/api/processar_importacao.php">

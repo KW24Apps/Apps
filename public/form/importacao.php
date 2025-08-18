@@ -93,38 +93,46 @@ try {
         <div class="import-form-title">
             Importação de Leads
         </div>
-        <div class="file-upload">
-            <label for="arquivo" class="file-upload-label">Escolher arquivo</label>
-            <input type="file" id="arquivo" name="arquivo" accept=".csv, .xlsx" required onchange="document.getElementById('file-selected').textContent = this.files[0] ? this.files[0].name : 'Nenhum arquivo selecionado';">
-            <span class="file-selected" id="file-selected">Nenhum arquivo selecionado</span>
-        </div>
-        <label for="funil">Qual Funil:</label>
-        <select id="funil" name="funil" required>
-            <option value="">Selecione...</option>
-            <?php 
-            if ($config_carregado): 
-                foreach ($config['funis'] as $id => $nome): ?>
-                    <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($nome); ?></option>
-                <?php endforeach; 
-            else: ?>
-                <option disabled>❌ Config não carregado</option>
-                <?php if (isset($erro_configuracao)): ?>
-                    <option disabled>Erro: <?php echo htmlspecialchars($erro_configuracao); ?></option>
+        
+        <div class="content-container">
+            <div class="file-upload">
+                <label for="arquivo" class="file-upload-label">Escolher arquivo</label>
+                <input type="file" id="arquivo" name="arquivo" accept=".csv, .xlsx" required onchange="document.getElementById('file-selected').textContent = this.files[0] ? this.files[0].name : 'Nenhum arquivo selecionado';">
+                <span class="file-selected" id="file-selected">Nenhum arquivo selecionado</span>
+            </div>
+            
+            <label for="funil">Qual Funil:</label>
+            <select id="funil" name="funil" required>
+                <option value="">Selecione...</option>
+                <?php 
+                if ($config_carregado): 
+                    foreach ($config['funis'] as $id => $nome): ?>
+                        <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($nome); ?></option>
+                    <?php endforeach; 
+                else: ?>
+                    <option disabled>❌ Config não carregado</option>
+                    <?php if (isset($erro_configuracao)): ?>
+                        <option disabled>Erro: <?php echo htmlspecialchars($erro_configuracao); ?></option>
+                    <?php endif; ?>
                 <?php endif; ?>
-            <?php endif; ?>
-        </select>
-        <label for="identificador">Identificador da Importação:</label>
-        <input type="text" id="identificador" name="identificador" required>
-        <label for="responsavel">Responsável pelo Lead Gerado:</label>
-        <div class="autocomplete-wrapper">
-            <input type="text" id="responsavel" name="responsavel" autocomplete="off" placeholder="Digite para buscar..." required>
-            <div id="autocomplete-responsavel" class="autocomplete-list"></div>
+            </select>
+            
+            <label for="identificador">Identificador da Importação:</label>
+            <input type="text" id="identificador" name="identificador" required>
+            
+            <label for="responsavel">Responsável pelo Lead Gerado:</label>
+            <div class="autocomplete-wrapper">
+                <input type="text" id="responsavel" name="responsavel" autocomplete="off" placeholder="Digite para buscar..." required>
+                <div id="autocomplete-responsavel" class="autocomplete-list"></div>
+            </div>
+            
+            <label for="solicitante">Solicitante do Import:</label>
+            <div class="autocomplete-wrapper">
+                <input type="text" id="solicitante" name="solicitante" autocomplete="off" placeholder="Digite para buscar..." required>
+                <div id="autocomplete-solicitante" class="autocomplete-list"></div>
+            </div>
         </div>
-        <label for="solicitante">Solicitante do Import:</label>
-        <div class="autocomplete-wrapper">
-            <input type="text" id="solicitante" name="solicitante" autocomplete="off" placeholder="Digite para buscar..." required>
-            <div id="autocomplete-solicitante" class="autocomplete-list"></div>
-        </div>
+        
         <button type="submit">Enviar</button>
     </form>
     <div id="mensagem"></div>

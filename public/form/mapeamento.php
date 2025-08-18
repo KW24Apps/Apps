@@ -149,34 +149,39 @@ $php_warnings = ob_get_clean();
             </div>
         </div>
     <?php elseif ($colunas && count($colunas) > 0 && $colunas[0] !== null && $colunas[0] !== ''): ?>
-        <form id="mapeamentoForm" class="import-form" method="POST" action="/Apps/public/form/api/salvar_mapeamento.php"><?php echo isset($_GET['cliente']) ? '<input type="hidden" name="cliente" value="' . htmlspecialchars($_GET['cliente']) . '">' : ''; ?>
+        <form id="mapeamentoForm" class="import-form" method="POST" action="/Apps/public/form/api/salvar_mapeamento.php">
+            <?php echo isset($_GET['cliente']) ? '<input type="hidden" name="cliente" value="' . htmlspecialchars($_GET['cliente']) . '">' : ''; ?>
             <div class="import-form-title">Mapeamento de Campos</div>
-            <p style="margin-bottom: 18px; color: #444; font-size: 1rem;">Associe cada coluna do arquivo a um campo do Bitrix (Negócios):</p>
-            <?php
-            foreach ($colunas as $col) {
-                echo '<div>';
-                echo '<label>' . htmlspecialchars($col) . ':</label>';
-                echo '<select name="map[' . htmlspecialchars($col) . ']" required><option value="">Selecione...</option>';
-                
-                if ($camposBitrix && is_array($camposBitrix)) {
-                    $temMatch = false;
-                    foreach ($camposBitrix as $campoId => $campoInfo) {
-                        $nome = $campoInfo['title'] ?? $campoId;
-                        $selected = '';
-                        
-                        // Auto-matching apenas por nome 100% igual (case insensitive)
-                        if (!$temMatch && strcasecmp(trim($col), trim($nome)) === 0) {
-                            $selected = ' selected';
-                            $temMatch = true;
+            <p>Associe cada coluna do arquivo a um campo do Bitrix (Negócios):</p>
+            
+            <div class="campos-container">
+                <?php
+                foreach ($colunas as $col) {
+                    echo '<div class="campo-grupo">';
+                    echo '<label>' . htmlspecialchars($col) . ':</label>';
+                    echo '<select name="map[' . htmlspecialchars($col) . ']" required><option value="">Selecione...</option>';
+                    
+                    if ($camposBitrix && is_array($camposBitrix)) {
+                        $temMatch = false;
+                        foreach ($camposBitrix as $campoId => $campoInfo) {
+                            $nome = $campoInfo['title'] ?? $campoId;
+                            $selected = '';
+                            
+                            // Auto-matching apenas por nome 100% igual (case insensitive)
+                            if (!$temMatch && strcasecmp(trim($col), trim($nome)) === 0) {
+                                $selected = ' selected';
+                                $temMatch = true;
+                            }
+                            
+                            echo '<option value="' . htmlspecialchars($campoId) . '"' . $selected . '>' . htmlspecialchars($nome) . '</option>';
                         }
-                        
-                        echo '<option value="' . htmlspecialchars($campoId) . '"' . $selected . '>' . htmlspecialchars($nome) . '</option>';
                     }
+                    echo '</select>';
+                    echo '</div>';
                 }
-                echo '</select>';
-                echo '</div>';
-            }
-            ?>
+                ?>
+            </div>
+            
             <button type="submit">Continuar para Confirmação</button>
         </form>
     <?php else: ?>
