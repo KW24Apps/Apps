@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(form);
         console.log('[DEBUG] Enviando fetch para api/salvar_mapeamento.php');
         
-        fetch('api/salvar_mapeamento.php', {
+        fetch('/Apps/public/form/api/salvar_mapeamento.php', {
             method: 'POST',
             body: formData
         })
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (resp.sucesso) {
                 // Busca dados do arquivo e SPA normalmente
                 console.log('[DEBUG] Mapeamento salvo com sucesso, buscando api/confirmacao_import.php');
-                fetch('api/confirmacao_import.php')
+                fetch('/Apps/public/form/api/confirmacao_import.php')
                     .then(res => {
                         console.log('[DEBUG] Resposta recebida de api/confirmacao_import.php', res);
                         return res.json();
@@ -143,11 +143,11 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('loading-ids').innerHTML = '';
 
         // Busca dados do modal (já carregados)
-        fetch('/Apps/importar/api/confirmacao_import')
+        fetch('/Apps/public/form/api/confirmacao_import.php')
             .then(res => res.json())
             .then(data => {
                 // Usa o novo sistema de jobs
-                fetch('/Apps/importar/api/importar_job', {
+                fetch('/Apps/public/form/api/importar_job.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
