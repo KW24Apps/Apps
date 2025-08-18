@@ -181,7 +181,7 @@ class LogHelper
     }
 
     // Log simples para monitoramento do CRON (3 estados apenas)
-    public static function logCronMonitor(string $status, string $jobId = null): void
+    public static function logCronMonitor(string $status, ?string $jobId = null): void
     {
         $arquivoLog = __DIR__ . '/../../logs/cron_monitor.log';
         $timestamp = date('Y-m-d H:i:s');

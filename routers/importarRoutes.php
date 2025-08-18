@@ -6,7 +6,8 @@ use Helpers\LogHelper;
 $uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 $method = $_SERVER['REQUEST_METHOD'];
 
-LogHelper::registrarEntradaGlobal($uri, $method);
+// TEMPORARIAMENTE DESABILITADO PARA DEBUG
+// LogHelper::registrarEntradaGlobal($uri, $method);
 
 // Remove os prefixos 'Apps/' e 'importar' da URI para facilitar o roteamento interno  
 $uriLimpa = ltrim($uri, '/');
@@ -95,7 +96,8 @@ if (strpos($uriSemPrefixo, 'api/') === 0) {
             break;
             
         default:
-            LogHelper::registrarRotaNaoEncontrada("importar/api/$apiRoute", $method, __FILE__);
+            // TEMPORARIAMENTE DESABILITADO PARA DEBUG
+            // LogHelper::registrarRotaNaoEncontrada("importar/api/$apiRoute", $method, __FILE__);
             http_response_code(404);
             echo json_encode(['erro' => 'Endpoint da API não encontrado', 'route' => $apiRoute]);
     }
@@ -122,7 +124,8 @@ elseif ($uriSemPrefixo === 'demo' || $uriSemPrefixo === 'demo.php') {
     require_once __DIR__ . '/../public/form/demo.php';
 } 
 else {
-    LogHelper::registrarRotaNaoEncontrada("importar/$uriSemPrefixo", $method, __FILE__);
+    // TEMPORARIAMENTE DESABILITADO PARA DEBUG
+    // LogHelper::registrarRotaNaoEncontrada("importar/$uriSemPrefixo", $method, __FILE__);
     http_response_code(404);
     echo json_encode(['erro' => 'Página não encontrada no sistema de importação', 'uri' => $uriSemPrefixo]);
 }

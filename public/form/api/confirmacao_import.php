@@ -1,5 +1,4 @@
 <?php
-// confirmacao_import_safe.php - Versão segura para debug
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -10,6 +9,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 header('Content-Type: application/json; charset=utf-8');
 
 try {
+    // Recupera dados da sessão
     $mapeamento = $_SESSION['mapeamento'] ?? [];
     $formData = $_SESSION['importacao_form'] ?? [];
     $spa = $formData['funil'] ?? 'undefined';
@@ -17,12 +17,7 @@ try {
     if (empty($mapeamento)) {
         echo json_encode([
             'sucesso' => false, 
-            'mensagem' => 'Mapeamento não encontrado na sessão',
-            'debug' => [
-                'session_keys' => array_keys($_SESSION),
-                'mapeamento_count' => count($mapeamento),
-                'form_data_keys' => array_keys($formData)
-            ]
+            'mensagem' => 'Mapeamento não encontrado na sessão'
         ]);
         exit;
     }
@@ -34,11 +29,7 @@ try {
     if (empty($files)) {
         echo json_encode([
             'sucesso' => false, 
-            'mensagem' => 'Arquivo CSV não encontrado',
-            'debug' => [
-                'upload_dir' => $uploadDir,
-                'files_found' => count($files)
-            ]
+            'mensagem' => 'Arquivo CSV não encontrado'
         ]);
         exit;
     }
@@ -47,26 +38,66 @@ try {
     $csvFile = $files[0];
     $nomeArquivo = basename($csvFile);
 
-    // Resposta de sucesso simplificada
+    // Processa o CSV
+    $dados = [];
+    $dados_processamento = [];
+    
+    if (($handle = fopen($csvFile, 'r')) !== FALSE) {
+        // Lê o cabeçalho
+        $header = fgetcsv($handle, 1000, ',');
+        $contador = 0;
+        
+        while (($row = fgetcsv($handle, 1000, ',')) !== FALSE && $contador < 5) {
+            $linha_display = [];
+            $linha_processamento = [];
+            
+            // Para cada coluna do CSV
+            for ($i = 0; $i < count($header); $i++) {
+                $nomeColuna = trim($header[$i]);
+                $valorCelula = isset($row[$i]) ? trim($row[$i]) : '';
+                
+                // Para dados de exibição (mostra nome das colunas)
+                $linha_display[$nomeColuna] = $valorCelula;
+                
+                // Para dados de processamento (usa códigos do Bitrix)
+                if (isset($mapeamento[$nomeColuna])) {
+                    $codigoBitrix = $mapeamento[$nomeColuna];
+                    $linha_processamento[$codigoBitrix] = $valorCelula;
+                }
+            }
+            
+            $dados[] = $linha_display;
+            $dados_processamento[] = $linha_processamento;
+            $contador++;
+        }
+        fclose($handle);
+    }
+
+    // Conta total de linhas no arquivo
+    $totalLinhas = 0;
+    if (($handle = fopen($csvFile, 'r')) !== FALSE) {
+        fgetcsv($handle); // Pula cabeçalho
+        while (fgetcsv($handle) !== FALSE) {
+            $totalLinhas++;
+        }
+        fclose($handle);
+    }
+
     echo json_encode([
         'sucesso' => true,
-        'dados' => [['teste' => 'valor1'], ['teste' => 'valor2']],
-        'dados_processamento' => [['ufCrm_123' => 'valor1'], ['ufCrm_123' => 'valor2']],
-        'total' => 2,
+        'dados' => $dados,
+        'dados_processamento' => $dados_processamento,
+        'total' => $totalLinhas,
         'arquivo' => $nomeArquivo,
         'spa' => $spa,
         'funil_id' => $spa,
-        'debug' => 'Versão simplificada funcionando'
+        'mapeamento' => $mapeamento
     ]);
 
 } catch (Exception $e) {
     echo json_encode([
         'sucesso' => false,
-        'mensagem' => 'Erro: ' . $e->getMessage(),
-        'debug' => [
-            'error_line' => $e->getLine(),
-            'error_file' => $e->getFile()
-        ]
+        'mensagem' => 'Erro: ' . $e->getMessage()
     ]);
 }
 ?>
