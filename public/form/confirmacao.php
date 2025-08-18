@@ -128,7 +128,7 @@ error_log("Mapeamento: " . print_r($mapeamento, true));
             </div>
 
             <div class="confirmation-actions">
-                <form id="confirmForm" method="POST" action="/Apps/public/form/api/importar_job.php">
+                <form id="confirmForm" method="POST" action="/Apps/public/form/api/processar_importacao.php">
                     <input type="hidden" name="cliente" value="<?php echo htmlspecialchars($cliente); ?>">
                     <button type="submit" class="confirm-btn">✅ Confirmar e Iniciar Importação</button>
                 </form>
