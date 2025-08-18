@@ -3,6 +3,9 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
+// Inclui helper para mapear nomes de campos
+require_once __DIR__ . '/helpers/field_mapper.php';
+
 // Debug session
 error_log("=== DEBUG CONFIRMACAO PAGE ===");
 error_log("SESSION: " . print_r($_SESSION, true));
@@ -68,14 +71,16 @@ if ($cliente) {
 // Dados para exibição
 $nomeArquivo = $dadosImportacao['nome_arquivo'] ?? 'Arquivo não identificado';
 $totalLinhas = $dadosImportacao['total_linhas'] ?? 0;
-$spa = $dadosImportacao['spa'] ?? 'SPA não identificado';
+$spa = $dadosImportacao['spa'] ?? $dadosImportacao['identificador'] ?? 'SPA não identificado';
 $colunas = $dadosImportacao['colunas'] ?? [];
+$primeiraLinhas = $dadosImportacao['primeiras_linhas'] ?? [];
 
 error_log("Dados para exibição:");
 error_log("Nome arquivo: $nomeArquivo");
 error_log("Total linhas: $totalLinhas");
 error_log("SPA: $spa");
 error_log("Colunas: " . print_r($colunas, true));
+error_log("Primeiras linhas: " . print_r($primeiraLinhas, true));
 error_log("Mapeamento: " . print_r($mapeamento, true));
 ?>
 <!DOCTYPE html>
@@ -101,14 +106,25 @@ error_log("Mapeamento: " . print_r($mapeamento, true));
             <div class="import-form-title">Confirmação de Importação</div>
             
             <div class="import-summary">
-                <h3>Resumo da Importação:</h3>
-                <p><strong>SPA:</strong> <?php echo htmlspecialchars($spa); ?></p>
-                <p><strong>Arquivo:</strong> <?php echo htmlspecialchars($nomeArquivo); ?></p>
-                <p><strong>Total de linhas:</strong> <?php echo htmlspecialchars($totalLinhas); ?></p>
+                <h3>📄 Resumo da Importação</h3>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <label>SPA:</label>
+                        <span><?php echo htmlspecialchars($spa); ?></span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Arquivo:</label>
+                        <span><?php echo htmlspecialchars($nomeArquivo); ?></span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Total de linhas:</label>
+                        <span><?php echo number_format($totalLinhas, 0, ',', '.'); ?> registros</span>
+                    </div>
+                </div>
             </div>
 
             <div class="mapping-summary">
-                <h3>Mapeamento de Campos:</h3>
+                <h3>🔗 Mapeamento de Campos</h3>
                 <table class="mapping-table">
                     <thead>
                         <tr>
@@ -120,21 +136,51 @@ error_log("Mapeamento: " . print_r($mapeamento, true));
                         <?php foreach ($mapeamento as $coluna => $campo): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($coluna); ?></td>
-                                <td><?php echo htmlspecialchars($campo); ?></td>
+                                <td><?php echo htmlspecialchars(FieldMapper::getFieldName($campo)); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
 
+            <?php if (!empty($primeiraLinhas)): ?>
+                <div class="preview-section">
+                    <h3>👁️ Pré-visualização dos Dados</h3>
+                    <div class="preview-note">Primeiras <?php echo count($primeiraLinhas); ?> linhas do arquivo:</div>
+                    
+                    <div class="preview-table-container">
+                        <table class="preview-table">
+                            <thead>
+                                <tr>
+                                    <?php foreach ($colunas as $coluna): ?>
+                                        <th><?php echo htmlspecialchars($coluna); ?></th>
+                                    <?php endforeach; ?>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($primeiraLinhas as $indice => $linha): ?>
+                                    <tr>
+                                        <?php foreach ($linha as $i => $valor): ?>
+                                            <td><?php echo htmlspecialchars($valor); ?></td>
+                                        <?php endforeach; ?>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <div class="confirmation-actions">
                 <form id="confirmForm" method="POST" action="/Apps/public/form/api/processar_importacao.php">
                     <input type="hidden" name="cliente" value="<?php echo htmlspecialchars($cliente); ?>">
-                    <button type="submit" class="confirm-btn">✅ Confirmar e Iniciar Importação</button>
+                    <button type="submit" class="confirm-btn">🚀 Confirmar e Iniciar Importação</button>
                 </form>
                 
-                <a href="/Apps/public/form/mapeamento.php<?php echo $cliente ? '?cliente=' . urlencode($cliente) : ''; ?>" class="back-btn">← Voltar ao Mapeamento</a>
-                <a href="/Apps/public/form/importacao.php<?php echo $cliente ? '?cliente=' . urlencode($cliente) : ''; ?>" class="back-btn">🏠 Voltar ao Início</a>
+                <div class="action-links">
+                    <a href="/Apps/public/form/mapeamento.php<?php echo $cliente ? '?cliente=' . urlencode($cliente) : ''; ?>" class="back-btn">← Voltar ao Mapeamento</a>
+                    <a href="/Apps/public/form/importacao.php<?php echo $cliente ? '?cliente=' . urlencode($cliente) : ''; ?>" class="back-btn">🏠 Voltar ao Início</a>
+                </div>
             </div>
         </div>
     <?php endif; ?>
