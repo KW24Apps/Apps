@@ -5,69 +5,101 @@ error_reporting(E_ALL);
 header('Content-Type: application/json; charset=utf-8');
 
 $q = $_GET['q'] ?? '';
-$cliente = $_GET['cliente'] ?? null;
-
-require_once __DIR__ . '/../../../helpers/BitrixHelper.php';
-use Helpers\BitrixHelper;
+$cliente = $_GET['cliente'] ?? 'gnappC93jLq7RxKZVp28HswuAYMe1';
 
 try {
-    // Se não tem cliente, tenta buscar de session ou define padrão
-    if (!$cliente) {
-        $cliente = $_SESSION['cliente'] ?? 'gnappC93jLq7RxKZVp28HswuAYMe1';
-        $_GET['cliente'] = $cliente;
+    // Conecta diretamente no banco para buscar webhook
+    $config = [
+        'host' => 'localhost',
+        'dbname' => 'kw24co49_api_kwconfig',
+        'usuario' => 'kw24co49_kw24',
+        'senha' => 'BlFOyf%X}#jXwrR-vi'
+    ];
+    
+    $pdo = new PDO(
+        "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+        $config['usuario'],
+        $config['senha']
+    );
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    // Busca webhook
+    $stmt = $pdo->prepare("
+        SELECT ca.webhook_bitrix
+        FROM cliente_aplicacoes ca
+        JOIN clientes c ON ca.cliente_id = c.id
+        JOIN aplicacoes a ON ca.aplicacao_id = a.id
+        WHERE c.chave_acesso = ? AND a.slug = 'importar'
+    ");
+    $stmt->execute([$cliente]);
+    $webhook = $stmt->fetchColumn();
+    
+    if (!$webhook) {
+        throw new Exception('Webhook não encontrado para o cliente: ' . $cliente);
     }
     
-    // Carrega configurações (que já define o webhook globalmente)
-    $config = require_once __DIR__ . '/../config.php';
+    // Busca usuários do Bitrix via API direta
+    $url = rtrim($webhook, '/') . '/user.get.json';
     
-    // Verifica se o webhook foi configurado
-    if (!isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) || 
-        !$GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) {
-        throw new Exception('Webhook do Bitrix não configurado. Configure no banco de dados para o cliente "' . $cliente . '" ou arquivo local.');
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'ACTIVE' => 'Y',
+        'ORDER' => ['ID' => 'ASC'],
+        'SELECT' => ['ID', 'NAME', 'LAST_NAME', 'EMAIL']
+    ]));
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+    
+    if ($curlError) {
+        throw new Exception('Erro cURL: ' . $curlError);
     }
+    
+    if ($httpCode !== 200) {
+        throw new Exception('Erro HTTP: ' . $httpCode . ' - ' . substr($response, 0, 200));
+    }
+    
+    $data = json_decode($response, true);
+    
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        throw new Exception('Erro JSON: ' . json_last_error_msg());
+    }
+    
+    if (isset($data['error'])) {
+        throw new Exception('Erro Bitrix: ' . ($data['error_description'] ?? 'Erro desconhecido'));
+    }
+    
+    if (!isset($data['result']) || !is_array($data['result'])) {
+        throw new Exception('Resposta inválida da API Bitrix');
+    }
+    
+    // Filtra e formata usuários
+    $usuarios = [];
+    foreach ($data['result'] as $user) {
+        $nome = trim(($user['NAME'] ?? '') . ' ' . ($user['LAST_NAME'] ?? ''));
+        if ($nome && ($q === '' || stripos($nome, $q) !== false)) {
+            $usuarios[] = [
+                'id' => $user['ID'],
+                'name' => $nome
+            ];
+        }
+    }
+    
+    echo json_encode($usuarios);
     
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
-        'erro' => 'Configuração inválida',
+        'erro' => 'Erro interno',
         'detalhes' => $e->getMessage(),
-        'cliente' => $cliente ?? 'não informado'
+        'cliente' => $cliente
     ]);
-    exit;
 }
-
-// Busca todos os usuários do Bitrix, paginando
-$usuarios = [];
-$start = 0;
-do {
-    $params = [
-        'ACTIVE' => 'Y',
-        'ORDER' => ['ID' => 'ASC'],
-        'SELECT' => ['ID', 'NAME', 'LAST_NAME', 'EMAIL'],
-        'start' => $start
-    ];
-    $resposta = BitrixHelper::chamarApi('user.get', $params);
-    if (isset($resposta['result']) && is_array($resposta['result'])) {
-        foreach ($resposta['result'] as $user) {
-            $nome = trim(($user['NAME'] ?? '') . ' ' . ($user['LAST_NAME'] ?? ''));
-            if ($q === '' || stripos($nome, $q) !== false) {
-                $usuarios[] = [
-                    'id' => $user['ID'],
-                    'name' => $nome
-                ];
-            }
-        }
-        if (isset($resposta['next'])) {
-            $start = $resposta['next'];
-        } else {
-            $start = null;
-        }
-    } else {
-        // Retorna erro para debug
-        echo json_encode(['error' => $resposta['error_description'] ?? 'Erro ao consultar usuários Bitrix', 'debug' => $resposta]);
-        exit;
-    }
-} while ($start !== null);
-
-echo json_encode($usuarios);
-exit;
+?>
