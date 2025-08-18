@@ -131,7 +131,6 @@ $php_warnings = ob_get_clean();
     <meta charset="UTF-8">
     <title>Mapeamento de Campos</title>
     <link rel="stylesheet" href="/Apps/public/form/assets/css/importacao.css">
-    <script src="/Apps/public/form/assets/js/confirmacao.js" defer></script>
 </head>
 <body>
     <?php if (!$webhook_configurado): ?>
@@ -150,7 +149,7 @@ $php_warnings = ob_get_clean();
             </div>
         </div>
     <?php elseif ($colunas && count($colunas) > 0 && $colunas[0] !== null && $colunas[0] !== ''): ?>
-        <form id="mapeamentoForm" class="import-form">
+        <form id="mapeamentoForm" class="import-form" method="POST" action="/Apps/public/form/api/salvar_mapeamento.php"><?php echo isset($_GET['cliente']) ? '<input type="hidden" name="cliente" value="' . htmlspecialchars($_GET['cliente']) . '">' : ''; ?>
             <div class="import-form-title">Mapeamento de Campos</div>
             <p style="margin-bottom: 18px; color: #444; font-size: 1rem;">Associe cada coluna do arquivo a um campo do Bitrix (Negócios):</p>
             <?php
@@ -178,7 +177,7 @@ $php_warnings = ob_get_clean();
                 echo '</div>';
             }
             ?>
-            <button type="submit">Continuar</button>
+            <button type="submit">Continuar para Confirmação</button>
         </form>
     <?php else: ?>
         <div class="import-form">

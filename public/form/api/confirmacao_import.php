@@ -71,10 +71,23 @@ try {
     $formData = $_SESSION['importacao_form'] ?? [];
     $spa = $formData['funil'] ?? 'undefined';
 
+    // Debug da sessão
+    error_log("=== DEBUG CONFIRMACAO ===");
+    error_log("SESSION completa: " . print_r($_SESSION, true));
+    error_log("Mapeamento: " . print_r($mapeamento, true));
+    error_log("FormData: " . print_r($formData, true));
+    error_log("SPA: " . $spa);
+
     if (empty($mapeamento)) {
+        error_log("ERRO: Mapeamento vazio na sessão");
         echo json_encode([
             'sucesso' => false, 
-            'mensagem' => 'Mapeamento não encontrado na sessão'
+            'mensagem' => 'Mapeamento não encontrado na sessão',
+            'debug' => [
+                'session_keys' => array_keys($_SESSION),
+                'mapeamento_empty' => empty($mapeamento),
+                'formdata_keys' => array_keys($formData)
+            ]
         ]);
         exit;
     }
