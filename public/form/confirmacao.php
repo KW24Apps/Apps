@@ -106,7 +106,7 @@ error_log("Mapeamento: " . print_r($mapeamento, true));
             <div class="import-form-title">Confirmação de Importação</div>
             
             <div class="import-summary">
-                <h3>📄 Resumo da Importação</h3>
+                <h3>Resumo da Importação</h3>
                 <div class="summary-grid">
                     <div class="summary-item">
                         <label>SPA:</label>
@@ -124,7 +124,7 @@ error_log("Mapeamento: " . print_r($mapeamento, true));
             </div>
 
             <div class="mapping-summary">
-                <h3>🔗 Mapeamento de Campos</h3>
+                <h3>Mapeamento de Campos</h3>
                 <table class="mapping-table">
                     <thead>
                         <tr>
@@ -145,7 +145,7 @@ error_log("Mapeamento: " . print_r($mapeamento, true));
 
             <?php if (!empty($primeiraLinhas)): ?>
                 <div class="preview-section">
-                    <h3>👁️ Pré-visualização dos Dados</h3>
+                    <h3>Pré-visualização dos Dados</h3>
                     <div class="preview-note">Primeiras <?php echo count($primeiraLinhas); ?> linhas do arquivo:</div>
                     
                     <div class="preview-table-container">
@@ -174,25 +174,17 @@ error_log("Mapeamento: " . print_r($mapeamento, true));
             <div class="confirmation-actions">
                 <form id="confirmForm" method="POST" action="/Apps/public/form/api/processar_importacao.php">
                     <input type="hidden" name="cliente" value="<?php echo htmlspecialchars($cliente); ?>">
-                    <button type="submit" class="confirm-btn">🚀 Confirmar e Iniciar Importação</button>
+                    <button type="submit" class="confirm-btn">Confirmar e Iniciar Importação</button>
                 </form>
                 
                 <div class="action-links">
-                    <a href="/Apps/public/form/mapeamento.php<?php echo $cliente ? '?cliente=' . urlencode($cliente) : ''; ?>" class="back-btn">← Voltar ao Mapeamento</a>
-                    <a href="/Apps/public/form/importacao.php<?php echo $cliente ? '?cliente=' . urlencode($cliente) : ''; ?>" class="back-btn">🏠 Voltar ao Início</a>
+                    <a href="/Apps/public/form/mapeamento.php<?php echo $cliente ? '?cliente=' . urlencode($cliente) : ''; ?>" class="back-btn">Voltar ao Mapeamento</a>
+                    <a href="/Apps/public/form/importacao.php<?php echo $cliente ? '?cliente=' . urlencode($cliente) : ''; ?>" class="back-btn">Voltar ao Início</a>
                 </div>
             </div>
         </div>
     <?php endif; ?>
 
-    <script>
-        // Debug no console
-        console.log('Dados da sessão:', {
-            spa: '<?php echo addslashes($spa); ?>',
-            arquivo: '<?php echo addslashes($nomeArquivo); ?>',
-            linhas: <?php echo $totalLinhas; ?>,
-            mapeamento: <?php echo json_encode($mapeamento); ?>
-        });
     </script>
 </body>
 </html>
