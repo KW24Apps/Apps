@@ -2,6 +2,9 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Conecta ao sistema principal
+require_once __DIR__ . '/../../../index.php';
+
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
@@ -9,6 +12,12 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 header('Content-Type: application/json; charset=utf-8');
 
 try {
+    // Verifica se webhook está configurado
+    if (!isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) || 
+        !$GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) {
+        throw new Exception('Webhook do Bitrix não configurado');
+    }
+
     // Recupera dados da sessão
     $mapeamento = $_SESSION['mapeamento'] ?? [];
     $formData = $_SESSION['importacao_form'] ?? [];

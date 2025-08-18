@@ -1,30 +1,29 @@
 <?php
+// Conecta ao sistema principal que já carrega todas as configurações
+require_once __DIR__ . '/../../index.php';
+
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
 try {
-    // Carrega configurações
-    $config = require_once __DIR__ . '/config.php';
-    
-    // Verifica se há parâmetro de cliente para mostrar informações
+    // Verifica se há parâmetro de cliente
     $cliente = $_GET['cliente'] ?? null;
+    if (!$cliente) {
+        throw new Exception('Parâmetro cliente é obrigatório');
+    }
     
-    // TEMPORARIAMENTE DESABILITADO - DEBUG PARA ERRO 500
-    /*
-    // Debug detalhado do webhook
+    // Verifica se webhook está configurado (já vem do sistema principal)
     $webhook_configurado = isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) && 
                           $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'];
-    $bitrix_constant = defined('BITRIX_WEBHOOK') && BITRIX_WEBHOOK;
     $webhook_value = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? 'NÃO DEFINIDO';
-    */
     
-    // Valores padrão para debug
-    $webhook_configurado = true; // Assumir que está configurado
-    $webhook_value = 'WEBHOOK_TEMPORARIO_DEBUG';
-    $bitrix_constant = true; // Assumir que está definida
-    
-    // Debug: verifica se config foi carregado corretamente
+    if (!$webhook_configurado) {
+        throw new Exception('Webhook do Bitrix não configurado para o cliente: ' . $cliente);
+    }
+
+    // Carrega configurações dos funis (ainda usando config local para funis específicos)
+    $config = require_once __DIR__ . '/config.php';
     $config_carregado = is_array($config) && isset($config['funis']) && is_array($config['funis']);
     
 } catch (Exception $e) {

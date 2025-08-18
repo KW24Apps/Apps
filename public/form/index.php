@@ -1,3 +1,26 @@
+<?php
+// Conecta ao sistema principal para carregar configurações
+require_once __DIR__ . '/../../index.php';
+
+// Verifica se cliente foi informado
+$cliente = $_GET['cliente'] ?? null;
+if (!$cliente) {
+    // Se não tem cliente, exibe erro amigável
+    die('<div style="font-family: Arial; text-align: center; margin-top: 50px;">
+         <h2>❌ Parâmetro obrigatório</h2>
+         <p>Esta aplicação requer o parâmetro <code>?cliente=CHAVE_CLIENTE</code> na URL.</p>
+         <p>Exemplo: <code>index.php?cliente=sua_chave_aqui</code></p>
+         </div>');
+}
+
+// Verifica se as configurações foram carregadas
+if (!isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'])) {
+    die('<div style="font-family: Arial; text-align: center; margin-top: 50px;">
+         <h2>❌ Configuração não encontrada</h2>
+         <p>Webhook do Bitrix não configurado para o cliente: ' . htmlspecialchars($cliente) . '</p>
+         </div>');
+}
+?>
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
