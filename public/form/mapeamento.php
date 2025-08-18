@@ -3,7 +3,7 @@
 ob_start();
 
 // Caminho do arquivo CSV salvo na etapa anterior
-$uploadDir = __DIR__ . '/../uploads/';
+$uploadDir = __DIR__ . '/uploads/';
 $csvFile = null;
 
 // Busca o arquivo mais recente enviado (simples, pode ser melhorado)
