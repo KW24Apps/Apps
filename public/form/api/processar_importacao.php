@@ -66,20 +66,53 @@ try {
     $formData = $_SESSION['importacao_form'] ?? [];
     $spa = $formData['funil'] ?? null;
 
+    error_log("DEBUG: Session mapeamento: " . print_r($mapeamento, true));
+    error_log("DEBUG: Session formData: " . print_r($formData, true));
+    error_log("DEBUG: SPA: " . $spa);
+
     if (empty($mapeamento) || !$spa) {
+        error_log("ERRO: Mapeamento vazio: " . (empty($mapeamento) ? 'SIM' : 'NÃO'));
+        error_log("ERRO: SPA vazio: " . ($spa ? 'NÃO' : 'SIM'));
         throw new Exception('Dados de mapeamento ou SPA não encontrados na sessão');
     }
 
     // Busca o arquivo CSV mais recente
-    $uploadDir = __DIR__ . '/uploads/';
+    $uploadDir = __DIR__ . '/../uploads/';
+    error_log("DEBUG: Procurando arquivos CSV em: " . $uploadDir);
+    
+    if (!is_dir($uploadDir)) {
+        error_log("ERRO: Diretório de upload não existe: " . $uploadDir);
+        throw new Exception('Diretório de uploads não encontrado');
+    }
+    
     $files = glob($uploadDir . '*.csv');
+    error_log("DEBUG: Arquivos CSV encontrados: " . print_r($files, true));
     
     if (empty($files)) {
+        error_log("ERRO: Nenhum arquivo CSV encontrado em: " . $uploadDir);
+        // Lista todos os arquivos para debug
+        $allFiles = glob($uploadDir . '*');
+        error_log("DEBUG: Todos os arquivos no diretório: " . print_r($allFiles, true));
         throw new Exception('Arquivo CSV não encontrado');
     }
 
     usort($files, function($a, $b) { return filemtime($b) - filemtime($a); });
     $csvFile = $files[0];
+    
+    // Se temos o nome do arquivo na sessão, tenta usar ele primeiro
+    $nomeArquivoSessao = $formData['arquivo'] ?? null;
+    if ($nomeArquivoSessao) {
+        $arquivoSessao = $uploadDir . $nomeArquivoSessao;
+        error_log("DEBUG: Tentando usar arquivo da sessão: " . $arquivoSessao);
+        if (file_exists($arquivoSessao)) {
+            $csvFile = $arquivoSessao;
+            error_log("DEBUG: Usando arquivo da sessão: " . $csvFile);
+        } else {
+            error_log("WARNING: Arquivo da sessão não existe, usando mais recente: " . $csvFile);
+        }
+    }
+    
+    error_log("DEBUG: Arquivo CSV selecionado: " . $csvFile);
 
     // Processa o CSV para criar os deals
     $deals = [];
