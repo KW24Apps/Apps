@@ -73,7 +73,7 @@ $_GET['cliente'] = 'gnappC93jLq7RxKZVp28HswuAYMe1';
 $_GET['q'] = 'test';
 
 try {
-    include __DIR__ . '/bitrix_users.php';
+    include __DIR__ . '/api/bitrix_users.php';
 } catch (Exception $e) {
     echo "❌ Erro capturado: " . htmlspecialchars($e->getMessage()) . "<br>";
 } catch (Error $e) {

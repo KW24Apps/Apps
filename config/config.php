@@ -1,6 +1,6 @@
 <?php
 
-$ambiente = getenv('APP_ENV') ?: 'local';
+$ambiente = getenv('APP_ENV') ?: 'producao';
 
 $config = [];
 
