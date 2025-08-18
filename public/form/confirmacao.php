@@ -31,9 +31,9 @@ $erro_configuracao = '';
 if ($cliente) {
     try {
         $pdo = new PDO(
-            'mysql:host=127.0.0.1;port=3306;dbname=kw24co49_api_kwconfig;charset=utf8mb4',
-            'kw24co49_api_kwconfig',
-            'Kwconfig123456@'
+            'mysql:host=localhost;dbname=kw24co49_api_kwconfig;charset=utf8mb4',
+            'kw24co49_kw24',
+            'BlFOyf%X}#jXwrR-vi'
         );
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
