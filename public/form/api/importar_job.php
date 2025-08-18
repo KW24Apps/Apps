@@ -1,5 +1,5 @@
 <?php
-// Verifica se cliente foi informado antes de carregar sistema principal
+// Verifica se cliente foi informado
 $cliente = $_GET['cliente'] ?? $_POST['cliente'] ?? null;
 if (!$cliente) {
     header('Content-Type: application/json');
@@ -10,15 +10,47 @@ if (!$cliente) {
     exit;
 }
 
-// Conecta ao sistema principal
-require_once __DIR__ . '/../../../index.php';
-
 try {
-    // Verifica se webhook está configurado pelo sistema principal
-    if (!isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) || 
-        !$GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) {
-        throw new Exception('Webhook do Bitrix não configurado');
+    // Conecta diretamente ao banco para buscar webhook
+    $config = [
+        'host' => 'localhost',
+        'dbname' => 'kw24co49_api_kwconfig',
+        'usuario' => 'kw24co49_kw24',
+        'senha' => 'BlFOyf%X}#jXwrR-vi'
+    ];
+
+    $pdo = new PDO(
+        "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+        $config['usuario'],
+        $config['senha']
+    );
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $sql = "
+        SELECT ca.webhook_bitrix
+        FROM clientes c
+        JOIN cliente_aplicacoes ca ON ca.cliente_id = c.id
+        JOIN aplicacoes a ON ca.aplicacao_id = a.id
+        WHERE c.chave_acesso = :chave
+        AND a.slug = 'import'
+        AND ca.ativo = 1
+        AND ca.webhook_bitrix IS NOT NULL
+        AND ca.webhook_bitrix != ''
+        LIMIT 1
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':chave', $cliente);
+    $stmt->execute();
+    $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+    $webhook = $resultado['webhook_bitrix'] ?? null;
+
+    if (!$webhook) {
+        throw new Exception('Webhook não encontrado para o cliente: ' . $cliente);
     }
+
+    // Define globalmente para uso nos helpers
+    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
     
 } catch (Exception $e) {
     header('Content-Type: application/json');

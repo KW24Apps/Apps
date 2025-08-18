@@ -13,19 +13,50 @@ if (!$cliente) {
          </div>');
 }
 
-// Agora conecta ao sistema principal que já tem o cliente definido
-require_once __DIR__ . '/../../index.php';
-
 try {
-    // Verifica se webhook está configurado (já vem do sistema principal)
-    $webhook_configurado = isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) && 
-                          $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'];
-    $webhook_value = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? 'NÃO DEFINIDO';
-    
-    if (!$webhook_configurado) {
-        throw new Exception('Webhook do Bitrix não configurado para o cliente: ' . $cliente);
+    // Conecta diretamente ao banco para buscar webhook (como fazíamos antes)
+    $config = [
+        'host' => 'localhost',
+        'dbname' => 'kw24co49_api_kwconfig',
+        'usuario' => 'kw24co49_kw24',
+        'senha' => 'BlFOyf%X}#jXwrR-vi'
+    ];
+
+    $pdo = new PDO(
+        "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+        $config['usuario'],
+        $config['senha']
+    );
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $sql = "
+        SELECT ca.webhook_bitrix
+        FROM clientes c
+        JOIN cliente_aplicacoes ca ON ca.cliente_id = c.id
+        JOIN aplicacoes a ON ca.aplicacao_id = a.id
+        WHERE c.chave_acesso = :chave
+        AND a.slug = 'import'
+        AND ca.ativo = 1
+        AND ca.webhook_bitrix IS NOT NULL
+        AND ca.webhook_bitrix != ''
+        LIMIT 1
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':chave', $cliente);
+    $stmt->execute();
+    $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+    $webhook = $resultado['webhook_bitrix'] ?? null;
+
+    if (!$webhook) {
+        throw new Exception('Webhook não encontrado para o cliente: ' . $cliente);
     }
 
+    // Define globalmente para uso nos helpers
+    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
+    $webhook_configurado = true;
+    $webhook_value = $webhook;
+    
     // Carrega configurações dos funis (ainda usando config local para funis específicos)
     $config = require_once __DIR__ . '/config.php';
     $config_carregado = is_array($config) && isset($config['funis']) && is_array($config['funis']);
