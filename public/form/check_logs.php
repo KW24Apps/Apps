@@ -69,7 +69,7 @@ echo "<h3>🧪 Teste da API Original</h3>";
 echo "<strong>Testando bitrix_users.php...</strong><br>";
 
 ob_start();
-$_GET['cliente'] = 'gnappC93jLq7RxKZVp28HswuAYMe1';
+$_GET['cliente'] = 'gnappC93fLq7RxKZVp28HswuAYMe1';
 $_GET['q'] = 'test';
 
 try {

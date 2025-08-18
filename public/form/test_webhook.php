@@ -2,8 +2,8 @@
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/WebhookHelper.php';
 
-$cliente = $_GET['cliente'] ?? 'gnappC93jLq7RxKZVp28HswuAYMe1';
-$slug = 'importar';
+$cliente = $_GET['cliente'] ?? 'gnappC93fLq7RxKZVp28HswuAYMe1';
+$slug = 'import';
 
 echo "<h2>Teste de Webhook - Cliente: $cliente</h2>";
 

@@ -7,7 +7,7 @@ header('Content-Type: text/html; charset=utf-8');
 echo "<h2>🔍 Debug API Bitrix Users</h2>";
 
 $q = $_GET['q'] ?? 'test';
-$cliente = $_GET['cliente'] ?? 'gnappC93jLq7RxKZVp28HswuAYMe1';
+$cliente = $_GET['cliente'] ?? 'gnappC93fLq7RxKZVp28HswuAYMe1';
 
 echo "Query: " . htmlspecialchars($q) . "<br>";
 echo "Cliente: " . htmlspecialchars($cliente) . "<br><br>";
@@ -31,11 +31,11 @@ try {
     
     echo "<strong>2. Buscando webhook...</strong><br>";
     $stmt = $pdo->prepare("
-        SELECT ca.webhook_bitrix
-        FROM cliente_aplicacoes ca
-        JOIN clientes c ON ca.cliente_id = c.id
-        JOIN aplicacoes a ON ca.aplicacao_id = a.id
-        WHERE c.chave_acesso = ? AND a.slug = 'importar'
+        SELECT aa.url_webhook
+        FROM aplicacao_acesso aa
+        JOIN aplicacoes a ON aa.aplicacao_id = a.id
+        JOIN clientes c ON a.cliente_id = c.id
+        WHERE c.chave_acesso = ? AND a.slug = 'import'
     ");
     $stmt->execute([$cliente]);
     $webhook = $stmt->fetchColumn();

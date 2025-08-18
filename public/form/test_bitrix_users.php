@@ -5,7 +5,7 @@ header('Content-Type: text/html; charset=utf-8');
 echo "<h2>👥 Teste Busca Usuários Bitrix</h2>";
 
 // Primeiro busca o webhook
-$cliente = $_GET['cliente'] ?? 'gnappC93jLq7RxKZVp28HswuAYMe1';
+$cliente = $_GET['cliente'] ?? 'gnappC93fLq7RxKZVp28HswuAYMe1';
 
 try {
     // Conexão com banco
@@ -25,11 +25,11 @@ try {
     
     // Busca webhook
     $stmt = $pdo->prepare("
-        SELECT ca.webhook_bitrix
-        FROM cliente_aplicacoes ca
-        JOIN clientes c ON ca.cliente_id = c.id
-        JOIN aplicacoes a ON ca.aplicacao_id = a.id
-        WHERE c.chave_acesso = ? AND a.slug = 'importar'
+        SELECT aa.url_webhook
+        FROM aplicacao_acesso aa
+        JOIN aplicacoes a ON aa.aplicacao_id = a.id
+        JOIN clientes c ON a.cliente_id = c.id
+        WHERE c.chave_acesso = ? AND a.slug = 'import'
     ");
     $stmt->execute([$cliente]);
     $webhook = $stmt->fetchColumn();

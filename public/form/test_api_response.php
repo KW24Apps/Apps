@@ -4,7 +4,7 @@ header('Content-Type: text/html; charset=utf-8');
 
 echo "<h2>🧪 Teste Direto da API bitrix_users</h2>";
 
-$cliente = $_GET['cliente'] ?? 'gnappC93jLq7RxKZVp28HswuAYMe1';
+$cliente = $_GET['cliente'] ?? 'gnappC93fLq7RxKZVp28HswuAYMe1';
 $q = $_GET['q'] ?? 'test';
 
 $url = "https://apis.kw24.com.br/Apps/importar/api/bitrix_users?q=" . urlencode($q) . "&cliente=" . urlencode($cliente);

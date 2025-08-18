@@ -32,7 +32,7 @@ try {
     
     // Se não tem cliente no GET, simula um para teste
     if (!$cliente) {
-        $_GET['cliente'] = 'gnappC93jLq7RxKZVp28HswuAYMe1';
+        $_GET['cliente'] = 'gnappC93fLq7RxKZVp28HswuAYMe1';
         $cliente = $_GET['cliente'];
         logDebug("Cliente não informado, usando padrão: $cliente");
     }

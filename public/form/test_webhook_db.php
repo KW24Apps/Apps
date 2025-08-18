@@ -4,7 +4,7 @@ header('Content-Type: text/html; charset=utf-8');
 
 echo "<h2>🗄️ Teste Direto do Webhook no Banco</h2>";
 
-$cliente = $_GET['cliente'] ?? 'gnappC93jLq7RxKZVp28HswuAYMe1';
+$cliente = $_GET['cliente'] ?? 'gnappC93fLq7RxKZVp28HswuAYMe1';
 
 try {
     // Usar configuração de produção diretamente

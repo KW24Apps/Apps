@@ -6,8 +6,8 @@ ini_set('display_errors', 1);
 echo "<h1>🔍 Diagnóstico Completo do Sistema de Webhook</h1>";
 
 // Dados de entrada
-$cliente = $_GET['cliente'] ?? 'gnappC93jLq7RxKZVp28HswuAYMe1';
-$slug = 'importar';
+$cliente = $_GET['cliente'] ?? 'gnappC93fLq7RxKZVp28HswuAYMe1';
+$slug = 'import';
 
 echo "<h2>📋 Parâmetros de Entrada</h2>";
 echo "<strong>Cliente:</strong> " . htmlspecialchars($cliente) . "<br>";
