@@ -20,8 +20,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const cliente = urlParams.get('cliente') || '';
                 const clienteParam = cliente ? '&cliente=' + encodeURIComponent(cliente) : '';
                 
-                // Busca usuários via API do sistema de rotas
-                fetch('/Apps/public/form/api/bitrix_users.php?q=' + encodeURIComponent(query) + clienteParam)
+                // Busca usuários via API do sistema de rotas (com cache bust)
+                fetch('/Apps/public/form/api/bitrix_users.php?q=' + encodeURIComponent(query) + clienteParam + '&v=' + Date.now())
                     .then(res => {
                         // Log para debug
                         console.log('Status da resposta:', res.status, res.statusText);
