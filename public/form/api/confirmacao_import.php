@@ -26,7 +26,7 @@ usort($files, function($a, $b) { return filemtime($b) - filemtime($a); });
 $csvFile = $files[0];
 $nomeArquivo = basename($csvFile);
 
-// Lê o arquivo CSV
+// Lê o arquivo CSV e converte para usar nomes dos campos
 $dados = [];
 if (($handle = fopen($csvFile, 'r')) !== false) {
     $headers = fgetcsv($handle, 0, ',', '"', "\\");
@@ -36,7 +36,8 @@ if (($handle = fopen($csvFile, 'r')) !== false) {
             foreach ($headers as $index => $header) {
                 $campoBitrix = $mapeamento[$header] ?? null;
                 if ($campoBitrix) {
-                    $linha[$campoBitrix] = $row[$index] ?? '';
+                    // Usa o nome original da coluna do CSV ao invés do ID do campo Bitrix
+                    $linha[$header] = $row[$index] ?? '';
                 }
             }
             if (!empty($linha)) {
