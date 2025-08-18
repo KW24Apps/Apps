@@ -15,8 +15,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             timeout = setTimeout(() => {
+                // Obtém parâmetro cliente da URL atual
+                const urlParams = new URLSearchParams(window.location.search);
+                const cliente = urlParams.get('cliente') || '';
+                const clienteParam = cliente ? '&cliente=' + encodeURIComponent(cliente) : '';
+                
                 // Busca usuários via API do sistema de rotas
-                fetch('/Apps/importar/api/bitrix_users?q=' + encodeURIComponent(query))
+                fetch('/Apps/importar/api/bitrix_users?q=' + encodeURIComponent(query) + clienteParam)
                     .then(res => res.json())
                     .then(users => {
                         // ...existing code...
