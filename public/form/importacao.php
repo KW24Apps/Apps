@@ -54,6 +54,12 @@ try {
 
     // Define globalmente para uso nos helpers
     $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
+    
+    // Define constante para compatibilidade
+    if (!defined('BITRIX_WEBHOOK')) {
+        define('BITRIX_WEBHOOK', $webhook);
+    }
+    
     $webhook_configurado = true;
     $webhook_value = $webhook;
     
@@ -83,7 +89,7 @@ try {
     <link rel="stylesheet" href="/Apps/public/form/assets/css/importacao.css">
 </head>
 <body>
-    <form id="importacaoForm" class="import-form" method="POST" action="api/importacao.php<?php echo '?cliente=' . urlencode($cliente); ?>" enctype="multipart/form-data">
+    <form id="importacaoForm" class="import-form" method="POST" action="/Apps/public/form/api/importacao.php?cliente=<?php echo urlencode($cliente); ?>" enctype="multipart/form-data">
         <div class="import-form-title">
             Importação de Leads 
             <span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: normal; margin-left: 10px;">v2.1 - API Corrigida</span>

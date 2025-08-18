@@ -52,6 +52,11 @@ try {
     // Define globalmente para uso nos helpers
     $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
     
+    // Define constante para compatibilidade
+    if (!defined('BITRIX_WEBHOOK')) {
+        define('BITRIX_WEBHOOK', $webhook);
+    }
+    
 } catch (Exception $e) {
     header('Content-Type: application/json');
     http_response_code(500);

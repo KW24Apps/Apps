@@ -60,6 +60,11 @@ try {
 
     // Define globalmente para uso nos helpers
     $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
+    
+    // Define constante para compatibilidade
+    if (!defined('BITRIX_WEBHOOK')) {
+        define('BITRIX_WEBHOOK', $webhook);
+    }
 
     // Recupera dados da sessão
     $mapeamento = $_SESSION['mapeamento'] ?? [];
