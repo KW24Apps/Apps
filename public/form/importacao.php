@@ -89,7 +89,7 @@ try {
     <link rel="stylesheet" href="/Apps/public/form/assets/css/importacao.css">
 </head>
 <body>
-    <form id="importacaoForm" class="import-form" method="POST" action="/Apps/public/form/api/teste.php?cliente=<?php echo urlencode($cliente); ?>" enctype="multipart/form-data">
+    <form id="importacaoForm" class="import-form" method="POST" action="/Apps/public/form/api/importacao.php?cliente=<?php echo urlencode($cliente); ?>" enctype="multipart/form-data">
         <div class="import-form-title">
             Importação de Leads 
             <span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: normal; margin-left: 10px;">v2.1 - API Corrigida</span>

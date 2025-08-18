@@ -155,6 +155,10 @@ try {
         throw new Exception('Nenhum deal válido encontrado no arquivo CSV');
     }
 
+    error_log("DEBUG: Total de deals preparados: " . count($deals));
+    error_log("DEBUG: Primeiro deal: " . print_r($deals[0] ?? 'nenhum', true));
+    error_log("DEBUG: Último deal: " . print_r($deals[count($deals)-1] ?? 'nenhum', true));
+
     // Prepara dados para o importar_job.php
     $jobData = [
         'entityId' => 2, // CRM Deal entity
@@ -163,7 +167,7 @@ try {
         'tipoJob' => 'criar_deals'
     ];
 
-    error_log("DEBUG: JobData preparado: " . print_r($jobData, true));
+    error_log("DEBUG: JobData preparado com " . count($jobData['deals']) . " deals");
 
     // Em vez de usar curl, vamos chamar diretamente
     $_POST['cliente'] = $cliente;

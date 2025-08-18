@@ -12,10 +12,18 @@ class BitrixDealHelper
     // Cria um ou vários negócios no Bitrix24 via API (sempre em batch, sem agendamento)
     public static function criarDeal($entityId, $categoryId, $fields): array
     {
+        error_log("=== DEBUG CRIAR DEAL ===");
+        error_log("EntityId: " . $entityId);
+        error_log("CategoryId: " . $categoryId);
+        error_log("Total fields recebidos: " . count($fields));
+        error_log("Primeiro field: " . print_r($fields[0] ?? 'nenhum', true));
+        
         // Sempre trata $fields como array de arrays
         if (!isset($fields[0]) || !is_array($fields[0])) {
             $fields = [$fields];
         }
+
+        error_log("Total fields após normalização: " . count($fields));
 
         // Sempre executa em batch, mesmo para 1 deal
         $chunks = array_chunk($fields, 25);
@@ -25,7 +33,9 @@ class BitrixDealHelper
 
         $startTime = microtime(true);
 
-        foreach ($chunks as $chunk) {
+        foreach ($chunks as $chunkIndex => $chunk) {
+            error_log("Processando chunk " . ($chunkIndex + 1) . " com " . count($chunk) . " deals");
+            
             $batchCommands = [];
             foreach ($chunk as $index => $dealFields) {
                 $formattedFields = BitrixHelper::formatarCampos($dealFields);
@@ -38,9 +48,14 @@ class BitrixDealHelper
                 ];
                 $batchCommands["deal$index"] = 'crm.item.add?' . http_build_query($params);
             }
+            
+            error_log("Batch commands preparados: " . count($batchCommands));
+            
             $resultado = BitrixHelper::chamarApi('batch', ['cmd' => $batchCommands], [
                 'log' => true
             ]);
+            
+            error_log("Resultado do chunk " . ($chunkIndex + 1) . ": " . print_r($resultado, true));
             $sucessosChunk = 0;
             $idsChunk = [];
             if (isset($resultado['result']['result'])) {
