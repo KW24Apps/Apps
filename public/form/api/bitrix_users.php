@@ -29,7 +29,7 @@ try {
         FROM cliente_aplicacoes ca
         JOIN clientes c ON ca.cliente_id = c.id
         JOIN aplicacoes a ON ca.aplicacao_id = a.id
-        WHERE c.chave_acesso = ? AND a.slug = 'importar'
+        WHERE c.chave_acesso = ? AND a.slug = 'import'
     ");
     $stmt->execute([$cliente]);
     $webhook = $stmt->fetchColumn();

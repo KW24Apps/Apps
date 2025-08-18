@@ -5,7 +5,7 @@ require_once __DIR__ . '/WebhookHelper.php';
 
 // Obtém dados do cliente a partir da URL
 $chaveAcesso = $_GET['cliente'] ?? null;
-$slugAplicacao = 'importar';
+$slugAplicacao = 'import';
 
 // Tenta obter webhook do banco de dados primeiro
 $bitrixWebhook = null;
