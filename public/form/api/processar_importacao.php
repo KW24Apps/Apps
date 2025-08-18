@@ -128,6 +128,7 @@ try {
     if (($handle = fopen($csvFile, 'r')) !== FALSE) {
         // Lê o cabeçalho
         $header = fgetcsv($handle, 1000, ',');
+        error_log("DEBUG: Cabeçalho do CSV: " . print_r($header, true));
         
         while (($row = fgetcsv($handle, 1000, ',')) !== FALSE) {
             $deal = [];
@@ -141,6 +142,11 @@ try {
                 if (isset($mapeamento[$nomeColuna])) {
                     $codigoBitrix = $mapeamento[$nomeColuna];
                     $deal[$codigoBitrix] = $valorCelula;
+                    
+                    // Log apenas para o primeiro deal
+                    if (count($deals) === 0) {
+                        error_log("DEBUG: Mapeamento - Coluna '$nomeColuna' -> Campo '$codigoBitrix' = '$valorCelula'");
+                    }
                 }
             }
             
