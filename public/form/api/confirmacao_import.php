@@ -7,6 +7,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 $mapeamento = $_SESSION['mapeamento'] ?? [];
 $formData = $_SESSION['importacao_form'] ?? [];
+$spa = $formData['funil'] ?? 'undefined';
 
 if (empty($mapeamento)) {
     echo json_encode(['sucesso' => false, 'mensagem' => 'Mapeamento não encontrado na sessão']);
@@ -48,8 +49,8 @@ if (($handle = fopen($csvFile, 'r')) !== false) {
 
 echo json_encode([
     'sucesso' => true,
-    'spa' => $formData['funil'] ?? '',
-    'funil_id' => $formData['funil'] ?? '',
+    'spa' => $spa,
+    'funil_id' => $spa,
     'arquivo' => $nomeArquivo,
     'linhas' => count($dados),
     'dados' => $dados

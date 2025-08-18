@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(form);
         console.log('[DEBUG] Enviando fetch para api/salvar_mapeamento.php');
         
-        fetch('/Apps/importar/api/salvar_mapeamento', {
+        fetch('api/salvar_mapeamento.php', {
             method: 'POST',
             body: formData
         })
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (resp.sucesso) {
                 // Busca dados do arquivo e SPA normalmente
                 console.log('[DEBUG] Mapeamento salvo com sucesso, buscando api/confirmacao_import.php');
-                fetch('/Apps/importar/api/confirmacao_import')
+                fetch('api/confirmacao_import.php')
                     .then(res => {
                         console.log('[DEBUG] Resposta recebida de api/confirmacao_import.php', res);
                         return res.json();
