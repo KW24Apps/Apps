@@ -25,14 +25,40 @@ require_once __DIR__ . '/../../helpers/BitrixHelper.php';
 use Helpers\BitrixHelper;
 
 try {
-    // Carrega configurações
-    $config = require_once __DIR__ . '/config.php';
+    // Conecta diretamente no banco para buscar webhook (igual à API)
+    $cliente = $_GET['cliente'] ?? 'gnappC93fLq7RxKZVp28HswuAYMe1';
     
-    // Verifica se o webhook foi configurado no config.php
-    if (!isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) || 
-        !$GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) {
-        throw new Exception('Webhook do Bitrix não configurado. Configure no banco de dados para o cliente ou arquivo local.');
+    $configDb = [
+        'host' => 'localhost',
+        'dbname' => 'kw24co49_api_kwconfig',
+        'usuario' => 'kw24co49_kw24',
+        'senha' => 'BlFOyf%X}#jXwrR-vi'
+    ];
+    
+    $pdo = new PDO(
+        "mysql:host={$configDb['host']};dbname={$configDb['dbname']};charset=utf8",
+        $configDb['usuario'],
+        $configDb['senha']
+    );
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    // Busca webhook
+    $stmt = $pdo->prepare("
+        SELECT ca.webhook_bitrix
+        FROM cliente_aplicacoes ca
+        JOIN clientes c ON ca.cliente_id = c.id
+        JOIN aplicacoes a ON ca.aplicacao_id = a.id
+        WHERE c.chave_acesso = ? AND a.slug = 'import'
+    ");
+    $stmt->execute([$cliente]);
+    $webhook = $stmt->fetchColumn();
+    
+    if (!$webhook) {
+        throw new Exception('Webhook não encontrado para o cliente: ' . $cliente);
     }
+    
+    // Define variáveis globais para o BitrixHelper
+    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
     
     $camposBitrix = BitrixHelper::consultarCamposCrm(2); // 2 = Negócios
     $webhook_configurado = true;
