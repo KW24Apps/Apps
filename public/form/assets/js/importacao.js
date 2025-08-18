@@ -62,15 +62,28 @@ document.addEventListener('DOMContentLoaded', function() {
                             return;
                         }
                         
-                        // TERCEIRA VERIFICAÇÃO: Se NÃO é um array
-                        if (!Array.isArray(data)) {
+                        // TERCEIRA VERIFICAÇÃO: Se NÃO é um array NUMÉRICO (lista de usuários)
+                        // Arrays associativos do PHP são detectados como objetos no JavaScript
+                        if (!Array.isArray(data) || (Array.isArray(data) && data.length > 0 && (data[0] === null || typeof data[0] === 'undefined'))) {
                             const div = document.createElement('div');
-                            div.textContent = 'Erro: API retornou formato inválido (tipo: ' + typeof data + ')';
+                            div.textContent = 'Erro: API retornou formato inválido (não é uma lista de usuários)';
                             div.style.color = 'red';
                             div.style.padding = '5px';
                             list.appendChild(div);
                             list.classList.add('active');
-                            console.error('Resposta da API não é um array:', typeof data, data);
+                            console.error('Resposta da API não é uma lista válida:', typeof data, data);
+                            return;
+                        }
+                        
+                        // VALIDAÇÃO ADICIONAL: Verifica se o primeiro elemento tem estrutura de usuário
+                        if (data.length > 0 && (!data[0].hasOwnProperty('id') || !data[0].hasOwnProperty('name'))) {
+                            const div = document.createElement('div');
+                            div.textContent = 'Erro: Formato de usuário inválido na resposta da API';
+                            div.style.color = 'red';
+                            div.style.padding = '5px';
+                            list.appendChild(div);
+                            list.classList.add('active');
+                            console.error('Primeiro usuário não tem id/name:', data[0]);
                             return;
                         }
                         
