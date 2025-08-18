@@ -179,21 +179,50 @@ document.addEventListener('DOMContentLoaded', function() {
         data.append('responsavel_id', document.getElementById('responsavel').dataset.userid || '');
         data.append('solicitante_id', document.getElementById('solicitante').dataset.userid || '');
         
+        // Mostra loading
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Enviando...';
+        submitBtn.disabled = true;
+        
+        console.log('🚀 Enviando formulário para:', form.action);
+        
         fetch(form.action, {
             method: 'POST',
             body: data
         })
-        .then(res => res.json())
-        .then(resp => {
-            if (resp.sucesso && resp.next_url) {
-                window.location.href = resp.next_url;
-            } else {
-                document.getElementById('mensagem').textContent = resp.mensagem || 'Enviado com sucesso!';
-                form.reset();
+        .then(res => {
+            console.log('📡 Status resposta:', res.status, res.statusText);
+            return res.text(); // Primeiro pega como texto para debug
+        })
+        .then(text => {
+            console.log('📄 Resposta raw:', text);
+            try {
+                const resp = JSON.parse(text);
+                console.log('📦 Resposta JSON:', resp);
+                
+                if (resp.sucesso && resp.next_url) {
+                    console.log('✅ Redirecionando para:', resp.next_url);
+                    window.location.href = resp.next_url;
+                } else {
+                    console.log('❌ Erro na resposta:', resp);
+                    document.getElementById('mensagem').textContent = resp.mensagem || 'Erro desconhecido';
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
+            } catch (e) {
+                console.error('❌ Erro ao fazer parse JSON:', e);
+                console.log('📄 Texto recebido:', text);
+                document.getElementById('mensagem').textContent = 'Erro: Resposta inválida do servidor';
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
             }
         })
-        .catch(() => {
-            document.getElementById('mensagem').textContent = 'Erro ao enviar.';
+        .catch(error => {
+            console.error('❌ Erro na requisição:', error);
+            document.getElementById('mensagem').textContent = 'Erro ao enviar: ' + error.message;
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
         });
     });
 });
