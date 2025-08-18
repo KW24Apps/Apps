@@ -2,12 +2,23 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Conecta ao sistema principal
-require_once __DIR__ . '/../../../index.php';
-
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
+
+// Verifica se cliente foi informado antes de carregar sistema principal
+$cliente = $_GET['cliente'] ?? $_POST['cliente'] ?? null;
+if (!$cliente) {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'sucesso' => false,
+        'mensagem' => 'Parâmetro cliente é obrigatório'
+    ]);
+    exit;
+}
+
+// Conecta ao sistema principal
+require_once __DIR__ . '/../../../index.php';
 
 header('Content-Type: application/json; charset=utf-8');
 

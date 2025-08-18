@@ -1,18 +1,22 @@
 <?php
-// Conecta ao sistema principal que já carrega todas as configurações
-require_once __DIR__ . '/../../index.php';
-
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
+// Primeiro verifica se cliente foi informado
+$cliente = $_GET['cliente'] ?? null;
+if (!$cliente) {
+    die('<div style="font-family: Arial; text-align: center; margin-top: 50px;">
+         <h2>❌ Parâmetro obrigatório</h2>
+         <p>Esta aplicação requer o parâmetro <code>?cliente=CHAVE_CLIENTE</code> na URL.</p>
+         <p>Exemplo: <code>importacao.php?cliente=sua_chave_aqui</code></p>
+         </div>');
+}
+
+// Agora conecta ao sistema principal que já tem o cliente definido
+require_once __DIR__ . '/../../index.php';
+
 try {
-    // Verifica se há parâmetro de cliente
-    $cliente = $_GET['cliente'] ?? null;
-    if (!$cliente) {
-        throw new Exception('Parâmetro cliente é obrigatório');
-    }
-    
     // Verifica se webhook está configurado (já vem do sistema principal)
     $webhook_configurado = isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) && 
                           $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'];
@@ -26,11 +30,15 @@ try {
     $config = require_once __DIR__ . '/config.php';
     $config_carregado = is_array($config) && isset($config['funis']) && is_array($config['funis']);
     
+    // Define variável para debug
+    $bitrix_constant = defined('BITRIX_WEBHOOK') && BITRIX_WEBHOOK;
+    
 } catch (Exception $e) {
     $webhook_configurado = false;
     $erro_configuracao = $e->getMessage();
     $config = ['funis' => []]; // Config fallback
     $config_carregado = false;
+    $bitrix_constant = false; // Define para debug
 }
 
 // Não limpar a sessão ao acessar via GET
