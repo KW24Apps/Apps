@@ -23,19 +23,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Busca usuários via API do sistema de rotas
                 fetch('/Apps/importar/api/bitrix_users?q=' + encodeURIComponent(query) + clienteParam)
                     .then(res => {
+                        // Log para debug
+                        console.log('Status da resposta:', res.status, res.statusText);
+                        
                         // Verifica se a resposta é válida
                         if (!res.ok) {
                             throw new Error(`Erro HTTP: ${res.status} - ${res.statusText}`);
                         }
                         return res.json();
                     })
-                    .then(users => {
+                    .then(data => {
+                        // Log da resposta para debug
+                        console.log('Dados recebidos da API:', data);
+                        
                         list.innerHTML = '';
                         
-                        // Verifica se há erro na resposta
-                        if (users.error || users.erro) {
+                        // PRIMEIRA VERIFICAÇÃO: Se é null ou undefined
+                        if (!data) {
                             const div = document.createElement('div');
-                            div.textContent = 'Erro: ' + (users.error || users.erro || users.detalhes || 'Erro desconhecido');
+                            div.textContent = 'Erro: Resposta vazia da API';
                             div.style.color = 'red';
                             div.style.padding = '5px';
                             list.appendChild(div);
@@ -43,20 +49,33 @@ document.addEventListener('DOMContentLoaded', function() {
                             return;
                         }
                         
-                        // Verifica se users é um array válido
-                        if (!Array.isArray(users)) {
+                        // SEGUNDA VERIFICAÇÃO: Se tem propriedades de erro (qualquer uma)
+                        if (data.error || data.erro || data.detalhes || data.debug) {
                             const div = document.createElement('div');
-                            div.textContent = 'Erro: Resposta inválida da API (não é um array)';
+                            const errorMsg = data.error || data.erro || data.detalhes || 'Erro desconhecido';
+                            div.textContent = 'Erro: ' + errorMsg;
                             div.style.color = 'red';
                             div.style.padding = '5px';
                             list.appendChild(div);
                             list.classList.add('active');
-                            console.error('Resposta da API não é um array:', users);
+                            console.error('Erro retornado pela API:', data);
                             return;
                         }
                         
-                        // Se não há usuários encontrados
-                        if (users.length === 0) {
+                        // TERCEIRA VERIFICAÇÃO: Se NÃO é um array
+                        if (!Array.isArray(data)) {
+                            const div = document.createElement('div');
+                            div.textContent = 'Erro: API retornou formato inválido (tipo: ' + typeof data + ')';
+                            div.style.color = 'red';
+                            div.style.padding = '5px';
+                            list.appendChild(div);
+                            list.classList.add('active');
+                            console.error('Resposta da API não é um array:', typeof data, data);
+                            return;
+                        }
+                        
+                        // QUARTA VERIFICAÇÃO: Se array está vazio
+                        if (data.length === 0) {
                             const div = document.createElement('div');
                             div.textContent = 'Nenhum usuário encontrado';
                             div.style.color = '#666';
@@ -66,24 +85,50 @@ document.addEventListener('DOMContentLoaded', function() {
                             return;
                         }
                         
-                        // Processa usuários encontrados
-                        users.forEach(user => {
-                            const div = document.createElement('div');
-                            div.textContent = user.name;
-                            div.dataset.userid = user.id;
-                            div.onclick = () => {
-                                input.value = user.name;
-                                input.dataset.userid = user.id;
+                        // QUINTA VERIFICAÇÃO: Processar apenas se chegou até aqui
+                        console.log('Processando', data.length, 'usuários');
+                        
+                        // PROCESSAMENTO SEGURO DOS USUÁRIOS
+                        try {
+                            data.forEach((user, index) => {
+                                // Valida cada usuário
+                                if (!user || typeof user !== 'object') {
+                                    console.warn('Usuário inválido no índice', index, ':', user);
+                                    return; // pula este usuário
+                                }
+                                
+                                if (!user.name || !user.id) {
+                                    console.warn('Usuário sem nome/id no índice', index, ':', user);
+                                    return; // pula este usuário
+                                }
+                                
+                                const div = document.createElement('div');
+                                div.textContent = user.name;
+                                div.dataset.userid = user.id;
+                                div.onclick = () => {
+                                    input.value = user.name;
+                                    input.dataset.userid = user.id;
+                                    list.classList.remove('active');
+                                    list.innerHTML = '';
+                                };
+                                list.appendChild(div);
+                            });
+                            
+                            // Mostra a lista se há usuários
+                            if (data.length > 0) {
+                                list.classList.add('active');
+                            } else {
                                 list.classList.remove('active');
-                                list.innerHTML = '';
-
-                            };
+                            }
+                            
+                        } catch (foreachError) {
+                            console.error('Erro no processamento dos usuários:', foreachError);
+                            const div = document.createElement('div');
+                            div.textContent = 'Erro no processamento dos dados';
+                            div.style.color = 'red';
+                            div.style.padding = '5px';
                             list.appendChild(div);
-                        });
-                        if (users.length > 0) {
                             list.classList.add('active');
-                        } else {
-                            list.classList.remove('active');
                         }
                     })
                     .catch(error => {
