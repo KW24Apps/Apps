@@ -1,13 +1,39 @@
 <?php
 try {
-    // Carrega configurações (que já define o webhook globalmente)
-    $config = require_once __DIR__ . '/../config.php';
+    // Conecta diretamente no banco para buscar webhook (igual aos outros arquivos)
+    $cliente = $_GET['cliente'] ?? $_POST['cliente'] ?? 'gnappC93fLq7RxKZVp28HswuAYMe1';
     
-    // Verifica se o webhook foi configurado
-    if (!isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) || 
-        !$GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) {
-        throw new Exception('Webhook do Bitrix não configurado. Configure no banco de dados para o cliente ou arquivo local.');
+    $config = [
+        'host' => 'localhost',
+        'dbname' => 'kw24co49_api_kwconfig',
+        'usuario' => 'kw24co49_kw24',
+        'senha' => 'BlFOyf%X}#jXwrR-vi'
+    ];
+    
+    $pdo = new PDO(
+        "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+        $config['usuario'],
+        $config['senha']
+    );
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    // Busca webhook
+    $stmt = $pdo->prepare("
+        SELECT ca.webhook_bitrix
+        FROM cliente_aplicacoes ca
+        JOIN clientes c ON ca.cliente_id = c.id
+        JOIN aplicacoes a ON ca.aplicacao_id = a.id
+        WHERE c.chave_acesso = ? AND a.slug = 'import'
+    ");
+    $stmt->execute([$cliente]);
+    $webhook = $stmt->fetchColumn();
+    
+    if (!$webhook) {
+        throw new Exception('Webhook não encontrado para o cliente: ' . $cliente);
     }
+    
+    // Define variável global para o BitrixDealHelper
+    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
     
 } catch (Exception $e) {
     header('Content-Type: application/json');
