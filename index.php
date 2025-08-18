@@ -2,11 +2,10 @@
 date_default_timezone_set('America/Sao_Paulo');
 require_once __DIR__ . '/helpers/UtilHelpers.php';
 require_once __DIR__ . '/helpers/LogHelper.php';
-// TEMPORARIAMENTE DESABILITADO PARA DEBUG
-// require_once __DIR__ . '/dao/AplicacaoAcessoDAO.php';
+require_once __DIR__ . '/dao/AplicacaoAcessoDAO.php';
 
 use Helpers\LogHelper;
-// use dao\AplicacaoAcessoDAO;
+use dao\AplicacaoAcessoDAO;
 use Helpers\UtilHelpers;
 
 $uri = $_SERVER['REQUEST_URI'];
@@ -15,32 +14,25 @@ $method = $_SERVER['REQUEST_METHOD'];
 $slugAplicacao = UtilHelpers::detectarAplicacaoPorUri($uri);
 
 // Gera o TRACE_ID uma única vez
-// TEMPORARIAMENTE DESABILITADO PARA DEBUG
-// LogHelper::gerarTraceId();
+LogHelper::gerarTraceId();
 
 // Log de erros via função
-/*
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
     LogHelper::registrarErroGlobal("[$errno] $errstr em $errfile na linha $errline", NOME_APLICACAO, 'Index::ErroGlobal');
 });
 set_exception_handler(function ($exception) {
     LogHelper::registrarErroGlobal("Exceção não capturada: " . $exception->getMessage(), NOME_APLICACAO, 'Index::ErroGlobal');
 });
-*/
 
 // Log de entrada global
-// TEMPORARIAMENTE DESABILITADO PARA DEBUG
-// LogHelper::registrarEntradaGlobal($uri, $method);
+LogHelper::registrarEntradaGlobal($uri, $method);
 
 
 // --- Autenticação global: busca e valida cliente ---
-// TEMPORARIAMENTE DESABILITADO PARA DEBUG
-/*
 $cliente = $_GET['cliente'] ?? null;
 if ($cliente && $slugAplicacao && NOME_APLICACAO !== 'bitrix-sync') {
     AplicacaoAcessoDAO::ValidarClienteAplicacao($cliente, $slugAplicacao);
 }
-*/
 // Direcionamento com base no prefixo
 switch (NOME_APLICACAO) {
 
