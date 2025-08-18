@@ -1,7 +1,15 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
+
+// Inclui o BitrixDealHelper
+require_once __DIR__ . '/../../../helpers/BitrixDealHelper.php';
+use Helpers\BitrixDealHelper;
 
 // Verifica se cliente foi informado
 $cliente = $_GET['cliente'] ?? $_POST['cliente'] ?? null;
@@ -155,35 +163,36 @@ try {
         'tipoJob' => 'criar_deals'
     ];
 
-    // Chama o importar_job.php
-    $url = 'http://localhost/Apps/public/form/api/importar_job.php?cliente=' . urlencode($cliente);
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($jobData));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
-        'Content-Length: ' . strlen(json_encode($jobData))
-    ]);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+    error_log("DEBUG: JobData preparado: " . print_r($jobData, true));
 
-    if ($httpCode === 200) {
-        $result = json_decode($response, true);
-        
+    // Em vez de usar curl, vamos chamar diretamente
+    $_POST['cliente'] = $cliente;
+    
+    // Simula input JSON para o importar_job.php
+    $tempInput = json_encode($jobData);
+    file_put_contents('php://temp', $tempInput);
+    
+    // Processa diretamente
+    $input = $jobData; // Usa os dados preparados diretamente
+    
+    $entityId = $input['entityId'];
+    $categoryId = $input['categoryId'];
+    $deals = $input['deals'];
+    $tipoJob = $input['tipoJob'];
+
+    // Usa a função do BitrixDealHelper para criar job na fila
+    $resultado = BitrixDealHelper::criarJobParaFila($entityId, $categoryId, $deals, $tipoJob);
+    
+    if ($resultado['status'] === 'job_criado') {
         // Redireciona para página de sucesso
         $redirectUrl = "/Apps/public/form/sucesso.php?cliente=" . urlencode($cliente) . 
-                      "&job_id=" . ($result['job_id'] ?? 'unknown') . 
+                      "&job_id=" . ($resultado['job_id'] ?? 'unknown') . 
                       "&total=" . count($deals);
         
         header("Location: $redirectUrl");
         exit;
     } else {
-        throw new Exception('Erro ao processar importação: ' . $response);
+        throw new Exception('Erro ao criar job: ' . ($resultado['mensagem'] ?? 'Erro desconhecido'));
     }
 
 } catch (Exception $e) {
