@@ -78,10 +78,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetch('/Apps/public/form/api/confirmacao_import.php')
                     .then(res => {
                         console.log('[DEBUG] Resposta recebida de api/confirmacao_import.php', res);
-                        return res.json();
+                        if (!res.ok) {
+                            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                        }
+                        return res.text(); // Primeiro pega como texto para debug
+                    })
+                    .then(text => {
+                        console.log('[DEBUG] Texto bruto de api/confirmacao_import.php:', text);
+                        try {
+                            const data = JSON.parse(text);
+                            console.log('[DEBUG] JSON de api/confirmacao_import.php', data);
+                            return data;
+                        } catch (e) {
+                            console.error('[DEBUG] Erro ao parsear JSON:', e);
+                            throw new Error('Resposta não é um JSON válido: ' + text.substring(0, 100));
+                        }
                     })
                     .then(data => {
-                        console.log('[DEBUG] JSON de api/confirmacao_import.php', data);
                         // Monta info
                         let info = `<b>SPA escolhida:</b> ${data.spa}<br>`;
                         info += `<b>Nome do arquivo:</b> ${data.arquivo}<br>`;
