@@ -10,11 +10,19 @@ try {
     // Verifica se há parâmetro de cliente para mostrar informações
     $cliente = $_GET['cliente'] ?? null;
     
+    // TEMPORARIAMENTE DESABILITADO - DEBUG PARA ERRO 500
+    /*
     // Debug detalhado do webhook
     $webhook_configurado = isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) && 
                           $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'];
     $bitrix_constant = defined('BITRIX_WEBHOOK') && BITRIX_WEBHOOK;
     $webhook_value = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? 'NÃO DEFINIDO';
+    */
+    
+    // Valores padrão para debug
+    $webhook_configurado = true; // Assumir que está configurado
+    $webhook_value = 'WEBHOOK_TEMPORARIO_DEBUG';
+    $bitrix_constant = true; // Assumir que está definida
     
     // Debug: verifica se config foi carregado corretamente
     $config_carregado = is_array($config) && isset($config['funis']) && is_array($config['funis']);

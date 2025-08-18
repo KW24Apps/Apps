@@ -58,7 +58,8 @@ try {
     }
     
     // Define variáveis globais para o BitrixHelper
-    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
+    // TEMPORARIAMENTE DESABILITADO PARA DEBUG
+    // $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
     
     $camposBitrix = BitrixHelper::consultarCamposCrm(2); // 2 = Negócios
     $webhook_configurado = true;

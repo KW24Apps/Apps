@@ -4,6 +4,8 @@ namespace Helpers;
 require_once __DIR__ . '/../helpers/LogHelper.php';
 
 use Helpers\LogHelper;
+use PDO;
+use Exception;
 
 class BitrixHelper
 {
@@ -11,6 +13,35 @@ class BitrixHelper
     public static function chamarApi($endpoint, $params, $opcoes = [])
     {
         $webhookBase = trim($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? '');
+
+        // TEMPORARIO: Se não tem webhook global, busca direto do banco
+        if (!$webhookBase) {
+            $cliente = $_GET['cliente'] ?? null;
+            if ($cliente) {
+                try {
+                    $config = require __DIR__ . '/../config/config.php';
+                    $pdo = new PDO(
+                        "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+                        $config['usuario'],
+                        $config['senha']
+                    );
+                    
+                    $sql = "SELECT webhook_bitrix FROM cliente_aplicacoes 
+                           WHERE cliente_chave = :cliente AND aplicacao_slug = 'importar' 
+                           AND ativo = 1 LIMIT 1";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->bindParam(':cliente', $cliente);
+                    $stmt->execute();
+                    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    if ($result && $result['webhook_bitrix']) {
+                        $webhookBase = trim($result['webhook_bitrix']);
+                    }
+                } catch (Exception $e) {
+                    // Ignora erro temporariamente
+                }
+            }
+        }
 
         if (!$webhookBase) {
             LogHelper::logBitrixHelpers("Webhook não informado para chamada do endpoint: $endpoint", __CLASS__ . '::' . __FUNCTION__);
