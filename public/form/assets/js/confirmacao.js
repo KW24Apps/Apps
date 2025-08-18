@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Monta info
                         let info = `<b>SPA escolhida:</b> ${data.spa}<br>`;
                         info += `<b>Nome do arquivo:</b> ${data.arquivo}<br>`;
-                        info += `<b>Linhas encontradas:</b> ${data.linhas}<br>`;
+                        info += `<b>Linhas encontradas:</b> ${data.total}<br>`;
                         info += `<b>Processamento:</b> Via sistema de jobs (assíncrono)`;
                         
                         document.getElementById('modal-info').innerHTML = info;
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: JSON.stringify({
                         entityId: data.spa,
                         categoryId: data.funil_id,
-                        deals: data.dados,
+                        deals: data.dados_processamento, // Usa dados com códigos Bitrix
                         tipoJob: 'criar_deals'
                     })
                 })
