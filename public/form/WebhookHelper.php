@@ -63,8 +63,8 @@ class WebhookHelper
      */
     public static function validarWebhook($webhook): bool
     {
+        // Validação mais permissiva - apenas verifica se não está vazio e é uma URL
         return !empty($webhook) && 
-               filter_var($webhook, FILTER_VALIDATE_URL) !== false &&
-               strpos($webhook, 'bitrix24') !== false;
+               filter_var($webhook, FILTER_VALIDATE_URL) !== false;
     }
 }
