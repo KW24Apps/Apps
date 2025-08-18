@@ -37,11 +37,15 @@ if ($cliente) {
         );
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        $stmt = $pdo->prepare("SELECT * FROM webhooks_bitrix WHERE client_key = ?");
+        $stmt = $pdo->prepare("
+            SELECT ca.webhook_bitrix
+            FROM cliente_aplicacoes ca 
+            WHERE ca.chave_acesso = ? AND ca.ativo = 1
+        ");
         $stmt->execute([$cliente]);
         $webhook = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($webhook && !empty($webhook['webhook_url'])) {
+        if ($webhook && !empty($webhook['webhook_bitrix'])) {
             $webhook_configurado = true;
         } else {
             $erro_configuracao = 'Webhook não encontrado para esta chave de cliente.';
