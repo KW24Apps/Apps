@@ -112,12 +112,8 @@ $php_warnings = ob_get_clean();
                         $nome = $campoInfo['title'] ?? $campoId;
                         $selected = '';
                         
-                        // Auto-matching por similaridade de nome
-                        if (!$temMatch && (
-                            stripos($nome, $col) !== false || 
-                            stripos($col, $nome) !== false ||
-                            levenshtein(strtolower($col), strtolower($nome)) <= 3
-                        )) {
+                        // Auto-matching apenas por nome 100% igual (case insensitive)
+                        if (!$temMatch && strcasecmp(trim($col), trim($nome)) === 0) {
                             $selected = ' selected';
                             $temMatch = true;
                         }
