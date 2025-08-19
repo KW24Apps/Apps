@@ -180,10 +180,22 @@ try {
         $chunkNumber = $chunkIndex + 1;
         error_log("DEBUG: Processando chunk $chunkNumber/" . $totalChunks . " com " . count($chunk) . " deals");
 
-        // Prepara dados para o job atual
+        // Prepara dados para o job atual usando dados do funil selecionado
+        $funilData = $formData['funil_data'] ?? null;
+        $entityTypeId = 2; // Default para deals tradicionais
+        $categoryId = (int)$spa; // Default para backward compatibility
+        
+        if ($funilData) {
+            $entityTypeId = $funilData['entityTypeId'];
+            $categoryId = $funilData['categoryId'];
+            error_log("DEBUG: Usando dados do funil - EntityTypeId: $entityTypeId, CategoryId: $categoryId");
+        } else {
+            error_log("DEBUG: Usando valores padrão - EntityTypeId: $entityTypeId, CategoryId: $categoryId");
+        }
+
         $jobData = [
-            'entityId' => 2, // CRM Deal entity
-            'categoryId' => (int)$spa,
+            'entityId' => $entityTypeId,
+            'categoryId' => $categoryId,
             'deals' => $chunk,
             'tipoJob' => 'criar_deals'
         ];
@@ -191,7 +203,7 @@ try {
         error_log("DEBUG: JobData chunk $chunkNumber preparado com " . count($jobData['deals']) . " deals");
 
         // Usa a função do BitrixDealHelper para criar job na fila
-        $resultado = BitrixDealHelper::criarJobParaFila(2, (int)$spa, $chunk, 'criar_deals');
+        $resultado = BitrixDealHelper::criarJobParaFila($entityTypeId, $categoryId, $chunk, 'criar_deals');
         
         if ($resultado['status'] === 'job_criado') {
             $jobIds[] = $resultado['job_id'];
