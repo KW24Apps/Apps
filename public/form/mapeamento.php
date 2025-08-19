@@ -4,31 +4,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 // Verifica se cliente foi informado
-    // Se não conseguiu buscar campos, usa campos padrão baseado no tipo
-    if (empty($camposBitrix)) {
-        if ($tipo === 'spa') {
-            // Campos padrão para SPAs
-            $camposBitrix = [
-                'title' => 'Título',
-                'entityId' => 'ID da Entidade', 
-                'categoryId' => 'Categoria',
-                'createdBy' => 'Criado por',
-                'assignedById' => 'Responsável'
-            ];
-        } else {
-            // Campos padrão para Deals tradicionais
-            $camposBitrix = [
-                'TITLE' => 'Título do Negócio',
-                'CONTACT_ID' => 'Pessoa de Contato',
-                'COMPANY_TITLE' => 'Empresa',
-                'PHONE' => 'Telefone',
-                'EMAIL' => 'E-mail',
-                'CATEGORY_ID' => 'Funil',
-                'ASSIGNED_BY_ID' => 'Responsável'
-            ];
-        }
-        error_log("Usando campos padrão para tipo: $tipo");
-    } $_GET['cliente'] ?? null;
+$cliente = $_GET['cliente'] ?? null;
 if (!$cliente) {
     die('<div style="font-family: Arial; text-align: center; margin-top: 50px;">
          <h2>❌ Parâmetro obrigatório</h2>
