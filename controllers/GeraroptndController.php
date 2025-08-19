@@ -283,9 +283,9 @@ class GeraroptndController
      */
     private function obterCombinacoesParaCriar($processType, $empresas, $ofer, $conv, $oportunidades, $dealId)
     {
-        // Buscar deals existentes que referenciam este closer
+        // CORREÇÃO: Buscar deals existentes com filtro correto para campo múltiplo
         $dealsExistentesResult = BitrixHelper::listarItensCrm(2, [
-            'ufcrm_1707331568' => $dealId
+            'ufcrm_1707331568' => [$dealId] // Array para campo múltiplo
         ], ['companyId', 'ufCrm_1646069163997']);
         
         $dealsExistentes = [];
@@ -296,12 +296,17 @@ class GeraroptndController
                 
                 if ($companyId && $opportunityId) {
                     $dealsExistentes[] = [
-                        'companyId' => $companyId,
-                        'opportunityId' => $opportunityId
+                        'companyId' => (string)$companyId,    // Normalizar como string
+                        'opportunityId' => (string)$opportunityId // Normalizar como string
                     ];
                 }
             }
         }
+        
+        // DEBUG: Log para acompanhar o que foi encontrado
+        error_log("DEBUG obterCombinacoesParaCriar - DealId: $dealId");
+        error_log("DEBUG obterCombinacoesParaCriar - Deals existentes encontrados: " . count($dealsExistentes));
+        error_log("DEBUG obterCombinacoesParaCriar - Deals existentes: " . json_encode($dealsExistentes));
         
         // Determinar quais oportunidades usar baseado no processType
         $oportunidadesParaUsar = [];
@@ -321,30 +326,37 @@ class GeraroptndController
                 }
                 
                 $combinacoesDesejadas[] = [
-                    'companyId' => $empresa,
-                    'opportunityId' => $oportunidades[$nomeOportunidade]['oportunidade'],
+                    'companyId' => (string)$empresa,    // Normalizar como string
+                    'opportunityId' => (string)$oportunidades[$nomeOportunidade]['oportunidade'], // Normalizar como string
                     'opportunityName' => $nomeOportunidade
                 ];
             }
         }
         
-        // Filtrar apenas as que NÃO existem ainda
+        error_log("DEBUG obterCombinacoesParaCriar - Combinações desejadas: " . count($combinacoesDesejadas));
+        error_log("DEBUG obterCombinacoesParaCriar - Combinações desejadas: " . json_encode($combinacoesDesejadas));
+        
+        // Filtrar apenas as que NÃO existem ainda com comparação rigorosa
         $combinacoesParaCriar = [];
         foreach ($combinacoesDesejadas as $desejada) {
             $jaExiste = false;
             
             foreach ($dealsExistentes as $existente) {
-                if ($existente['companyId'] == $desejada['companyId'] && 
-                    $existente['opportunityId'] == $desejada['opportunityId']) {
+                if ($existente['companyId'] === $desejada['companyId'] && 
+                    $existente['opportunityId'] === $desejada['opportunityId']) {
                     $jaExiste = true;
+                    error_log("DEBUG obterCombinacoesParaCriar - EXISTE: Company {$desejada['companyId']} + Opportunity {$desejada['opportunityId']}");
                     break;
                 }
             }
             
             if (!$jaExiste) {
                 $combinacoesParaCriar[] = $desejada;
+                error_log("DEBUG obterCombinacoesParaCriar - CRIAR: Company {$desejada['companyId']} + Opportunity {$desejada['opportunityId']} ({$desejada['opportunityName']})");
             }
         }
+        
+        error_log("DEBUG obterCombinacoesParaCriar - Final: " . count($combinacoesParaCriar) . " combinações para criar");
         
         return $combinacoesParaCriar;
     }

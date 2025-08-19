@@ -64,6 +64,39 @@ class DealBatchController
             
             $dao->marcarComoConcluido($job['job_id'], $resultado);
             
+            // NOVO: Verificar se deve reprocessar automaticamente
+            if (!empty($dados['controller_origem']) && 
+                $dados['controller_origem'] === 'GerarOpportunidadeController' &&
+                !empty($dados['deal_origem_id']) &&
+                isset($dados['reprocessar_automaticamente']) && 
+                $dados['reprocessar_automaticamente'] === true) {
+                
+                // Executar o GerarOpportunidadeController novamente para verificar se ainda falta algo
+                $dealOrigemId = $dados['deal_origem_id'];
+                $webhook = $dados['webhook'] ?? '';
+                
+                // Restaurar webhook para nova execução
+                if ($webhook) {
+                    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
+                }
+                
+                LogHelper::logDealBatchController("REPROCESSAMENTO - Executando GerarOpportunidadeController novamente | Deal: $dealOrigemId");
+                
+                // Simular GET para o controller
+                $_GET['deal'] = $dealOrigemId;
+                
+                try {
+                    $controller = new \Controllers\GeraroptndController();
+                    ob_start(); // Capturar output para não interferir
+                    $controller->executar();
+                    ob_end_clean(); // Descartar output
+                    
+                    LogHelper::logDealBatchController("REPROCESSAMENTO - Concluído com sucesso | Deal: $dealOrigemId");
+                } catch (\Exception $e) {
+                    LogHelper::logDealBatchController("REPROCESSAMENTO - Falhou | Deal: $dealOrigemId | Erro: " . $e->getMessage());
+                }
+            }
+            
             // Log de sucesso
             $quantidade = $resultado['quantidade'] ?? 0;
             $tempo = $resultado['tempo_total_minutos'] ?? 0;
