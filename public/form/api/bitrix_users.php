@@ -94,31 +94,49 @@ try {
         
     } while ($hasMore && $start < 500); // Limita a 500 usuários para performance
     
-    // Filtra e formata usuários
+    // Filtra e formata usuários (evitando duplicatas)
     $usuarios = [];
+    $nomesJaAdicionados = [];
     $count = 0;
+    
     foreach ($allUsers as $user) {
         $nome = trim(($user['NAME'] ?? '') . ' ' . ($user['LAST_NAME'] ?? ''));
-        if ($nome && ($q === '' || stripos($nome, $q) !== false)) {
-            $usuarios[] = [
-                'id' => $user['ID'],
-                'name' => $nome
-            ];
-            $count++;
-            // Limita a 50 resultados para performance no frontend
-            if ($count >= 50) {
-                break;
-            }
+        $userId = $user['ID'] ?? '';
+        
+        // Pula se não tem nome ou ID
+        if (!$nome || !$userId) {
+            continue;
+        }
+        
+        // Verifica se corresponde à busca
+        if ($q !== '' && stripos($nome, $q) === false) {
+            continue;
+        }
+        
+        // Evita duplicatas pelo nome (case insensitive)
+        $nomeLower = strtolower($nome);
+        if (isset($nomesJaAdicionados[$nomeLower])) {
+            continue;
+        }
+        
+        $usuarios[] = [
+            'id' => $userId,
+            'name' => $nome
+        ];
+        
+        $nomesJaAdicionados[$nomeLower] = true;
+        $count++;
+        
+        // Limita a 50 resultados para performance no frontend
+        if ($count >= 50) {
+            break;
         }
     }
     
-    // Adiciona informação de debug
-    $response = [
-        'users' => $usuarios,
-        'total_found' => count($usuarios),
-        'total_searched' => count($allUsers),
-        'query' => $q
-    ];
+    // Ordena por nome
+    usort($usuarios, function($a, $b) {
+        return strcasecmp($a['name'], $b['name']);
+    });
     
     echo json_encode($usuarios); // Retorna apenas os usuários para compatibilidade
     

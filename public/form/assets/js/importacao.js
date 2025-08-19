@@ -130,6 +130,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         // PROCESSAMENTO SEGURO DOS USUÁRIOS
                         try {
+                            const uniqueUsers = new Map(); // Para evitar duplicatas
+                            
                             data.forEach((user, index) => {
                                 // Valida cada usuário
                                 if (!user || typeof user !== 'object') {
@@ -142,6 +144,20 @@ document.addEventListener('DOMContentLoaded', function() {
                                     return; // pula este usuário
                                 }
                                 
+                                // Evita duplicatas usando o nome como chave (case insensitive)
+                                const nameKey = user.name.toLowerCase().trim();
+                                if (!uniqueUsers.has(nameKey)) {
+                                    uniqueUsers.set(nameKey, user);
+                                }
+                            });
+                            
+                            // Converte Map para array e ordena
+                            const sortedUsers = Array.from(uniqueUsers.values()).sort((a, b) => 
+                                a.name.localeCompare(b.name)
+                            );
+                            
+                            // Cria elementos DOM apenas para usuários únicos
+                            sortedUsers.forEach(user => {
                                 const div = document.createElement('div');
                                 div.textContent = user.name;
                                 div.dataset.userid = user.id;
