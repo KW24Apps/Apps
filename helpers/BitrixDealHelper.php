@@ -298,10 +298,10 @@ class BitrixDealHelper
     }
 
     // Cria um job para a fila de processamento
-    public static function criarJobParaFila($entityId, $categoryId, array $deals, $tipoJob, $dadosExtras = []): array
+    public static function criarJobParaFila($entityId, $categoryId, array $deals, $tipoJob): array
     {
         try {
-            // Prepara dados para o job, incluindo o webhook e dados extras
+            // Prepara dados para o job, incluindo o webhook
             $webhook = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? '';
             $dados = [
                 'spa' => $entityId,
@@ -309,10 +309,6 @@ class BitrixDealHelper
                 'deals' => $deals,
                 'webhook' => $webhook
             ];
-            
-            // Adicionar dados extras (como controller_origem, deal_origem_id, etc.)
-            $dados = array_merge($dados, $dadosExtras);
-            
             $totalItens = count($deals);
             $jobId = uniqid('job_', true);
             $dao = new BatchJobDAO();
