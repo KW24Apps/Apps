@@ -44,14 +44,22 @@ try {
     $start = 0;
     $limit = 50; // Bitrix limita a 50 por request
     
+    // Se não há query específica, busca todos os usuários ativos
+    $searchFilter = ['ACTIVE' => 'Y'];
+    if (!empty($q)) {
+        // Se há query, adiciona filtro de busca por nome
+        $searchFilter['NAME'] = '%' . $q . '%';
+        $searchFilter['LAST_NAME'] = '%' . $q . '%';
+    }
+    
     do {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-            'ACTIVE' => 'Y',
-            'ORDER' => ['ID' => 'ASC'],
+            'FILTER' => $searchFilter,
+            'ORDER' => ['NAME' => 'ASC'],
             'SELECT' => ['ID', 'NAME', 'LAST_NAME', 'EMAIL'],
             'START' => $start
         ]));
@@ -97,7 +105,6 @@ try {
     // Filtra e formata usuários (evitando duplicatas)
     $usuarios = [];
     $nomesJaAdicionados = [];
-    $count = 0;
     
     foreach ($allUsers as $user) {
         $nome = trim(($user['NAME'] ?? '') . ' ' . ($user['LAST_NAME'] ?? ''));
@@ -105,11 +112,6 @@ try {
         
         // Pula se não tem nome ou ID
         if (!$nome || !$userId) {
-            continue;
-        }
-        
-        // Verifica se corresponde à busca
-        if ($q !== '' && stripos($nome, $q) === false) {
             continue;
         }
         
@@ -125,12 +127,6 @@ try {
         ];
         
         $nomesJaAdicionados[$nomeLower] = true;
-        $count++;
-        
-        // Limita a 50 resultados para performance no frontend
-        if ($count >= 50) {
-            break;
-        }
     }
     
     // Ordena por nome
@@ -138,7 +134,7 @@ try {
         return strcasecmp($a['name'], $b['name']);
     });
     
-    echo json_encode($usuarios); // Retorna apenas os usuários para compatibilidade
+    echo json_encode($usuarios);
     
 } catch (Exception $e) {
     http_response_code(500);
