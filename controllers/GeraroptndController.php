@@ -86,54 +86,56 @@ class GeraroptndController
 
         // Passo 4: Construir mapa $oportunidades apenas das selecionadas
         $oportunidades = [];
-        $debugCrmFields = null; // Debug temporário
         
-        // A API do Bitrix retorna os campos diretamente, não em result.fields
-        if (!empty($crmFields) && (isset($crmFields['ufCrm_1646069163997']) || 
-            isset($crmFields['ufCrm_1688060696']) || isset($crmFields['ufCrm_1728327366']))) {
+        // CORREÇÃO: Usar os dados já mapeados do consultarDeal() ao invés de tentar mapear novamente
+        $oportunidadesSelecionadas = array_merge($ofer, $conv);
+        $oportunidadesSelecionadas = array_unique($oportunidadesSelecionadas);
+        
+        // Mapear oferecidas
+        if (!empty($item['ufCrm_1688060696']['valor']) && !empty($item['ufCrm_1688060696']['texto'])) {
+            $valoresOfer = $item['ufCrm_1688060696']['valor'];
+            $textosOfer = $item['ufCrm_1688060696']['texto'];
             
-            // Primeiro, coletar todas as oportunidades selecionadas (oferecidas + convertidas)
-            $oportunidadesSelecionadas = array_merge($ofer, $conv);
-            $oportunidadesSelecionadas = array_unique($oportunidadesSelecionadas);
-            
-            $debugCrmFields = [
-                'oportunidades_selecionadas' => $oportunidadesSelecionadas,
-                'campos_disponiveis' => ['uf_1646069163997' => isset($crmFields['ufCrm_1646069163997']), 
-                                        'uf_1688060696' => isset($crmFields['ufCrm_1688060696']),
-                                        'uf_1728327366' => isset($crmFields['ufCrm_1728327366'])]
-            ];
-            
-            // Mapear campos de oportunidade usando Enum
-            $camposOportunidades = GeraroptndEnums::CAMPOS_OPORTUNIDADES;
-            
-            foreach ($camposOportunidades as $campo => $tipo) {
-                if (isset($crmFields[$campo]['items'])) {
-                    $debugCrmFields[$campo] = [
-                        'tem_items' => true,
-                        'items_count' => count($crmFields[$campo]['items'])
-                    ];
-                    
-                    foreach ($crmFields[$campo]['items'] as $itemData) {
-                        $nomeAmigavel = $itemData['VALUE'] ?? '';
-                        $itemId = $itemData['ID'] ?? '';
-                        
-                        if (!empty($nomeAmigavel) && in_array($nomeAmigavel, $oportunidadesSelecionadas)) {
-                            if (!isset($oportunidades[$nomeAmigavel])) {
-                                $oportunidades[$nomeAmigavel] = [];
-                            }
-                            
-                            // Armazenar apenas o ID (o nome já é a chave do array)
-                            $oportunidades[$nomeAmigavel][$tipo] = $itemId;
-                        }
+            for ($i = 0; $i < count($textosOfer); $i++) {
+                $nomeOportunidade = $textosOfer[$i];
+                $idOportunidade = $valoresOfer[$i];
+                
+                if (in_array($nomeOportunidade, $oportunidadesSelecionadas)) {
+                    if (!isset($oportunidades[$nomeOportunidade])) {
+                        $oportunidades[$nomeOportunidade] = [];
                     }
-                } else {
-                    $debugCrmFields[$campo] = ['tem_items' => false, 'items_count' => 0];
+                    $oportunidades[$nomeOportunidade]['oferecida'] = $idOportunidade;
+                    $oportunidades[$nomeOportunidade]['oportunidade'] = $idOportunidade; // Para usar na criação
                 }
             }
-        } else {
-            $debugCrmFields = ['erro' => 'Campos de oportunidade não encontrados na resposta da API'];
         }
         
+        // Mapear convertidas (se não for apenas "N")
+        if (!empty($item['ufCrm_1728327366']['valor']) && 
+            !empty($item['ufCrm_1728327366']['texto']) && 
+            $item['ufCrm_1728327366']['texto'] !== 'N') {
+            
+            $valoresConv = is_array($item['ufCrm_1728327366']['valor']) ? 
+                          $item['ufCrm_1728327366']['valor'] : [$item['ufCrm_1728327366']['valor']];
+            $textosConv = is_array($item['ufCrm_1728327366']['texto']) ? 
+                         $item['ufCrm_1728327366']['texto'] : [$item['ufCrm_1728327366']['texto']];
+            
+            for ($i = 0; $i < count($textosConv); $i++) {
+                $nomeOportunidade = $textosConv[$i];
+                $idOportunidade = $valoresConv[$i];
+                
+                if (in_array($nomeOportunidade, $oportunidadesSelecionadas)) {
+                    if (!isset($oportunidades[$nomeOportunidade])) {
+                        $oportunidades[$nomeOportunidade] = [];
+                    }
+                    $oportunidades[$nomeOportunidade]['convertida'] = $idOportunidade;
+                    if (!isset($oportunidades[$nomeOportunidade]['oportunidade'])) {
+                        $oportunidades[$nomeOportunidade]['oportunidade'] = $idOportunidade;
+                    }
+                }
+            }
+        }
+
         // Passo 5: Montar campos base para espelhar usando Enum
         $camposParaEspelhar = [];
         $camposExcluir = GeraroptndEnums::CAMPOS_EXCLUIR;
