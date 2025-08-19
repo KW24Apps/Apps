@@ -2,6 +2,11 @@
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
+
+// Log temporário para debug
+ini_set('log_errors', 1);
+ini_set('error_log', '../logs/debug_bitrix.log');
+
 header('Content-Type: application/json; charset=utf-8');
 
 $q = $_GET['q'] ?? '';
@@ -37,20 +42,15 @@ try {
     if (!$webhook) {
         throw new Exception('Webhook não encontrado para o cliente: ' . $cliente);
     }
-    
-    // Busca usuários do Bitrix via API direta com paginação
+
+    // Busca SEMPRE todos os usuários (mais confiável)
     $url = rtrim($webhook, '/') . '/user.get.json';
     $allUsers = [];
-    $start = 0;
-    $limit = 50; // Bitrix limita a 50 por request
     
-    // Se não há query específica, busca todos os usuários ativos
-    $searchFilter = ['ACTIVE' => 'Y'];
-    if (!empty($q)) {
-        // Se há query, adiciona filtro de busca por nome
-        $searchFilter['NAME'] = '%' . $q . '%';
-        $searchFilter['LAST_NAME'] = '%' . $q . '%';
-    }
+    error_log("DEBUG: Iniciando busca de usuários. Query: '$q'");
+    
+    $start = 0;
+    $limit = 50;
     
     do {
         $ch = curl_init();
@@ -58,7 +58,7 @@ try {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-            'FILTER' => $searchFilter,
+            'FILTER' => ['ACTIVE' => 'Y'],
             'ORDER' => ['NAME' => 'ASC'],
             'SELECT' => ['ID', 'NAME', 'LAST_NAME', 'EMAIL'],
             'START' => $start
@@ -71,59 +71,82 @@ try {
         $curlError = curl_error($ch);
         curl_close($ch);
         
+        error_log("DEBUG: Página $start - HTTP: $httpCode, cURL Error: $curlError");
+        
         if ($curlError) {
-            throw new Exception('Erro cURL: ' . $curlError);
+            error_log("ERRO cURL: " . $curlError);
+            break;
         }
         
         if ($httpCode !== 200) {
-            throw new Exception('Erro HTTP: ' . $httpCode . ' - ' . substr($response, 0, 200));
+            error_log("ERRO HTTP: " . $httpCode . " - " . substr($response, 0, 200));
+            break;
         }
         
         $data = json_decode($response, true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception('Erro JSON: ' . json_last_error_msg());
+            error_log("ERRO JSON: " . json_last_error_msg());
+            break;
         }
         
         if (isset($data['error'])) {
-            throw new Exception('Erro Bitrix: ' . ($data['error_description'] ?? 'Erro desconhecido'));
+            error_log("ERRO Bitrix: " . ($data['error_description'] ?? 'Erro desconhecido'));
+            break;
         }
         
         if (!isset($data['result']) || !is_array($data['result'])) {
-            throw new Exception('Resposta inválida da API Bitrix');
+            error_log("ERRO: Resposta inválida da API Bitrix");
+            break;
         }
         
         // Adiciona usuários desta página
-        $allUsers = array_merge($allUsers, $data['result']);
+        $pageUsers = $data['result'];
+        $allUsers = array_merge($allUsers, $pageUsers);
         
         // Prepara para próxima página
         $start += $limit;
-        $hasMore = count($data['result']) === $limit; // Se retornou 50, pode haver mais
+        $hasMore = count($pageUsers) === $limit;
         
-        // Log de debug da paginação
-        error_log("DEBUG: Página start=$start, recebidos=" . count($data['result']) . ", hasMore=" . ($hasMore ? 'sim' : 'não'));
+        error_log("DEBUG: Página start=$start, recebidos=" . count($pageUsers) . ", total=" . count($allUsers));
         
-    } while ($hasMore && $start < 2000); // Aumenta limite para 2000 usuários
+    } while ($hasMore && $start < 1000); // Limite de 1000 usuários
     
     // Log para debug
     error_log("DEBUG: Buscados " . count($allUsers) . " usuários do Bitrix para cliente: " . $cliente);
+    error_log("DEBUG: Query de filtro: '$q'");
     
     // Filtra e formata usuários (evitando duplicatas)
     $usuarios = [];
     $nomesJaAdicionados = [];
+    $countTotal = 0;
+    $countFiltrados = 0;
     
     foreach ($allUsers as $user) {
+        $countTotal++;
         $nome = trim(($user['NAME'] ?? '') . ' ' . ($user['LAST_NAME'] ?? ''));
         $userId = $user['ID'] ?? '';
         
+        error_log("DEBUG: Processando usuário $countTotal - ID: $userId, Nome: '$nome'");
+        
         // Pula se não tem nome ou ID
         if (!$nome || !$userId) {
+            error_log("DEBUG: Pulando usuário sem nome ou ID");
             continue;
         }
+        
+        // Se há query, verifica se o nome corresponde
+        if (!empty($q) && stripos($nome, $q) === false) {
+            error_log("DEBUG: Usuário '$nome' não corresponde à query '$q'");
+            continue;
+        }
+        
+        $countFiltrados++;
         
         // Evita duplicatas pelo nome (case insensitive)
         $nomeLower = strtolower($nome);
         if (isset($nomesJaAdicionados[$nomeLower])) {
+            error_log("DEBUG: Usuário '$nome' já foi adicionado (duplicata)");
             continue;
         }
         
@@ -133,6 +156,8 @@ try {
         ];
         
         $nomesJaAdicionados[$nomeLower] = true;
+        
+        error_log("DEBUG: Usuário '$nome' adicionado à lista final");
     }
     
     // Ordena por nome
@@ -141,7 +166,9 @@ try {
     });
     
     // Log final para debug
-    error_log("DEBUG: Retornando " . count($usuarios) . " usuários únicos após filtros");
+    error_log("DEBUG: Processados $countTotal usuários, $countFiltrados passaram no filtro");
+    error_log("DEBUG: Retornando " . count($usuarios) . " usuários únicos após filtros para query: '$q'");
+    error_log("DEBUG: Primeiros 5 usuários: " . json_encode(array_slice(array_column($usuarios, 'name'), 0, 5)));
     
     echo json_encode($usuarios);
     
