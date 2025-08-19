@@ -1,9 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Sistema de autocomplete carregado');
+    console.log('🚀 Sistema de autocomplete v2.0 carregado:', new Date().toISOString());
 
     // Cache global de usuários para evitar requisições desnecessárias
     let usersCache = null;
     let cachePromise = null;
+    
+    // Evita qualquer conflito com versões anteriores
+    window.currentRequest = null;
     
     function setupAutocomplete(inputId, listId) {
         const input = document.getElementById(inputId);
