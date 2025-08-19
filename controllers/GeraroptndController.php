@@ -455,19 +455,11 @@ class GeraroptndController
             
             // 1. Adicionar todos os campos que devem ser espelhados (APENAS valores simples)
             foreach ($camposParaEspelhar as $campo => $valorCompleto) {
-                // CORREÇÃO: Extrair corretamente o valor baseado na estrutura
+                // CORREÇÃO RIGOROSA: Sempre extrair apenas o valor, nunca objetos
                 if (is_array($valorCompleto) && isset($valorCompleto['valor'])) {
-                    // Se tem estrutura {nome, valor, texto, type}, pegar apenas o valor
+                    // Pegar SEMPRE o valor, mesmo se for null
                     $valor = $valorCompleto['valor'];
-                    
-                    // Se o valor ainda é um array, verificar se é múltiplo
-                    if (is_array($valor) && count($valor) === 1) {
-                        $dealCompleto[$campo] = $valor[0]; // Converter array de 1 elemento para valor único
-                    } elseif (is_array($valor)) {
-                        $dealCompleto[$campo] = $valor; // Manter array múltiplo
-                    } else {
-                        $dealCompleto[$campo] = $valor; // Valor simples
-                    }
+                    $dealCompleto[$campo] = $valor;
                 } else {
                     // Valor direto sem estrutura
                     $dealCompleto[$campo] = $valorCompleto;
@@ -490,4 +482,4 @@ class GeraroptndController
         ];
     }
 }
-
+    
