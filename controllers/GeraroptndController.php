@@ -230,7 +230,7 @@ class GeraroptndController
             $arrayFinalParaCriacao['entityId'],
             $arrayFinalParaCriacao['categoryId'], 
             $arrayFinalParaCriacao['fields'],
-            'gerar_oportunidades' // Tipo do job
+            'criar_deals' // Tipo do job
         );
         
         // ============================================
@@ -262,7 +262,7 @@ class GeraroptndController
                 'modo_processamento' => 'assincrono_via_cron'
             ],
             'configuracao_processamento' => [
-                'tipo_job' => 'gerar_oportunidades',
+                'tipo_job' => 'criar_deals',
                 'entity_id' => $arrayFinalParaCriacao['entityId'],
                 'category_id' => $arrayFinalParaCriacao['categoryId'],
                 'total_deals_no_job' => $resultadoCriacao['total_deals'] ?? 0
@@ -455,13 +455,17 @@ class GeraroptndController
             
             // 1. Adicionar todos os campos que devem ser espelhados (APENAS valores simples)
             foreach ($camposParaEspelhar as $campo => $valorCompleto) {
-                // CORREÇÃO RIGOROSA: Sempre extrair apenas o valor, nunca objetos
-                if (is_array($valorCompleto) && isset($valorCompleto['valor'])) {
-                    // Pegar SEMPRE o valor, mesmo se for null
-                    $valor = $valorCompleto['valor'];
-                    $dealCompleto[$campo] = $valor;
+                // CORREÇÃO ULTRA-RIGOROSA: Sempre extrair apenas valores primitivos
+                if (is_array($valorCompleto)) {
+                    if (isset($valorCompleto['valor'])) {
+                        // Estrutura completa {nome, valor, texto, type} - pegar só o valor
+                        $dealCompleto[$campo] = $valorCompleto['valor'];
+                    } else {
+                        // Array simples - manter como está
+                        $dealCompleto[$campo] = $valorCompleto;
+                    }
                 } else {
-                    // Valor direto sem estrutura
+                    // Valor direto (string, int, null)
                     $dealCompleto[$campo] = $valorCompleto;
                 }
             }
@@ -482,4 +486,4 @@ class GeraroptndController
         ];
     }
 }
-    
+
