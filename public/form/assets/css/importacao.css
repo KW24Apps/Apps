@@ -1,17 +1,17 @@
-/* Padronização dos campos para ambos os formulários - Adaptado para PC */
+/* Padronização dos campos para ambos os formulários - Tamanho moderado */
 .import-form input,
 .import-form select {
     width: 100%;
-    height: 58px;
-    padding: 16px 24px;
+    height: 50px;
+    padding: 14px 20px;
     border: 2px solid #e0e0e0;
-    border-radius: 12px;
+    border-radius: 10px;
     background: #f7f9fa;
-    font-size: 1.1rem;
+    font-size: 1rem;
     transition: border 0.2s, box-shadow 0.2s;
     outline: none;
     box-sizing: border-box;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
 }
 
 .import-form input:focus,
@@ -21,58 +21,58 @@
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
 
-/* Labels padronizados - Adaptado para PC */
+/* Labels padronizados - Tamanho moderado */
 .import-form label {
     display: block;
     font-weight: 600;
     color: #495057;
-    margin-bottom: 12px;
-    font-size: 1.1rem;
+    margin-bottom: 8px;
+    font-size: 1rem;
     line-height: 1.4;
 }
 
-/* Parágrafos de descrição - Adaptado para PC */
+/* Parágrafos de descrição - Tamanho moderado */
 .import-form p {
-    font-size: 1.1rem;
-    line-height: 1.6;
+    font-size: 1rem;
+    line-height: 1.5;
     color: #6c757d;
-    margin: 0 0 24px 0;
+    margin: 0 0 18px 0;
 }
 /* Modernização do formulário de importação */
 /* Título mais harmônico, menor e cor suave */
-/* Título dentro do card, harmônico - Adaptado para PC */
+/* Título dentro do card, harmônico - Tamanho moderado */
 .import-form-title {
-    font-size: 1.6rem;
+    font-size: 1.4rem;
     font-weight: 600;
     color: #2c3e50;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     margin-top: 0;
     text-align: center;
-    letter-spacing: 0.02em;
-    padding-top: 4px;
+    letter-spacing: 0.01em;
+    padding-top: 2px;
 }
 
 .import-form {
     background: #fff;
-    padding: 48px 64px 48px 64px;
-    border-radius: 20px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.1);
-    width: 1200px;
+    padding: 32px 48px 32px 48px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    width: 950px;
     max-width: 95vw;
-    min-height: 700px;
-    margin: 40px auto 0 auto;
+    min-height: 520px;
+    margin: 20px auto 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 20px;
     box-sizing: border-box;
 }
 
-/* Customização do campo de upload - Adaptado para PC */
+/* Customização do campo de upload - Tamanho moderado */
 .file-upload {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin-bottom: 8px;
+    gap: 12px;
+    margin-bottom: 6px;
 }
 .file-upload input[type="file"] {
     opacity: 0;
@@ -86,9 +86,9 @@
     background: #f1f3f7;
     color: #0078d7;
     border: 2px solid #d1d5db;
-    border-radius: 10px;
-    padding: 12px 28px;
-    font-size: 1.1rem;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
@@ -101,9 +101,9 @@
 }
 .file-selected {
     color: #444;
-    font-size: 1.05rem;
+    font-size: 1rem;
     font-style: italic;
-    max-width: 300px;
+    max-width: 250px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -163,31 +163,31 @@ input:focus, select:focus {
     border: 1.5px solid #007bff;
     background: #fff;
 }
-/* Botões padronizados - Adaptado para PC */
+/* Botões padronizados - Tamanho moderado */
 .import-form button,
 .import-form .confirm-btn {
     width: 100%;
-    height: 64px;
-    margin-top: 32px;
+    height: 52px;
+    margin-top: 24px;
     padding: 0;
     background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
     color: #fff;
     border: none;
-    border-radius: 12px;
+    border-radius: 10px;
     cursor: pointer;
-    font-size: 1.2rem;
+    font-size: 1.05rem;
     font-weight: 600;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
-    box-shadow: 0 4px 16px rgba(0,123,255,0.2);
-    transition: all 0.3s ease;
+    box-shadow: 0 3px 12px rgba(0,123,255,0.2);
+    transition: all 0.2s ease;
     box-sizing: border-box;
 }
 
 .import-form button:hover,
 .import-form .confirm-btn:hover {
     background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
-    box-shadow: 0 6px 20px rgba(0,123,255,0.3);
+    box-shadow: 0 4px 16px rgba(0,123,255,0.3);
     transform: translateY(-1px);
 }
 #mensagem {
@@ -198,24 +198,24 @@ input:focus, select:focus {
     position: absolute;
     background: #fff;
     border: 2px solid #e0e0e0;
-    border-radius: 12px;
-    max-height: 200px;
+    border-radius: 10px;
+    max-height: 180px;
     overflow-y: auto;
     z-index: 10;
     width: 100%;
     display: none;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.12);
     top: 100%;
-    margin-top: 4px;
+    margin-top: 2px;
 }
 .autocomplete-list.active {
     display: block;
 }
 .autocomplete-list div {
-    padding: 14px 16px;
+    padding: 12px 14px;
     cursor: pointer;
-    border-radius: 8px;
-    font-size: 1.05rem;
+    border-radius: 6px;
+    font-size: 1rem;
     transition: background 0.15s;
 }
 .autocomplete-list div:hover {
@@ -505,41 +505,41 @@ input:focus, select:focus {
     max-width: 200px;
 }
 
-/* Responsivo para página de confirmação - Adaptado para PC */
-@media (max-width: 1400px) {
+/* Responsivo para página de confirmação - Tamanho moderado */
+@media (max-width: 1100px) {
     .import-form {
-        width: 1000px;
-        padding: 40px 48px;
+        width: 850px;
+        padding: 28px 40px;
     }
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
     .import-form {
-        width: 900px;
-        padding: 36px 40px;
+        width: 750px;
+        padding: 24px 32px;
     }
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 800px) {
     .import-form {
         width: 95%;
-        max-width: 800px;
-        padding: 32px 36px;
+        max-width: 700px;
+        padding: 20px 28px;
     }
 }
 
 @media (max-width: 768px) {
     .import-form {
         max-width: 95%;
-        padding: 24px;
-        margin: 20px auto;
+        padding: 20px;
+        margin: 15px auto;
     }
     
     .import-form input,
     .import-form select {
-        height: 52px;
+        height: 48px;
         font-size: 1rem;
-        padding: 14px 18px;
+        padding: 12px 16px;
     }
     
     .import-form label {
@@ -547,7 +547,7 @@ input:focus, select:focus {
     }
     
     .import-form-title {
-        font-size: 1.4rem;
+        font-size: 1.3rem;
     }
     
     .summary-item {
@@ -575,4 +575,91 @@ input:focus, select:focus {
     .action-links .back-btn {
         max-width: none;
     }
+}
+
+/* Loading Spinner para Mapeamento */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 0;
+    text-align: center;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #e9ecef;
+    border-top: 5px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+    color: #6c757d;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.loading-subtitle {
+    color: #8a8a8a;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Ocultar conteúdo durante loading */
+.content-hidden {
+    display: none !important;
+}
+
+/* Animação de fade-in quando o conteúdo aparecer */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Estilos específicos para página de mapeamento */
+.back-btn {
+    display: inline-block;
+    text-align: center;
+    padding: 12px 20px;
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+    margin-top: 12px;
+}
+
+.back-btn:hover {
+    background: #545b62;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* Ajuste para ações de confirmação no mapeamento */
+.confirmation-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
 }

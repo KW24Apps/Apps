@@ -4,13 +4,54 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 // Verifica se cliente foi informado
-$cliente = $_GET['cliente'] ?? null;
+    // Se não conseguiu buscar campos, usa campos padrão baseado no tipo
+    if (empty($camposBitrix)) {
+        if ($tipo === 'spa') {
+            // Campos padrão para SPAs
+            $camposBitrix = [
+                'title' => 'Título',
+                'entityId' => 'ID da Entidade', 
+                'categoryId' => 'Categoria',
+                'createdBy' => 'Criado por',
+                'assignedById' => 'Responsável'
+            ];
+        } else {
+            // Campos padrão para Deals tradicionais
+            $camposBitrix = [
+                'TITLE' => 'Título do Negócio',
+                'CONTACT_ID' => 'Pessoa de Contato',
+                'COMPANY_TITLE' => 'Empresa',
+                'PHONE' => 'Telefone',
+                'EMAIL' => 'E-mail',
+                'CATEGORY_ID' => 'Funil',
+                'ASSIGNED_BY_ID' => 'Responsável'
+            ];
+        }
+        error_log("Usando campos padrão para tipo: $tipo");
+    } $_GET['cliente'] ?? null;
 if (!$cliente) {
     die('<div style="font-family: Arial; text-align: center; margin-top: 50px;">
          <h2>❌ Parâmetro obrigatório</h2>
          <p>Esta aplicação requer o parâmetro <code>?cliente=CHAVE_CLIENTE</code> na URL.</p>
          </div>');
 }
+
+// Verifica se tem dados da importação na sessão
+$dadosImportacao = $_SESSION['importacao_form'] ?? null;
+if (!$dadosImportacao || !isset($dadosImportacao['funil'])) {
+    die('<div style="font-family: Arial; text-align: center; margin-top: 50px;">
+         <h2>❌ Dados de importação não encontrados</h2>
+         <p>Por favor, volte para a tela de importação e selecione um funil.</p>
+         <a href="/Apps/public/form/importacao.php?cliente=' . urlencode($cliente) . '">← Voltar para Importação</a>
+         </div>');
+}
+
+// Extrai dados do funil selecionado
+$funilSelecionado = $dadosImportacao['funil'];
+$dadosFunil = explode('_', $funilSelecionado);
+$entityTypeId = $dadosFunil[0] ?? 2;
+$categoryId = $dadosFunil[1] ?? null;
+$tipo = $dadosFunil[2] ?? 'deal';
 
 // Conecta diretamente ao banco para buscar webhook
 try {
@@ -92,11 +133,16 @@ require_once __DIR__ . '/../../helpers/BitrixHelper.php';
 use Helpers\BitrixHelper;
 
 try {
-    // O webhook já foi configurado anteriormente, apenas busca campos do Bitrix
-    $camposBitrix = BitrixHelper::consultarCamposCrm(2); // 2 = Negócios
+    // O webhook já foi configurado anteriormente, busca campos específicos do funil selecionado
+    error_log("Buscando campos para entityTypeId: $entityTypeId, tipo: $tipo");
+    
+    // Para SPAs (Smart Process Automation) usa entityTypeId específico
+    $camposBitrix = BitrixHelper::consultarCamposCrm($entityTypeId);
     $webhook_configurado = true;
     
-    // Se não conseguiu buscar campos, usa campos padrão
+    error_log("Campos encontrados: " . json_encode(array_keys($camposBitrix ?? [])));
+    
+    // Se não conseguiu buscar campos, usa campos padrão baseado no tipo
     if (empty($camposBitrix)) {
         $camposBitrix = [
             'TITLE' => 'Título do Negócio',
@@ -149,10 +195,26 @@ $php_warnings = ob_get_clean();
             </div>
         </div>
     <?php elseif ($colunas && count($colunas) > 0 && $colunas[0] !== null && $colunas[0] !== ''): ?>
-        <form id="mapeamentoForm" class="import-form" method="POST" action="/Apps/public/form/api/salvar_mapeamento.php">
+        
+        <!-- Loading Screen -->
+        <div id="loadingScreen" class="import-form">
+            <div class="import-form-title">Mapeamento de Campos - <?php echo $tipo === 'spa' ? 'SPA' : 'Negócios'; ?></div>
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Carregando campos do Bitrix...</div>
+                <div class="loading-subtitle">Buscando campos disponíveis para <?php echo $tipo === 'spa' ? 'Smart Process (SPA)' : 'Negócios tradicionais'; ?><br>EntityTypeId: <?php echo $entityTypeId; ?><?php echo $categoryId ? " | Categoria: $categoryId" : ''; ?></div>
+            </div>
+        </div>
+
+        <!-- Conteúdo Principal (inicialmente oculto) -->
+        <form id="mapeamentoForm" class="import-form content-hidden" method="POST" action="/Apps/public/form/api/salvar_mapeamento.php">
             <?php echo isset($_GET['cliente']) ? '<input type="hidden" name="cliente" value="' . htmlspecialchars($_GET['cliente']) . '">' : ''; ?>
-            <div class="import-form-title">Mapeamento de Campos</div>
-            <p>Associe cada coluna do arquivo a um campo do Bitrix (Negócios):</p>
+            <input type="hidden" name="entityTypeId" value="<?php echo htmlspecialchars($entityTypeId); ?>">
+            <input type="hidden" name="categoryId" value="<?php echo htmlspecialchars($categoryId); ?>">
+            <input type="hidden" name="tipo" value="<?php echo htmlspecialchars($tipo); ?>">
+            <input type="hidden" name="funil" value="<?php echo htmlspecialchars($funilSelecionado); ?>">
+            <div class="import-form-title">Mapeamento de Campos - <?php echo $tipo === 'spa' ? 'SPA' : 'Negócios'; ?></div>
+            <p>Associe cada coluna do arquivo a um campo do Bitrix (<?php echo $tipo === 'spa' ? 'Smart Process - EntityTypeId: ' . $entityTypeId : 'Negócios tradicionais'; ?>):</p>
             
             <div class="campos-container">
                 <?php
@@ -182,7 +244,12 @@ $php_warnings = ob_get_clean();
                 ?>
             </div>
             
-            <button type="submit">Continuar para Confirmação</button>
+            <div class="confirmation-actions">
+                <button type="submit">Continuar para Confirmação</button>
+                <div class="action-links">
+                    <a href="/Apps/public/form/importacao.php?cliente=<?php echo urlencode($cliente); ?>" class="back-btn">← Voltar para Importação de Leads</a>
+                </div>
+            </div>
         </form>
     <?php else: ?>
         <div class="import-form">
@@ -197,5 +264,24 @@ $php_warnings = ob_get_clean();
             console.warn('PHP Warnings:', <?php echo json_encode($php_warnings); ?>);
         </script>
     <?php endif; ?>
+
+    <script>
+        // Simula o carregamento dos campos do Bitrix
+        document.addEventListener('DOMContentLoaded', function() {
+            const loadingScreen = document.getElementById('loadingScreen');
+            const mapeamentoForm = document.getElementById('mapeamentoForm');
+            
+            // Simula um delay de carregamento (1.5 segundos)
+            setTimeout(function() {
+                if (loadingScreen) {
+                    loadingScreen.style.display = 'none';
+                }
+                if (mapeamentoForm) {
+                    mapeamentoForm.classList.remove('content-hidden');
+                    mapeamentoForm.classList.add('fade-in');
+                }
+            }, 1500);
+        });
+    </script>
 </body>
 </html>
