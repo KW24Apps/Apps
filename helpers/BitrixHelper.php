@@ -19,6 +19,7 @@ class BitrixHelper
 
         $url = $webhookBase . '/' . $endpoint . '.json';
         $postData = http_build_query($params);
+        $startTime = microtime(true);
 
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -32,16 +33,106 @@ class BitrixHelper
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
+        $endTime = microtime(true);
+        $tempoExecucao = round(($endTime - $startTime) * 1000, 2);
         $respostaJson = json_decode($resposta, true);
          
         $traceId = defined('TRACE_ID') ? TRACE_ID : 'sem_trace';
-        $resumo = "[$traceId] Endpoint: $endpoint | HTTP: $httpCode | Erro: $curlErro";
         
-        if (!empty($respostaJson['error_description'])) {
-            $resumo .= " | Descrição: " . $respostaJson['error_description'];
+        // Log detalhado para debug
+        $logCompleto = "[$traceId] Endpoint: $endpoint | HTTP: $httpCode | Tempo: {$tempoExecucao}ms";
+        
+        // Adicionar erro cURL se houver
+        if (!empty($curlErro)) {
+            $logCompleto .= " | cURL Erro: $curlErro";
+        }
+        
+        // Adicionar informações da requisição para debug
+        $logCompleto .= " | URL: $url";
+        $logCompleto .= " | POST Data Size: " . strlen($postData) . " bytes";
+        
+        // Log dos parâmetros principais (sempre, para debug)
+        $paramsResumo = [];
+        if (isset($params['entityTypeId'])) $paramsResumo['entityTypeId'] = $params['entityTypeId'];
+        if (isset($params['id'])) $paramsResumo['id'] = $params['id'];
+        if (isset($params['cmd'])) $paramsResumo['batch_commands'] = count($params['cmd']);
+        if (isset($params['filter'])) $paramsResumo['filter_keys'] = array_keys($params['filter']);
+        if (isset($params['select'])) $paramsResumo['select_fields'] = is_array($params['select']) ? count($params['select']) : 1;
+        if (!empty($paramsResumo)) {
+            $logCompleto .= " | Params: " . json_encode($paramsResumo, JSON_UNESCAPED_UNICODE);
+        }
+        
+        // Verificar se houve erro na resposta da API
+        if (isset($respostaJson['error']) || isset($respostaJson['error_description']) || $httpCode >= 400 || !empty($curlErro)) {
+            $logCompleto .= " | STATUS: ERRO";
+            
+            // Adicionar detalhes do erro da API
+            if (!empty($respostaJson['error'])) {
+                $logCompleto .= " | API Error Code: " . $respostaJson['error'];
+            }
+            
+            if (!empty($respostaJson['error_description'])) {
+                $logCompleto .= " | API Error Desc: " . $respostaJson['error_description'];
+            }
+            
+            // Log da resposta RAW para debug completo de erros
+            $logCompleto .= " | Raw Response: " . substr($resposta, 0, 1000) . (strlen($resposta) > 1000 ? '...[truncated]' : '');
+            
+            // Log dos parâmetros completos em caso de erro
+            $logCompleto .= " | Full Params: " . json_encode($params, JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+            
+        } else {
+            // Log de sucesso mais detalhado
+            $logCompleto .= " | STATUS: SUCESSO";
+            
+            if (isset($respostaJson['result'])) {
+                if (is_array($respostaJson['result'])) {
+                    $logCompleto .= " | Items: " . count($respostaJson['result']);
+                    
+                    // Para batch, log detalhado dos resultados
+                    if ($endpoint === 'batch' && isset($respostaJson['result']['result'])) {
+                        $batchResults = $respostaJson['result']['result'];
+                        $sucessos = 0;
+                        $erros = 0;
+                        $errosList = [];
+                        
+                        foreach ($batchResults as $key => $resultado) {
+                            if (isset($resultado['error']) || isset($resultado['error_description'])) {
+                                $erros++;
+                                $errosList[] = $key . ':' . ($resultado['error'] ?? 'unknown');
+                            } else {
+                                $sucessos++;
+                            }
+                        }
+                        
+                        $logCompleto .= " | Batch Total: " . count($batchResults);
+                        $logCompleto .= " | Batch Sucessos: $sucessos";
+                        if ($erros > 0) {
+                            $logCompleto .= " | Batch Erros: $erros";
+                            $logCompleto .= " | Batch Erros Detail: " . implode(', ', array_slice($errosList, 0, 5)) . ($erros > 5 ? '...' : '');
+                        }
+                    }
+                    
+                    // Para listas com paginação
+                    if (isset($respostaJson['result']['items'])) {
+                        $logCompleto .= " | Page Items: " . count($respostaJson['result']['items']);
+                    }
+                    if (isset($respostaJson['total'])) {
+                        $logCompleto .= " | Total Available: " . $respostaJson['total'];
+                    }
+                    if (isset($respostaJson['next'])) {
+                        $logCompleto .= " | Next Page: " . $respostaJson['next'];
+                    }
+                }
+            }
+            
+            // Log de campos retornados para debug
+            if (isset($respostaJson['result']['fields'])) {
+                $logCompleto .= " | Fields Count: " . count($respostaJson['result']['fields']);
+            }
         }
 
-        LogHelper::logBitrixHelpers($resumo, __CLASS__ . '::' . __FUNCTION__);
+        LogHelper::logBitrixHelpers($logCompleto, __CLASS__ . '::' . __FUNCTION__);
 
         return $respostaJson;
     }
@@ -200,9 +291,6 @@ class BitrixHelper
             // Prepara próxima página
             $start += 50; // Bitrix sempre retorna 50 por página
             $paginaAtual++;
-
-            // Log de progresso
-            LogHelper::logSincronizacaoBitrix("Página {$paginaAtual} processada - {$totalPagina} itens encontrados. Total acumulado: {$totalGeral}");
 
         } while ($temProximaPagina && $totalPagina === 50); // Para quando não há mais páginas ou página incompleta
 
