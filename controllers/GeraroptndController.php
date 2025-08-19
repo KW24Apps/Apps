@@ -475,6 +475,7 @@ class GeraroptndController
             $dealCompleto['ufCrm_1646069163997'] = $combinacao['opportunityId'];  // Oportunidade específica
             $dealCompleto['ufcrm_1707331568'] = $dealId;                          // Negócio Closer (será validado automaticamente)
             $dealCompleto['stageId'] = $destinoInfo['stage_id'];                  // Etapa de destino
+            $dealCompleto['ufCrm_1755632512'] = 'criando DEALS';                  // Campo fixo - Retorno API
             
             $dealsCompletos[] = $dealCompleto;
         }
