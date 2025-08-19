@@ -239,42 +239,38 @@ class GeraroptndController
         // Isso será feito pelo processador de jobs quando os deals forem criados
         
         // ============================================
-        // RETORNO FINAL - JOB CRIADO
+        // RETORNO FINAL - STATUS DO JOB
         // ============================================
+        
+        $jobCriado = ($resultadoCriacao['status'] === 'job_criado');
         
         header('Content-Type: application/json');
         echo json_encode([
-            'sucesso' => true,
-            'resultado_criacao' => $resultadoCriacao,
-            'deals_para_processar' => [
-                'quantidade' => count($arrayFinalParaCriacao['fields']),
-                'pipeline_destino' => $destinoInfo['pipeline_name'],
-                'etapa_destino' => $destinoInfo['stage_name']
-            ],
-            'job_info' => [
+            'sucesso' => $jobCriado,
+            'job_status' => [
+                'criado' => $jobCriado,
                 'job_id' => $resultadoCriacao['job_id'] ?? null,
-                'status' => $resultadoCriacao['status'] ?? 'erro',
-                'consultar_status' => $resultadoCriacao['consultar_status'] ?? null
+                'mensagem' => $resultadoCriacao['mensagem'] ?? 'Erro ao criar job',
+                'consultar_progresso' => $resultadoCriacao['consultar_status'] ?? null
             ],
-            'resumo' => [
-                'deals_solicitados' => count($combinacoesParaCriar),
-                'modo_execucao' => 'assincrono_via_job',
-                'tempo_criacao_job' => 'imediato'
+            'deals_programados' => [
+                'quantidade_total' => count($arrayFinalParaCriacao['fields']),
+                'pipeline_destino' => $destinoInfo['pipeline_name'],
+                'etapa_destino' => $destinoInfo['stage_name'],
+                'modo_processamento' => 'assincrono_via_cron'
             ],
-            'momento_atual' => [
-                'etapa' => $etapaAtualId,
-                'processType' => $processType,
-                'tipo_processo' => $tipoProcessoTexto
+            'configuracao_processamento' => [
+                'tipo_job' => 'gerar_oportunidades',
+                'entity_id' => $arrayFinalParaCriacao['entityId'],
+                'category_id' => $arrayFinalParaCriacao['categoryId'],
+                'total_deals_no_job' => $resultadoCriacao['total_deals'] ?? 0
             ],
-            'debug_tentativa_criacao' => [
-                'array_enviado_para_job' => $arrayFinalParaCriacao,
-                'combinacoes_identificadas' => $combinacoesParaCriar,
-                'campos_por_deal' => array_map(function($deal) {
-                    return [
-                        'campos_enviados' => array_keys($deal),
-                        'valores' => $deal
-                    ];
-                }, $arrayFinalParaCriacao['fields'])
+            'contexto_original' => [
+                'deal_origem' => $dealId,
+                'etapa_atual' => $etapaAtualId,
+                'process_type' => $processType,
+                'tipo_processo' => $tipoProcessoTexto,
+                'combinacoes_solicitadas' => count($combinacoesParaCriar)
             ]
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
