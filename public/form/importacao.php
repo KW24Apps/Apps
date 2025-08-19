@@ -137,6 +137,6 @@ try {
     </form>
     <div id="mensagem"></div>
     
-    <script src="/Apps/public/form/assets/js/importacao.js" defer></script>
+    <script src="/Apps/public/form/assets/js/importacao.js?v=<?= time() . rand(1000, 9999) . microtime(true) ?>" defer></script>
 </body>
 </html>
