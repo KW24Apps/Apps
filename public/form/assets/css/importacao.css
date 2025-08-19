@@ -201,12 +201,20 @@ input:focus, select:focus {
     border-radius: 10px;
     max-height: 180px;
     overflow-y: auto;
-    z-index: 10;
+    z-index: 1000;
     width: 100%;
     display: none;
     box-shadow: 0 3px 12px rgba(0,0,0,0.12);
     top: 100%;
     margin-top: 2px;
+}
+
+/* Lista de autocomplete para campos próximos ao final da tela */
+.autocomplete-list.show-above {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 2px;
 }
 .autocomplete-list.active {
     display: block;

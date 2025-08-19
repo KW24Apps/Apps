@@ -69,16 +69,34 @@ if ($cliente) {
 }
 
 // Dados para exibição
-$nomeArquivo = $dadosImportacao['nome_arquivo'] ?? 'Arquivo não identificado';
+error_log("=== DEBUG NOME ARQUIVO ===");
+error_log("dados_importacao completo: " . print_r($dadosImportacao, true));
+error_log("nome_arquivo direto: " . ($dadosImportacao['nome_arquivo'] ?? 'CHAVE NÃO EXISTE'));
+error_log("arquivo direto: " . ($dadosImportacao['arquivo'] ?? 'CHAVE NÃO EXISTE'));
+
+$nomeArquivo = $dadosImportacao['nome_arquivo'] ?? $dadosImportacao['arquivo'] ?? 'Arquivo não identificado';
 $totalLinhas = $dadosImportacao['total_linhas'] ?? 0;
-$spa = $dadosImportacao['spa'] ?? $dadosImportacao['identificador'] ?? 'SPA não identificado';
+
+// Carrega config para mapear o nome do funil corretamente
+$config = require_once __DIR__ . '/config.php';
+$funilId = $dadosImportacao['funil'] ?? '';
+$nomeFunil = 'Funil não identificado';
+
+if ($funilId && isset($config['funis'][$funilId])) {
+    $nomeFunil = $config['funis'][$funilId];
+} else {
+    // Fallback para identificador se não encontrar o funil
+    $nomeFunil = $dadosImportacao['identificador'] ?? 'Funil não identificado';
+}
+
 $colunas = $dadosImportacao['colunas'] ?? [];
 $primeiraLinhas = $dadosImportacao['primeiras_linhas'] ?? [];
 
 error_log("Dados para exibição:");
 error_log("Nome arquivo: $nomeArquivo");
 error_log("Total linhas: $totalLinhas");
-error_log("SPA: $spa");
+error_log("Funil ID: $funilId");
+error_log("Nome Funil: $nomeFunil");
 error_log("Colunas: " . print_r($colunas, true));
 error_log("Primeiras linhas: " . print_r($primeiraLinhas, true));
 error_log("Mapeamento: " . print_r($mapeamento, true));
@@ -110,8 +128,8 @@ error_log("Mapeamento: " . print_r($mapeamento, true));
                     <h3>Resumo da Importação</h3>
                     <div class="summary-grid">
                         <div class="summary-item">
-                            <label>SPA:</label>
-                            <span><?php echo htmlspecialchars($spa); ?></span>
+                            <label>Qual Funil:</label>
+                            <span><?php echo htmlspecialchars($nomeFunil); ?></span>
                         </div>
                         <div class="summary-item">
                             <label>Arquivo:</label>
