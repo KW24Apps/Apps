@@ -12,6 +12,12 @@ class BitrixDealHelper
     // Cria um ou vários negócios no Bitrix24 via API (sempre em batch, sem agendamento)
     public static function criarDeal($entityId, $categoryId, $fields): array
     {
+        error_log("=== DEBUG CRIAR DEAL ===");
+        error_log("EntityId: " . $entityId);
+        error_log("CategoryId: " . $categoryId);
+        error_log("Total fields recebidos: " . count($fields));
+        error_log("Primeiro field: " . print_r($fields[0] ?? 'nenhum', true));
+        
         // Sempre trata $fields como array de arrays
         if (!isset($fields[0]) || !is_array($fields[0])) {
             $fields = [$fields];
@@ -33,9 +39,13 @@ class BitrixDealHelper
 
         $startTime = microtime(true);
 
-        foreach ($chunks as $chunk) {
+        foreach ($chunks as $chunkIndex => $chunk) {
+            error_log("Processando chunk " . ($chunkIndex + 1) . " com " . count($chunk) . " deals");
+            
             $batchCommands = [];
             foreach ($chunk as $index => $dealFields) {
+                error_log("DEBUG: Deal $index campos originais: " . print_r($dealFields, true));
+                
                 $formattedFields = BitrixHelper::formatarCampos($dealFields);
                 
                 // Garantir que categoryId seja sempre adicionado
@@ -53,7 +63,12 @@ class BitrixDealHelper
                     'fields' => $formattedFields
                 ];
                 $batchCommands["deal$index"] = 'crm.item.add?' . http_build_query($params);
+                
+                error_log("DEBUG: Deal $index comando: " . $batchCommands["deal$index"]);
             }
+            
+            error_log("Batch commands preparados: " . count($batchCommands));
+            
             $resultado = BitrixHelper::chamarApi('batch', ['cmd' => $batchCommands], [
                 'log' => true
             ]);
@@ -63,6 +78,8 @@ class BitrixDealHelper
             
             $sucessosChunk = 0;
             $idsChunk = [];
+            $errosChunk = [];
+            
             if (isset($resultado['result']['result'])) {
                 foreach ($resultado['result']['result'] as $key => $res) {
                     if (isset($res['item']['id'])) {
@@ -82,7 +99,15 @@ class BitrixDealHelper
                         LogHelper::logBitrixHelpers("DEAL FALHOU - Key: $key - Erro: " . json_encode($res, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
                     }
                 }
+            } else {
+                error_log("ERRO: Resposta da API não tem estrutura esperada");
+                error_log("Resposta completa: " . print_r($resultado, true));
             }
+            
+            if (!empty($errosChunk)) {
+                error_log("ERROS encontrados no chunk " . ($chunkIndex + 1) . ": " . print_r($errosChunk, true));
+            }
+            
             $totalSucessos += $sucessosChunk;
             $totalErros += count($chunk) - $sucessosChunk;
             

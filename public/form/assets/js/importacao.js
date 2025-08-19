@@ -3,10 +3,30 @@ document.addEventListener('DOMContentLoaded', function() {
     function setupAutocomplete(inputId, listId) {
         const input = document.getElementById(inputId);
         const list = document.getElementById(listId);
-        let timeout = null;
+        let currentRequest = null; // Para cancelar requisições anteriores
+        
+        // Função para verificar se deve mostrar a lista acima
+        function checkPosition() {
+            const inputRect = input.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            const spaceBelow = windowHeight - inputRect.bottom;
+            const spaceAbove = inputRect.top;
+            
+            // Se há menos espaço abaixo que acima E menos de 200px abaixo
+            if (spaceBelow < 200 && spaceAbove > spaceBelow) {
+                list.classList.add('show-above');
+            } else {
+                list.classList.remove('show-above');
+            }
+        }
         
         input.addEventListener('input', function() {
-            clearTimeout(timeout);
+            // Cancela requisição anterior se existir
+            if (currentRequest) {
+                currentRequest.abort();
+                currentRequest = null;
+            }
+            
             const query = input.value;
             // Permitir busca a partir do primeiro caractere
             if (query.length < 1) {
@@ -14,14 +34,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 list.innerHTML = '';
                 return;
             }
-            timeout = setTimeout(() => {
-                // Obtém parâmetro cliente da URL atual
-                const urlParams = new URLSearchParams(window.location.search);
-                const cliente = urlParams.get('cliente') || '';
-                const clienteParam = cliente ? '&cliente=' + encodeURIComponent(cliente) : '';
-                
-                // Busca usuários via API do sistema de rotas (com cache bust)
-                fetch('/Apps/public/form/api/bitrix_users.php?q=' + encodeURIComponent(query) + clienteParam + '&v=' + Date.now())
+            
+            // Verifica posicionamento antes de mostrar
+            checkPosition();
+            
+            // Obtém parâmetro cliente da URL atual
+            const urlParams = new URLSearchParams(window.location.search);
+            const cliente = urlParams.get('cliente') || '';
+            const clienteParam = cliente ? '&cliente=' + encodeURIComponent(cliente) : '';
+            
+            // Busca usuários via API do sistema de rotas (sem timeout, imediato)
+            currentRequest = fetch('/Apps/public/form/api/bitrix_users.php?q=' + encodeURIComponent(query) + clienteParam + '&v=' + Date.now())
                     .then(res => {
                         // Log para debug
                         console.log('Status da resposta:', res.status, res.statusText);
@@ -107,6 +130,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         // PROCESSAMENTO SEGURO DOS USUÁRIOS
                         try {
+                            const uniqueUsers = new Map(); // Para evitar duplicatas
+                            
                             data.forEach((user, index) => {
                                 // Valida cada usuário
                                 if (!user || typeof user !== 'object') {
@@ -119,6 +144,20 @@ document.addEventListener('DOMContentLoaded', function() {
                                     return; // pula este usuário
                                 }
                                 
+                                // Evita duplicatas usando o nome como chave (case insensitive)
+                                const nameKey = user.name.toLowerCase().trim();
+                                if (!uniqueUsers.has(nameKey)) {
+                                    uniqueUsers.set(nameKey, user);
+                                }
+                            });
+                            
+                            // Converte Map para array e ordena
+                            const sortedUsers = Array.from(uniqueUsers.values()).sort((a, b) => 
+                                a.name.localeCompare(b.name)
+                            );
+                            
+                            // Cria elementos DOM apenas para usuários únicos
+                            sortedUsers.forEach(user => {
                                 const div = document.createElement('div');
                                 div.textContent = user.name;
                                 div.dataset.userid = user.id;
@@ -158,9 +197,33 @@ document.addEventListener('DOMContentLoaded', function() {
                         div.style.fontSize = '12px';
                         list.appendChild(div);
                         list.classList.add('active');
+                    })
+                    .catch(error => {
+                        // Ignora erros de requisições canceladas
+                        if (error.name === 'AbortError') {
+                            return;
+                        }
+                        
+                        console.error('Erro na busca de usuários:', error);
+                        list.innerHTML = '';
+                        const div = document.createElement('div');
+                        div.textContent = 'Erro de conexão: ' + error.message;
+                        div.style.color = 'red';
+                        div.style.padding = '5px';
+                        div.style.fontSize = '12px';
+                        list.appendChild(div);
+                        list.classList.add('active');
+                    })
+                    .finally(() => {
+                        currentRequest = null;
                     });
-            }, 300);
         });
+        
+        // Event listeners para recalcular posição
+        input.addEventListener('focus', checkPosition);
+        window.addEventListener('scroll', checkPosition);
+        window.addEventListener('resize', checkPosition);
+        
         document.addEventListener('click', function(e) {
             if (!list.contains(e.target) && e.target !== input) {
                 list.classList.remove('active');
@@ -179,21 +242,50 @@ document.addEventListener('DOMContentLoaded', function() {
         data.append('responsavel_id', document.getElementById('responsavel').dataset.userid || '');
         data.append('solicitante_id', document.getElementById('solicitante').dataset.userid || '');
         
+        // Mostra loading
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Enviando...';
+        submitBtn.disabled = true;
+        
+        console.log('🚀 Enviando formulário para:', form.action);
+        
         fetch(form.action, {
             method: 'POST',
             body: data
         })
-        .then(res => res.json())
-        .then(resp => {
-            if (resp.sucesso && resp.next_url) {
-                window.location.href = resp.next_url;
-            } else {
-                document.getElementById('mensagem').textContent = resp.mensagem || 'Enviado com sucesso!';
-                form.reset();
+        .then(res => {
+            console.log('📡 Status resposta:', res.status, res.statusText);
+            return res.text(); // Primeiro pega como texto para debug
+        })
+        .then(text => {
+            console.log('📄 Resposta raw:', text);
+            try {
+                const resp = JSON.parse(text);
+                console.log('📦 Resposta JSON:', resp);
+                
+                if (resp.sucesso && resp.next_url) {
+                    console.log('✅ Redirecionando para:', resp.next_url);
+                    window.location.href = resp.next_url;
+                } else {
+                    console.log('❌ Erro na resposta:', resp);
+                    document.getElementById('mensagem').textContent = resp.mensagem || 'Erro desconhecido';
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
+            } catch (e) {
+                console.error('❌ Erro ao fazer parse JSON:', e);
+                console.log('📄 Texto recebido:', text);
+                document.getElementById('mensagem').textContent = 'Erro: Resposta inválida do servidor';
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
             }
         })
-        .catch(() => {
-            document.getElementById('mensagem').textContent = 'Erro ao enviar.';
+        .catch(error => {
+            console.error('❌ Erro na requisição:', error);
+            document.getElementById('mensagem').textContent = 'Erro ao enviar: ' + error.message;
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
         });
     });
 });

@@ -3,35 +3,79 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
+// Primeiro verifica se cliente foi informado
+$cliente = $_GET['cliente'] ?? null;
+if (!$cliente) {
+    die('<div style="font-family: Arial; text-align: center; margin-top: 50px;">
+         <h2>❌ Parâmetro obrigatório</h2>
+         <p>Esta aplicação requer o parâmetro <code>?cliente=CHAVE_CLIENTE</code> na URL.</p>
+         <p>Exemplo: <code>importacao.php?cliente=sua_chave_aqui</code></p>
+         </div>');
+}
+
 try {
-    // Carrega configurações
+    // Conecta diretamente ao banco para buscar webhook (como fazíamos antes)
+    $config = [
+        'host' => 'localhost',
+        'dbname' => 'kw24co49_api_kwconfig',
+        'usuario' => 'kw24co49_kw24',
+        'senha' => 'BlFOyf%X}#jXwrR-vi'
+    ];
+
+    $pdo = new PDO(
+        "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+        $config['usuario'],
+        $config['senha']
+    );
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $sql = "
+        SELECT ca.webhook_bitrix
+        FROM clientes c
+        JOIN cliente_aplicacoes ca ON ca.cliente_id = c.id
+        JOIN aplicacoes a ON ca.aplicacao_id = a.id
+        WHERE c.chave_acesso = :chave
+        AND a.slug = 'import'
+        AND ca.ativo = 1
+        AND ca.webhook_bitrix IS NOT NULL
+        AND ca.webhook_bitrix != ''
+        LIMIT 1
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':chave', $cliente);
+    $stmt->execute();
+    $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+    $webhook = $resultado['webhook_bitrix'] ?? null;
+
+    if (!$webhook) {
+        throw new Exception('Webhook não encontrado para o cliente: ' . $cliente);
+    }
+
+    // Define globalmente para uso nos helpers
+    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
+    
+    // Define constante para compatibilidade
+    if (!defined('BITRIX_WEBHOOK')) {
+        define('BITRIX_WEBHOOK', $webhook);
+    }
+    
+    $webhook_configurado = true;
+    $webhook_value = $webhook;
+    
+    // Carrega configurações dos funis (ainda usando config local para funis específicos)
     $config = require_once __DIR__ . '/config.php';
-    
-    // Verifica se há parâmetro de cliente para mostrar informações
-    $cliente = $_GET['cliente'] ?? null;
-    
-    // TEMPORARIAMENTE DESABILITADO - DEBUG PARA ERRO 500
-    /*
-    // Debug detalhado do webhook
-    $webhook_configurado = isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) && 
-                          $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'];
-    $bitrix_constant = defined('BITRIX_WEBHOOK') && BITRIX_WEBHOOK;
-    $webhook_value = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? 'NÃO DEFINIDO';
-    */
-    
-    // Valores padrão para debug
-    $webhook_configurado = true; // Assumir que está configurado
-    $webhook_value = 'WEBHOOK_TEMPORARIO_DEBUG';
-    $bitrix_constant = true; // Assumir que está definida
-    
-    // Debug: verifica se config foi carregado corretamente
     $config_carregado = is_array($config) && isset($config['funis']) && is_array($config['funis']);
+    
+    // Define variável para debug
+    $bitrix_constant = defined('BITRIX_WEBHOOK') && BITRIX_WEBHOOK;
     
 } catch (Exception $e) {
     $webhook_configurado = false;
     $erro_configuracao = $e->getMessage();
     $config = ['funis' => []]; // Config fallback
     $config_carregado = false;
+    $bitrix_constant = false; // Define para debug
 }
 
 // Não limpar a sessão ao acessar via GET
@@ -45,60 +89,53 @@ try {
     <link rel="stylesheet" href="/Apps/public/form/assets/css/importacao.css">
 </head>
 <body>
-    <form id="importacaoForm" class="import-form" method="POST" action="/Apps/importar/api/importacao" enctype="multipart/form-data">
+    <form id="importacaoForm" class="import-form" method="POST" action="/Apps/public/form/api/importacao.php?cliente=<?php echo urlencode($cliente); ?>" enctype="multipart/form-data">
         <div class="import-form-title">
-            Importação de Leads 
-            <span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: normal; margin-left: 10px;">v2.1 - API Corrigida</span>
+            Importação de Leads
         </div>
-        <div class="file-upload">
-            <label for="arquivo" class="file-upload-label">Escolher arquivo</label>
-            <input type="file" id="arquivo" name="arquivo" accept=".csv, .xlsx" required onchange="document.getElementById('file-selected').textContent = this.files[0] ? this.files[0].name : 'Nenhum arquivo selecionado';">
-            <span class="file-selected" id="file-selected">Nenhum arquivo selecionado</span>
-        </div>
-        <label for="funil">Qual Funil:</label>
-        <select id="funil" name="funil" required>
-            <option value="">Selecione...</option>
-            <?php 
-            if ($config_carregado): 
-                foreach ($config['funis'] as $id => $nome): ?>
-                    <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($nome); ?></option>
-                <?php endforeach; 
-            else: ?>
-                <option disabled>❌ Config não carregado</option>
-                <?php if (isset($erro_configuracao)): ?>
-                    <option disabled>Erro: <?php echo htmlspecialchars($erro_configuracao); ?></option>
+        
+        <div class="content-container">
+            <div class="file-upload">
+                <label for="arquivo" class="file-upload-label">Escolher arquivo</label>
+                <input type="file" id="arquivo" name="arquivo" accept=".csv, .xlsx" required onchange="document.getElementById('file-selected').textContent = this.files[0] ? this.files[0].name : 'Nenhum arquivo selecionado';">
+                <span class="file-selected" id="file-selected">Nenhum arquivo selecionado</span>
+            </div>
+            
+            <label for="funil">Qual Funil:</label>
+            <select id="funil" name="funil" required>
+                <option value="">Selecione...</option>
+                <?php 
+                if ($config_carregado): 
+                    foreach ($config['funis'] as $id => $nome): ?>
+                        <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($nome); ?></option>
+                    <?php endforeach; 
+                else: ?>
+                    <option disabled>❌ Config não carregado</option>
+                    <?php if (isset($erro_configuracao)): ?>
+                        <option disabled>Erro: <?php echo htmlspecialchars($erro_configuracao); ?></option>
+                    <?php endif; ?>
                 <?php endif; ?>
-            <?php endif; ?>
-        </select>
-        <label for="identificador">Identificador da Importação:</label>
-        <input type="text" id="identificador" name="identificador" required>
-        <label for="responsavel">Responsável pelo Lead Gerado:</label>
-        <div class="autocomplete-wrapper">
-            <input type="text" id="responsavel" name="responsavel" autocomplete="off" placeholder="Digite para buscar..." required>
-            <div id="autocomplete-responsavel" class="autocomplete-list"></div>
+            </select>
+            
+            <label for="identificador">Identificador da Importação:</label>
+            <input type="text" id="identificador" name="identificador" required>
+            
+            <label for="responsavel">Responsável pelo Lead Gerado:</label>
+            <div class="autocomplete-wrapper">
+                <input type="text" id="responsavel" name="responsavel" autocomplete="off" placeholder="Digite para buscar..." required>
+                <div id="autocomplete-responsavel" class="autocomplete-list"></div>
+            </div>
+            
+            <label for="solicitante">Solicitante do Import:</label>
+            <div class="autocomplete-wrapper">
+                <input type="text" id="solicitante" name="solicitante" autocomplete="off" placeholder="Digite para buscar..." required>
+                <div id="autocomplete-solicitante" class="autocomplete-list"></div>
+            </div>
         </div>
-        <label for="solicitante">Solicitante do Import:</label>
-        <div class="autocomplete-wrapper">
-            <input type="text" id="solicitante" name="solicitante" autocomplete="off" placeholder="Digite para buscar..." required>
-            <div id="autocomplete-solicitante" class="autocomplete-list"></div>
-        </div>
+        
         <button type="submit">Enviar</button>
     </form>
     <div id="mensagem"></div>
-    
-    <!-- Debug Info -->
-    <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 12px; color: #6c757d; border-left: 4px solid #28a745;">
-        <strong>🔧 Info Técnica:</strong><br>
-        • Cliente: <?php echo htmlspecialchars($cliente ?? 'Não informado'); ?><br>
-        • Webhook Global: <?php echo $webhook_configurado ? '✅ Configurado' : '❌ Não configurado'; ?><br>
-        • Constante BITRIX: <?php echo $bitrix_constant ? '✅ Definida' : '❌ Não definida'; ?><br>
-        • Valor Webhook: <?php echo htmlspecialchars(substr($webhook_value, 0, 50)) . (strlen($webhook_value) > 50 ? '...' : ''); ?><br>
-        • Config: <?php echo $config_carregado ? '✅ Carregado' : '❌ Erro'; ?><br>
-        • Última atualização: 18/08/2025 - 16:45<br>
-        <?php if (isset($erro_configuracao)): ?>
-        • Erro: <?php echo htmlspecialchars($erro_configuracao); ?><br>
-        <?php endif; ?>
-    </div>
     
     <script src="/Apps/public/form/assets/js/importacao.js" defer></script>
 </body>

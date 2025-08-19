@@ -6,18 +6,88 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
+// Verifica se cliente foi informado
+$cliente = $_GET['cliente'] ?? $_POST['cliente'] ?? null;
+if (!$cliente) {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'sucesso' => false,
+        'mensagem' => 'Parâmetro cliente é obrigatório'
+    ]);
+    exit;
+}
+
 header('Content-Type: application/json; charset=utf-8');
 
 try {
+    // Conecta diretamente ao banco para buscar webhook
+    $config = [
+        'host' => 'localhost',
+        'dbname' => 'kw24co49_api_kwconfig',
+        'usuario' => 'kw24co49_kw24',
+        'senha' => 'BlFOyf%X}#jXwrR-vi'
+    ];
+
+    $pdo = new PDO(
+        "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+        $config['usuario'],
+        $config['senha']
+    );
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $sql = "
+        SELECT ca.webhook_bitrix
+        FROM clientes c
+        JOIN cliente_aplicacoes ca ON ca.cliente_id = c.id
+        JOIN aplicacoes a ON ca.aplicacao_id = a.id
+        WHERE c.chave_acesso = :chave
+        AND a.slug = 'import'
+        AND ca.ativo = 1
+        AND ca.webhook_bitrix IS NOT NULL
+        AND ca.webhook_bitrix != ''
+        LIMIT 1
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':chave', $cliente);
+    $stmt->execute();
+    $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+    $webhook = $resultado['webhook_bitrix'] ?? null;
+
+    if (!$webhook) {
+        throw new Exception('Webhook não encontrado para o cliente: ' . $cliente);
+    }
+
+    // Define globalmente para uso nos helpers
+    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
+    
+    // Define constante para compatibilidade
+    if (!defined('BITRIX_WEBHOOK')) {
+        define('BITRIX_WEBHOOK', $webhook);
+    }
+
     // Recupera dados da sessão
     $mapeamento = $_SESSION['mapeamento'] ?? [];
     $formData = $_SESSION['importacao_form'] ?? [];
     $spa = $formData['funil'] ?? 'undefined';
 
+    // Debug da sessão
+    error_log("=== DEBUG CONFIRMACAO ===");
+    error_log("SESSION completa: " . print_r($_SESSION, true));
+    error_log("Mapeamento: " . print_r($mapeamento, true));
+    error_log("FormData: " . print_r($formData, true));
+    error_log("SPA: " . $spa);
+
     if (empty($mapeamento)) {
+        error_log("ERRO: Mapeamento vazio na sessão");
         echo json_encode([
             'sucesso' => false, 
-            'mensagem' => 'Mapeamento não encontrado na sessão'
+            'mensagem' => 'Mapeamento não encontrado na sessão',
+            'debug' => [
+                'session_keys' => array_keys($_SESSION),
+                'mapeamento_empty' => empty($mapeamento),
+                'formdata_keys' => array_keys($formData)
+            ]
         ]);
         exit;
     }

@@ -1,30 +1,51 @@
-/* Padronização dos campos para ambos os formulários */
+/* Padronização dos campos para ambos os formulários - Tamanho moderado */
 .import-form input,
 .import-form select {
     width: 100%;
-    padding: 12px 14px;
-    border: 1.5px solid #e0e0e0;
+    height: 50px;
+    padding: 14px 20px;
+    border: 2px solid #e0e0e0;
     border-radius: 10px;
     background: #f7f9fa;
     font-size: 1rem;
-    transition: border 0.2s;
+    transition: border 0.2s, box-shadow 0.2s;
     outline: none;
     box-sizing: border-box;
-    margin-bottom: 0;
+    margin-bottom: 18px;
 }
+
 .import-form input:focus,
 .import-form select:focus {
-    border: 1.5px solid #007bff;
+    border: 2px solid #007bff;
     background: #fff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Labels padronizados - Tamanho moderado */
+.import-form label {
+    display: block;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+/* Parágrafos de descrição - Tamanho moderado */
+.import-form p {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #6c757d;
+    margin: 0 0 18px 0;
 }
 /* Modernização do formulário de importação */
 /* Título mais harmônico, menor e cor suave */
-/* Título dentro do card, harmônico */
+/* Título dentro do card, harmônico - Tamanho moderado */
 .import-form-title {
-    font-size: 1.35rem;
+    font-size: 1.4rem;
     font-weight: 600;
-    color: #3a4a5d;
-    margin-bottom: 10px;
+    color: #2c3e50;
+    margin-bottom: 12px;
     margin-top: 0;
     text-align: center;
     letter-spacing: 0.01em;
@@ -33,21 +54,25 @@
 
 .import-form {
     background: #fff;
-    padding: 28px 32px 28px 32px;
+    padding: 32px 48px 32px 48px;
     border-radius: 16px;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
-    max-width: 440px;
-    margin: 32px auto 0 auto;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    width: 950px;
+    max-width: 95vw;
+    min-height: 520px;
+    margin: 20px auto 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
+    box-sizing: border-box;
 }
 
-/* Customização do campo de upload */
+/* Customização do campo de upload - Tamanho moderado */
 .file-upload {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    margin-bottom: 6px;
 }
 .file-upload input[type="file"] {
     opacity: 0;
@@ -60,23 +85,25 @@
     display: inline-block;
     background: #f1f3f7;
     color: #0078d7;
-    border: 1px solid #d1d5db;
-    border-radius: 7px;
-    padding: 7px 18px;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px 22px;
     font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    transition: all 0.2s;
+    white-space: nowrap;
 }
 .file-upload-label:hover {
     background: #e6eaf1;
     color: #005fa3;
+    border-color: #b8bcc4;
 }
 .file-selected {
     color: #444;
-    font-size: 0.97rem;
+    font-size: 1rem;
     font-style: italic;
-    max-width: 120px;
+    max-width: 250px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -86,14 +113,15 @@
     position: relative;
 }
 body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background: #f5f7fa;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', Arial, sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     min-height: 100vh;
     margin: 0;
+    padding: 20px 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
 }
 h1 {
     text-align: center;
@@ -135,23 +163,32 @@ input:focus, select:focus {
     border: 1.5px solid #007bff;
     background: #fff;
 }
-button {
-    margin-top: 18px;
-    padding: 13px 0;
-    background: #007bff;
+/* Botões padronizados - Tamanho moderado */
+.import-form button,
+.import-form .confirm-btn {
+    width: 100%;
+    height: 52px;
+    margin-top: 24px;
+    padding: 0;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
     color: #fff;
     border: none;
     border-radius: 10px;
     cursor: pointer;
-    font-size: 1.08rem;
+    font-size: 1.05rem;
     font-weight: 600;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
-    box-shadow: 0 2px 8px rgba(0,123,255,0.08);
-    transition: background 0.2s;
+    box-shadow: 0 3px 12px rgba(0,123,255,0.2);
+    transition: all 0.2s ease;
+    box-sizing: border-box;
 }
-button:hover {
-    background: #0056b3;
+
+.import-form button:hover,
+.import-form .confirm-btn:hover {
+    background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
+    box-shadow: 0 4px 16px rgba(0,123,255,0.3);
+    transform: translateY(-1px);
 }
 #mensagem {
     margin-top: 20px;
@@ -160,23 +197,477 @@ button:hover {
 .autocomplete-list {
     position: absolute;
     background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    max-height: 150px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    max-height: 180px;
     overflow-y: auto;
-    z-index: 10;
+    z-index: 1000;
     width: 100%;
     display: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+    top: 100%;
+    margin-top: 2px;
+}
+
+/* Lista de autocomplete para campos próximos ao final da tela */
+.autocomplete-list.show-above {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 2px;
 }
 .autocomplete-list.active {
     display: block;
 }
 .autocomplete-list div {
-    padding: 10px 12px;
+    padding: 12px 14px;
     cursor: pointer;
-    border-radius: 8px;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: background 0.15s;
 }
 .autocomplete-list div:hover {
-    background: #f0f0f0;
+    background: #f8f9fa;
+}
+
+/* Estilos para página de confirmação */
+.import-summary, .mapping-summary {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    margin-bottom: 20px;
+}
+
+.import-summary h3, .mapping-summary h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #495057;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.import-summary p {
+    margin: 8px 0;
+    color: #6c757d;
+}
+
+.mapping-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.mapping-table th,
+.mapping-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.mapping-table th {
+    background: #e9ecef;
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.mapping-table td {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.confirmation-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.confirm-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    width: 100%;
+    text-transform: none;
+}
+
+.confirm-btn:hover {
+    background: #0056b3;
+}
+
+.back-btn {
+    display: inline-block;
+    text-align: center;
+    padding: 10px 16px;
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.back-btn:hover {
+    background: #545b62;
+    text-decoration: none;
+}
+
+/* Estilos para página de confirmação melhorada */
+.campos-container {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 400px;
+    padding-right: 8px;
+}
+
+.campo-grupo {
+    margin-bottom: 20px;
+}
+
+.campo-grupo:last-child {
+    margin-bottom: 0;
+}
+
+/* Seção de conteúdo - Adaptado para PC */
+.content-container {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 500px;
+    padding-right: 12px;
+}
+
+.confirmation-actions {
+    margin-top: auto;
+    padding-top: 32px;
+}
+.import-summary {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 20px;
+}
+
+.import-summary h3 {
+    margin: 0 0 15px 0;
+    color: #495057;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.summary-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+}
+
+.summary-item label {
+    font-weight: 600;
+    color: #495057;
+    margin: 0;
+}
+
+.summary-item span {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.mapping-summary {
+    margin-bottom: 20px;
+}
+
+.mapping-summary h3 {
+    margin: 0 0 15px 0;
+    color: #495057;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.mapping-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.mapping-table th,
+.mapping-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.mapping-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.mapping-table td {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.mapping-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Seção de pré-visualização */
+.preview-section {
+    margin-bottom: 20px;
+}
+
+.preview-section h3 {
+    margin: 0 0 15px 0;
+    color: #495057;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.preview-note {
+    color: #6c757d;
+    font-style: italic;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+}
+
+.preview-table-container {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: auto;
+    max-height: 300px;
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    min-width: 600px;
+}
+
+.preview-table th,
+.preview-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+    white-space: nowrap;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.preview-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.preview-table td {
+    color: #6c757d;
+}
+
+.preview-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+/* Ações de confirmação */
+.confirmation-actions {
+    margin-top: 25px;
+}
+
+.action-links {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    justify-content: center;
+}
+
+.action-links .back-btn {
+    flex: 1;
+    text-align: center;
+    max-width: 200px;
+}
+
+/* Responsivo para página de confirmação - Tamanho moderado */
+@media (max-width: 1100px) {
+    .import-form {
+        width: 850px;
+        padding: 28px 40px;
+    }
+}
+
+@media (max-width: 900px) {
+    .import-form {
+        width: 750px;
+        padding: 24px 32px;
+    }
+}
+
+@media (max-width: 800px) {
+    .import-form {
+        width: 95%;
+        max-width: 700px;
+        padding: 20px 28px;
+    }
+}
+
+@media (max-width: 768px) {
+    .import-form {
+        max-width: 95%;
+        padding: 20px;
+        margin: 15px auto;
+    }
+    
+    .import-form input,
+    .import-form select {
+        height: 48px;
+        font-size: 1rem;
+        padding: 12px 16px;
+    }
+    
+    .import-form label {
+        font-size: 1rem;
+    }
+    
+    .import-form-title {
+        font-size: 1.3rem;
+    }
+    
+    .summary-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .mapping-table,
+    .preview-table {
+        font-size: 0.8rem;
+    }
+    
+    .mapping-table th,
+    .mapping-table td,
+    .preview-table th,
+    .preview-table td {
+        padding: 8px;
+    }
+    
+    .action-links {
+        flex-direction: column;
+    }
+    
+    .action-links .back-btn {
+        max-width: none;
+    }
+}
+
+/* Loading Spinner para Mapeamento */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 0;
+    text-align: center;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #e9ecef;
+    border-top: 5px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+    color: #6c757d;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.loading-subtitle {
+    color: #8a8a8a;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Ocultar conteúdo durante loading */
+.content-hidden {
+    display: none !important;
+}
+
+/* Animação de fade-in quando o conteúdo aparecer */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Estilos específicos para página de mapeamento */
+.back-btn {
+    display: inline-block;
+    text-align: center;
+    padding: 12px 20px;
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+    margin-top: 12px;
+}
+
+.back-btn:hover {
+    background: #545b62;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* Ajuste para ações de confirmação no mapeamento */
+.confirmation-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
 }
