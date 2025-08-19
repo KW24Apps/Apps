@@ -62,7 +62,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     return res.json();
                 })
                 .then(data => {
-                    console.log('📊 Dados recebidos:', data);
+                    console.log('📊 Dados recebidos da API:', data);
+                    console.log('📊 Total de usuários recebidos:', data.length);
                     
                     if (!Array.isArray(data)) {
                         console.error('❌ API não retornou array:', typeof data, data);
@@ -95,7 +96,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' })
                     );
                     
-                    console.log('✅ Cache carregado com sucesso!', usersCache.length, 'usuários únicos');
+                    console.log('✅ Cache carregado com sucesso!', usersCache.length, 'usuários únicos de', data.length, 'usuários originais');
+                    console.log('📋 Primeiros 5 usuários do cache:', usersCache.slice(0, 5).map(u => u.name));
                     return usersCache;
                 })
                 .catch(error => {
@@ -120,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
             );
             
             console.log(`🔍 Filtrados ${filtered.length} usuários para "${query}"`);
-            return filtered.slice(0, 50); // Limita a 50 para performance na UI
+            return filtered; // Remove limite - mostra TODOS os usuários encontrados
         }
         
         // Função para exibir usuários na lista

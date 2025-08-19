@@ -98,9 +98,15 @@ try {
         
         // Prepara para próxima página
         $start += $limit;
-        $hasMore = isset($data['next']) && $data['next'] > 0;
+        $hasMore = count($data['result']) === $limit; // Se retornou 50, pode haver mais
         
-    } while ($hasMore && $start < 500); // Limita a 500 usuários para performance
+        // Log de debug da paginação
+        error_log("DEBUG: Página start=$start, recebidos=" . count($data['result']) . ", hasMore=" . ($hasMore ? 'sim' : 'não'));
+        
+    } while ($hasMore && $start < 2000); // Aumenta limite para 2000 usuários
+    
+    // Log para debug
+    error_log("DEBUG: Buscados " . count($allUsers) . " usuários do Bitrix para cliente: " . $cliente);
     
     // Filtra e formata usuários (evitando duplicatas)
     $usuarios = [];
@@ -133,6 +139,9 @@ try {
     usort($usuarios, function($a, $b) {
         return strcasecmp($a['name'], $b['name']);
     });
+    
+    // Log final para debug
+    error_log("DEBUG: Retornando " . count($usuarios) . " usuários únicos após filtros");
     
     echo json_encode($usuarios);
     
