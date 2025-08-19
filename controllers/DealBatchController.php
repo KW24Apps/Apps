@@ -53,7 +53,7 @@ class DealBatchController
             $categoryId = $dados['category_id'] ?? $dados['categoryId'] ?? null;
             $fields = $dados['deals'] ?? $dados['fields'] ?? [];
             
-            if ($tipo === 'criar_deals' || $tipo === 'gerar_oportunidades') {
+            if ($tipo === 'criar_deals') {
                 $resultado = BitrixDealHelper::criarDeal($spa, $categoryId, $fields);
             } elseif ($tipo === 'editar_deals') {
                 $dealIds = $dados['deal_ids'] ?? $dados['dealIds'] ?? null;
