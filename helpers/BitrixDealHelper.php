@@ -17,6 +17,14 @@ class BitrixDealHelper
             $fields = [$fields];
         }
 
+        // REABILITADO: Consultar metadados dos campos antes de criar
+        $camposMetadata = BitrixHelper::consultarCamposCrm($entityId);
+        
+        // REABILITADO: Validar e formatar campos baseado nos metadados
+        foreach ($fields as &$dealFields) {
+            $dealFields = self::validarEFormatarCampos($dealFields, $camposMetadata);
+        }
+
         // Sempre executa em batch, mesmo para 1 deal
         $chunks = array_chunk($fields, 25);
         $todosIds = [];
@@ -29,9 +37,17 @@ class BitrixDealHelper
             $batchCommands = [];
             foreach ($chunk as $index => $dealFields) {
                 $formattedFields = BitrixHelper::formatarCampos($dealFields);
+                
+                // Garantir que categoryId seja sempre adicionado
                 if ($categoryId) {
                     $formattedFields['categoryId'] = $categoryId;
                 }
+                
+                // CORREÇÃO: Garantir que stageId seja preservado corretamente
+                if (isset($dealFields['stageId']) && !empty($dealFields['stageId'])) {
+                    $formattedFields['stageId'] = $dealFields['stageId'];
+                }
+                
                 $params = [
                     'entityTypeId' => $entityId,
                     'fields' => $formattedFields
@@ -41,6 +57,10 @@ class BitrixDealHelper
             $resultado = BitrixHelper::chamarApi('batch', ['cmd' => $batchCommands], [
                 'log' => true
             ]);
+            
+            // LOG ADICIONAL para debug
+            LogHelper::logBitrixHelpers("BATCH DEBUG - Chunk processado com " . count($chunk) . " deals. Resposta: " . json_encode($resultado, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
+            
             $sucessosChunk = 0;
             $idsChunk = [];
             if (isset($resultado['result']['result'])) {
@@ -57,11 +77,17 @@ class BitrixDealHelper
                         $sucessosChunk++;
                         $idsChunk[] = $res['result'];
                         $todosIds[] = $res['result'];
+                    } else {
+                        // LOG do erro específico
+                        LogHelper::logBitrixHelpers("DEAL FALHOU - Key: $key - Erro: " . json_encode($res, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
                     }
                 }
             }
             $totalSucessos += $sucessosChunk;
             $totalErros += count($chunk) - $sucessosChunk;
+            
+            // LOG de resumo do chunk
+            LogHelper::logBitrixHelpers("CHUNK RESUMO - Sucessos: $sucessosChunk | Erros: " . (count($chunk) - $sucessosChunk) . " | IDs: " . implode(',', $idsChunk), __CLASS__ . '::' . __FUNCTION__);
         }
 
         $endTime = microtime(true);
@@ -279,6 +305,70 @@ class BitrixDealHelper
                 'mensagem' => 'Erro ao criar job: ' . $e->getMessage(),
                 'total_deals' => count($deals)
             ];
+        }
+    }
+
+    /**
+     * Valida e formata campos baseado nos metadados do Bitrix
+     */
+    private static function validarEFormatarCampos($fields, $metadata)
+    {
+        $fieldsFormatados = [];
+        
+        foreach ($fields as $campo => $valor) {
+            // Primeiro, formatar o nome do campo
+            $campoFormatado = array_key_first(BitrixHelper::formatarCampos([$campo => null]));
+            
+            // Verificar se existe metadados para este campo
+            if (!isset($metadata[$campoFormatado])) {
+                // Campo não existe nos metadados, manter como está
+                $fieldsFormatados[$campoFormatado] = $valor;
+                continue;
+            }
+            
+            $meta = $metadata[$campoFormatado];
+            $tipo = $meta['type'] ?? 'string';
+            $isMultiple = $meta['isMultiple'] ?? false;
+            
+            // Formatar valor baseado no tipo
+            $valorFormatado = self::formatarValorPorTipo($valor, $tipo, $isMultiple);
+            
+            $fieldsFormatados[$campoFormatado] = $valorFormatado;
+        }
+        
+        return $fieldsFormatados;
+    }
+    
+    /**
+     * Formata valor baseado no tipo do campo
+     */
+    private static function formatarValorPorTipo($valor, $tipo, $isMultiple)
+    {
+        // Se valor é nulo ou vazio, retorna como está
+        if ($valor === null || $valor === '') {
+            return $valor;
+        }
+        
+        switch ($tipo) {
+            case 'integer':
+            case 'double':
+                return $isMultiple ? (is_array($valor) ? array_map('intval', $valor) : [(int)$valor]) : (int)$valor;
+                
+            case 'boolean':
+                return $isMultiple ? (is_array($valor) ? array_map('boolval', $valor) : [(bool)$valor]) : (bool)$valor;
+                
+            case 'enumeration':
+                // Para campos de seleção, manter como está (IDs)
+                return $isMultiple ? (is_array($valor) ? $valor : [$valor]) : $valor;
+                
+            case 'crm_entity':
+                // Para campos de entidades (company, contact, deal)
+                return $isMultiple ? (is_array($valor) ? array_map('intval', $valor) : [(int)$valor]) : (int)$valor;
+                
+            case 'string':
+            case 'text':
+            default:
+                return $isMultiple ? (is_array($valor) ? $valor : [$valor]) : (string)$valor;
         }
     }
 
