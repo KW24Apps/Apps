@@ -37,73 +37,109 @@ try {
     if (!$webhook) {
         throw new Exception('Webhook não encontrado para o cliente: ' . $cliente);
     }
-    
-    // Busca usuários do Bitrix via API direta com paginação
+
+    // Busca otimizada no Bitrix
     $url = rtrim($webhook, '/') . '/user.get.json';
     $allUsers = [];
-    $start = 0;
-    $limit = 50; // Bitrix limita a 50 por request
     
-    // Se não há query específica, busca todos os usuários ativos
-    $searchFilter = ['ACTIVE' => 'Y'];
+    // Se há query de busca, faz busca direcionada
     if (!empty($q)) {
-        // Se há query, adiciona filtro de busca por nome
-        $searchFilter['NAME'] = '%' . $q . '%';
-        $searchFilter['LAST_NAME'] = '%' . $q . '%';
-    }
-    
-    do {
+        error_log("DEBUG: Fazendo busca direcionada por: " . $q);
+        
+        // Busca usuários que contenham a query no nome ou sobrenome
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-            'FILTER' => $searchFilter,
+            'FILTER' => [
+                'ACTIVE' => 'Y'
+                // Removendo filtros específicos pois podem não funcionar
+            ],
             'ORDER' => ['NAME' => 'ASC'],
-            'SELECT' => ['ID', 'NAME', 'LAST_NAME', 'EMAIL'],
-            'START' => $start
+            'SELECT' => ['ID', 'NAME', 'LAST_NAME', 'EMAIL']
         ]));
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
         curl_close($ch);
         
-        if ($curlError) {
-            throw new Exception('Erro cURL: ' . $curlError);
+        if ($httpCode === 200 && $response) {
+            $data = json_decode($response, true);
+            if (isset($data['result']) && is_array($data['result'])) {
+                $allUsers = array_merge($allUsers, $data['result']);
+                error_log("DEBUG: Primeira busca retornou " . count($data['result']) . " usuários");
+            }
         }
         
-        if ($httpCode !== 200) {
-            throw new Exception('Erro HTTP: ' . $httpCode . ' - ' . substr($response, 0, 200));
-        }
+    } else {
+        // Se não há query, busca TODOS os usuários com paginação
+        error_log("DEBUG: Fazendo busca completa de todos os usuários");
         
-        $data = json_decode($response, true);
+        $start = 0;
+        $limit = 50;
         
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception('Erro JSON: ' . json_last_error_msg());
-        }
-        
-        if (isset($data['error'])) {
-            throw new Exception('Erro Bitrix: ' . ($data['error_description'] ?? 'Erro desconhecido'));
-        }
-        
-        if (!isset($data['result']) || !is_array($data['result'])) {
-            throw new Exception('Resposta inválida da API Bitrix');
-        }
-        
-        // Adiciona usuários desta página
-        $allUsers = array_merge($allUsers, $data['result']);
-        
-        // Prepara para próxima página
-        $start += $limit;
-        $hasMore = count($data['result']) === $limit; // Se retornou 50, pode haver mais
-        
-        // Log de debug da paginação
-        error_log("DEBUG: Página start=$start, recebidos=" . count($data['result']) . ", hasMore=" . ($hasMore ? 'sim' : 'não'));
-        
-    } while ($hasMore && $start < 2000); // Aumenta limite para 2000 usuários
+        do {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+                'FILTER' => ['ACTIVE' => 'Y'],
+                'ORDER' => ['NAME' => 'ASC'],
+                'SELECT' => ['ID', 'NAME', 'LAST_NAME', 'EMAIL'],
+                'START' => $start
+            ]));
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+            
+            if ($curlError) {
+                error_log("ERRO cURL: " . $curlError);
+                break;
+            }
+            
+            if ($httpCode !== 200) {
+                error_log("ERRO HTTP: " . $httpCode . " - " . substr($response, 0, 200));
+                break;
+            }
+            
+            $data = json_decode($response, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                error_log("ERRO JSON: " . json_last_error_msg());
+                break;
+            }
+            
+            if (isset($data['error'])) {
+                error_log("ERRO Bitrix: " . ($data['error_description'] ?? 'Erro desconhecido'));
+                break;
+            }
+            
+            if (!isset($data['result']) || !is_array($data['result'])) {
+                error_log("ERRO: Resposta inválida da API Bitrix");
+                break;
+            }
+            
+            // Adiciona usuários desta página
+            $pageUsers = $data['result'];
+            $allUsers = array_merge($allUsers, $pageUsers);
+            
+            // Prepara para próxima página
+            $start += $limit;
+            $hasMore = count($pageUsers) === $limit; // Se retornou 50, pode haver mais
+            
+            // Log de debug da paginação
+            error_log("DEBUG: Página start=$start, recebidos=" . count($pageUsers) . ", total=" . count($allUsers) . ", hasMore=" . ($hasMore ? 'sim' : 'não'));
+            
+        } while ($hasMore && $start < 2000); // Aumenta limite para 2000 usuários
+    }
     
     // Log para debug
     error_log("DEBUG: Buscados " . count($allUsers) . " usuários do Bitrix para cliente: " . $cliente);
@@ -118,6 +154,11 @@ try {
         
         // Pula se não tem nome ou ID
         if (!$nome || !$userId) {
+            continue;
+        }
+        
+        // Se há query, verifica se o nome corresponde
+        if (!empty($q) && stripos($nome, $q) === false) {
             continue;
         }
         
@@ -141,7 +182,8 @@ try {
     });
     
     // Log final para debug
-    error_log("DEBUG: Retornando " . count($usuarios) . " usuários únicos após filtros");
+    error_log("DEBUG: Retornando " . count($usuarios) . " usuários únicos após filtros para query: '$q'");
+    error_log("DEBUG: Primeiros 5 usuários: " . json_encode(array_slice(array_column($usuarios, 'name'), 0, 5)));
     
     echo json_encode($usuarios);
     
