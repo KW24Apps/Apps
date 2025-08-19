@@ -2,11 +2,19 @@
 // config.php - Configurações específicas do formulário de importação
 // NOTA: Webhook vem do sistema principal, aqui apenas configurações de funis
 
-// Funis disponíveis para importação
+// Funis disponíveis para importação  
+// FORMATO: 'entityTypeId_categoryId_type' => 'Nome Exibido'
 $FUNIS_DISPONIVEIS = [
-    '84' => 'Postagens e Avisos',
-    '208' => 'KW24',
-    // Adicione mais funis conforme necessário
+    // DEALS TRADICIONAIS (entityTypeId = 2)
+    '2_43_deal' => 'Pré venda - Nimbus Tax',
+    '2_53_deal' => 'Comercial Nimbus Tax', 
+    '2_65_deal' => 'Pré venda Contabilidade',
+    '2_73_deal' => 'Pré venda Certificados',
+    '2_75_deal' => 'Pré venda KW24',
+    '2_69_deal' => 'Pré venda PDV Sys',
+    
+    // SPAs CUSTOMIZADAS
+    '147_226_spa' => 'Espaço AMI - Envio de WhatsApp'
 ];
 
 // Configurações de upload
