@@ -23,14 +23,6 @@ class BitrixDealHelper
             $fields = [$fields];
         }
 
-        // REABILITADO: Consultar metadados dos campos antes de criar
-        $camposMetadata = BitrixHelper::consultarCamposCrm($entityId);
-        
-        // REABILITADO: Validar e formatar campos baseado nos metadados
-        foreach ($fields as &$dealFields) {
-            $dealFields = self::validarEFormatarCampos($dealFields, $camposMetadata);
-        }
-
         // Sempre executa em batch, mesmo para 1 deal
         $chunks = array_chunk($fields, $tamanhoLote);
         $todosIds = [];
@@ -46,7 +38,8 @@ class BitrixDealHelper
             foreach ($chunk as $index => $dealFields) {
                 error_log("DEBUG: Deal $index campos originais: " . print_r($dealFields, true));
                 
-                $formattedFields = BitrixHelper::formatarCampos($dealFields);
+                // Formata nomes e valida/formata valores dos campos
+                $formattedFields = BitrixHelper::formatarCampos($dealFields, $entityId, true);
                 
                 // Garantir que categoryId seja sempre adicionado
                 if ($categoryId) {
@@ -55,13 +48,51 @@ class BitrixDealHelper
                 
                 // CORREÇÃO: Garantir que stageId seja preservado corretamente
                 if (isset($dealFields['stageId']) && !empty($dealFields['stageId'])) {
-                    $formattedFields['stageId'] = $dealFields['stageId'];
+                    unset($formattedFields['STAGE_ID']); // Garante a remoção de chaves com formato antigo
+                    
+                    $stageIdFornecido = $dealFields['stageId'];
+                    
+                    // Verifica se o stageId é numérico. Se for, busca o STATUS_ID correspondente.
+                    // Se não for numérico, assume que já é o STATUS_ID correto.
+                    if (is_numeric($stageIdFornecido)) {
+                        // Constrói o ID da entidade de estágio dinamicamente, conforme a nova documentação
+                        $stageEntityId = "DYNAMIC_{$entityId}_STAGE";
+                        if (!empty($categoryId)) {
+                            $stageEntityId .= "_{$categoryId}";
+                        }
+                        
+                        // Usa a nova função para consultar as etapas com o método correto
+                        $etapasDisponiveis = BitrixHelper::consultarEtapasCrmItem($stageEntityId);
+                        $statusIdCorreto = null;
+                        
+                        foreach ($etapasDisponiveis as $etapa) {
+                            // O ID numérico da etapa está no campo 'ID'
+                            if (isset($etapa['ID']) && $etapa['ID'] == $stageIdFornecido) {
+                                $statusIdCorreto = $etapa['STATUS_ID'];
+                                break;
+                            }
+                        }
+                        
+                        // Usa o STATUS_ID encontrado; se não encontrar, mantém o numérico como fallback (pode falhar)
+                        $formattedFields['stageId'] = $statusIdCorreto ?? $stageIdFornecido;
+                        
+                    } else {
+                        // Se não for numérico, usa o valor diretamente, assumindo que é o STATUS_ID
+                        $formattedFields['stageId'] = $stageIdFornecido;
+                    }
                 }
+                
+                // LOG DE DEPURAÇÃO FINAL: Verifica o conteúdo exato de $formattedFields antes de montar a chamada
+                error_log("DEBUG FINAL - Fields para API: " . print_r($formattedFields, true));
                 
                 $params = [
                     'entityTypeId' => $entityId,
                     'fields' => $formattedFields
                 ];
+                
+                // LOG ADICIONAL: Registrar os parâmetros exatos de cada deal antes de enviar
+                LogHelper::logBitrixHelpers("DEAL PARAMS (Chunk {$chunkIndex}, Index {$index}): " . json_encode($params, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
+                
                 $batchCommands["deal$index"] = 'crm.item.add?' . http_build_query($params);
                 
                 error_log("DEBUG: Deal $index comando: " . $batchCommands["deal$index"]);
@@ -165,7 +196,8 @@ class BitrixDealHelper
         foreach ($chunks as $chunk) {
             $batchCommands = [];
             foreach ($chunk as $index => $editItem) {
-                $fieldsFormatados = BitrixHelper::formatarCampos($editItem['fields']);
+                // Formata nomes e valida/formata valores dos campos
+                $fieldsFormatados = BitrixHelper::formatarCampos($editItem['fields'], $entityId, true);
                 $params = [
                     'entityTypeId' => $entityId,
                     'id' => (int)$editItem['id'],
@@ -330,70 +362,6 @@ class BitrixDealHelper
                 'mensagem' => 'Erro ao criar job: ' . $e->getMessage(),
                 'total_deals' => count($deals)
             ];
-        }
-    }
-
-    /**
-     * Valida e formata campos baseado nos metadados do Bitrix
-     */
-    private static function validarEFormatarCampos($fields, $metadata)
-    {
-        $fieldsFormatados = [];
-        
-        foreach ($fields as $campo => $valor) {
-            // Primeiro, formatar o nome do campo
-            $campoFormatado = array_key_first(BitrixHelper::formatarCampos([$campo => null]));
-            
-            // Verificar se existe metadados para este campo
-            if (!isset($metadata[$campoFormatado])) {
-                // Campo não existe nos metadados, manter como está
-                $fieldsFormatados[$campoFormatado] = $valor;
-                continue;
-            }
-            
-            $meta = $metadata[$campoFormatado];
-            $tipo = $meta['type'] ?? 'string';
-            $isMultiple = $meta['isMultiple'] ?? false;
-            
-            // Formatar valor baseado no tipo
-            $valorFormatado = self::formatarValorPorTipo($valor, $tipo, $isMultiple);
-            
-            $fieldsFormatados[$campoFormatado] = $valorFormatado;
-        }
-        
-        return $fieldsFormatados;
-    }
-    
-    /**
-     * Formata valor baseado no tipo do campo
-     */
-    private static function formatarValorPorTipo($valor, $tipo, $isMultiple)
-    {
-        // Se valor é nulo ou vazio, retorna como está
-        if ($valor === null || $valor === '') {
-            return $valor;
-        }
-        
-        switch ($tipo) {
-            case 'integer':
-            case 'double':
-                return $isMultiple ? (is_array($valor) ? array_map('intval', $valor) : [(int)$valor]) : (int)$valor;
-                
-            case 'boolean':
-                return $isMultiple ? (is_array($valor) ? array_map('boolval', $valor) : [(bool)$valor]) : (bool)$valor;
-                
-            case 'enumeration':
-                // Para campos de seleção, manter como está (IDs)
-                return $isMultiple ? (is_array($valor) ? $valor : [$valor]) : $valor;
-                
-            case 'crm_entity':
-                // Para campos de entidades (company, contact, deal)
-                return $isMultiple ? (is_array($valor) ? array_map('intval', $valor) : [(int)$valor]) : (int)$valor;
-                
-            case 'string':
-            case 'text':
-            default:
-                return $isMultiple ? (is_array($valor) ? $valor : [$valor]) : (string)$valor;
         }
     }
 

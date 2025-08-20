@@ -150,42 +150,38 @@ class BitrixHelper
     }
     
     // Formata os campos conforme o padrão esperado pelo Bitrix (camelCase)
-    public static function formatarCampos($dados)
+    public static function formatarCampos($dados, $entityTypeId = null, $validarValores = false)
     {
+        $metadata = [];
+        if ($validarValores && $entityTypeId) {
+            $metadata = self::consultarCamposCrm($entityTypeId);
+        }
+
         $fields = [];
-        
-        // Campos que devem ser ignorados/removidos
         $camposInvalidos = ['typeId'];
 
         foreach ($dados as $campo => $valor) {
-            // Pula campos inválidos
             if (in_array($campo, $camposInvalidos)) {
-                error_log("DEBUG: Campo '$campo' ignorado (inválido para API Bitrix)");
-                continue;
-            }
-            
-            // Se já está no padrão camelCase (ufCrm_ ou ufCrmXX_), não altera
-            if (preg_match('/^ufCrm(\d+_)?\d+$/', $campo)) {
-                $fields[$campo] = $valor;
                 continue;
             }
 
-            // Normaliza prefixos quebrados, aceita ufcrm_, uf_crm_, UF_CRM_...
-            $campoNormalizado = strtoupper(str_replace(['ufcrm_', 'uf_crm_'], 'UF_CRM_', $campo));
+            $campoFormatado = $campo;
+            if (!preg_match('/^ufCrm(\d+_)?\d+$/', $campo)) {
+                $campoNormalizado = strtoupper(str_replace(['ufcrm_', 'uf_crm_'], 'UF_CRM_', $campo));
+                if (preg_match('/^UF_CRM_(\d+)_([0-9]+)$/', $campoNormalizado, $m)) {
+                    $campoFormatado = 'ufCrm' . $m[1] . '_' . $m[2];
+                } elseif (preg_match('/^UF_CRM_([0-9]+)$/', $campoNormalizado, $m)) {
+                    $campoFormatado = 'ufCrm_' . $m[1];
+                }
+            }
 
-            // SPA: UF_CRM_XX_YYYYYYY (XX = qualquer número de SPA, YYYYYYY = campo)
-            if (preg_match('/^UF_CRM_(\d+)_([0-9]+)$/', $campoNormalizado, $m)) {
-                $chaveConvertida = 'ufCrm' . $m[1] . '_' . $m[2];
-                $fields[$chaveConvertida] = $valor;
-            }
-            // DEAL: UF_CRM_YYYYYYY
-            elseif (preg_match('/^UF_CRM_([0-9]+)$/', $campoNormalizado, $m)) {
-                $chaveConvertida = 'ufCrm_' . $m[1];
-                $fields[$chaveConvertida] = $valor;
-            }
-            // Se não bate nenhum padrão, mantém como veio
-            else {
-                $fields[$campo] = $valor;
+            if ($validarValores && !empty($metadata) && isset($metadata[$campoFormatado])) {
+                $meta = $metadata[$campoFormatado];
+                $tipo = $meta['type'] ?? 'string';
+                $isMultiple = $meta['isMultiple'] ?? false;
+                $fields[$campoFormatado] = self::formatarValorPorTipo($valor, $tipo, $isMultiple);
+            } else {
+                $fields[$campoFormatado] = $valor;
             }
         }
 
@@ -242,6 +238,16 @@ class BitrixHelper
             }
         }
         return $stageId; // Se não encontrar, retorna o próprio ID
+    }
+
+    // Consulta as etapas de uma entidade CRM (usando o método mais novo crm.status.entity.items)
+    public static function consultarEtapasCrmItem($entityId)
+    {
+        $params = [
+            'entityId' => $entityId
+        ];
+        $resposta = BitrixHelper::chamarApi('crm.status.entity.items', $params, []);
+        return $resposta['result']['items'] ?? $resposta['result'] ?? []; // A API pode retornar 'items' ou não
     }
 
     // Lista todos os itens de uma entidade CRM (genérico para Company, Deal, SPA, Contact) com paginação
@@ -302,4 +308,34 @@ class BitrixHelper
         ];
     }
 
+    /**
+     * Formata valor baseado no tipo do campo
+     */
+    private static function formatarValorPorTipo($valor, $tipo, $isMultiple)
+    {
+        if ($valor === null || $valor === '') {
+            return $valor;
+        }
+        
+        switch ($tipo) {
+            case 'integer':
+            case 'double':
+                return $isMultiple ? (is_array($valor) ? array_map('intval', $valor) : [(int)$valor]) : (int)$valor;
+                
+            case 'boolean':
+                return $isMultiple ? (is_array($valor) ? array_map('boolval', $valor) : [(bool)$valor]) : (bool)$valor;
+                
+            case 'enumeration':
+            case 'crm_entity':
+                return $isMultiple ? (is_array($valor) ? $valor : [$valor]) : $valor;
+                
+            case 'string':
+            case 'text':
+            default:
+                if ($isMultiple) {
+                    return is_array($valor) ? $valor : [$valor];
+                }
+                return is_array($valor) ? implode(', ', $valor) : (string)$valor;
+        }
+    }
 }

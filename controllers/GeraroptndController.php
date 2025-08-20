@@ -4,139 +4,170 @@ namespace Controllers;
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../enums/GeraroptndEnums.php';
+require_once __DIR__ . '/../helpers/LogHelper.php';
 
 use Helpers\BitrixDealHelper;
+use Helpers\LogHelper;
 use Helpers\BitrixHelper;
 use Enums\GeraroptndEnums;
+use Exception;
 
 class GeraroptndController
 {
     public function executar()
     {
-        // Definir timeout de 60 minutos para criação de múltiplos deals
-        set_time_limit(3600); // 60 minutos = 3600 segundos
+        // Definir timeout e header
+        set_time_limit(3600);
+        header('Content-Type: application/json');
 
-        // ============================================
-        // PARTE 1: COLETA DE DADOS
-        // ============================================
-        
-        // Passo 1: Obter dealId
-        $dealId = $_GET['deal'] ?? $_GET['id'] ?? null;
-        if (!$dealId) {
-            header('Content-Type: application/json');
-            echo json_encode(['erro' => 'Parâmetro deal/id é obrigatório']);
+        $dealId = $this->obterDealId();
+        LogHelper::logGerarOportunidade("INFO: Processo iniciado para o Deal ID: " . ($dealId ?? 'N/A'));
+
+        try {
+            // ============================================
+            // PARTE 1: COLETA E VALIDAÇÃO DE DADOS
+            // ============================================
+            if (!$dealId) {
+                throw new Exception('Parâmetro deal/id é obrigatório');
+            }
+
+            $item = $this->buscarDadosDealPrincipal($dealId);
+            if (empty($item)) {
+                throw new Exception("Deal com ID {$dealId} não encontrado ou sem dados.");
+            }
+
+            // ============================================
+            // PARTE 2: EXTRAÇÃO E NORMALIZAÇÃO
+            // ============================================
+            $empresas = $this->extrairListaDeCampo($item, 'ufCrm_1689718588');
+            $oportunidadesOferecidas = $this->extrairListaDeCampo($item, 'ufCrm_1688060696', true);
+            $oportunidadesConvertidas = $this->extrairListaDeCampo($item, 'ufCrm_1728327366', true);
+
+            $oportunidadesMapeadas = $this->mapearOportunidades($item, $oportunidadesOferecidas, $oportunidadesConvertidas);
+            $camposParaEspelhar = $this->montarCamposParaEspelhar($item);
+
+            // ============================================
+            // PARTE 3: DIAGNÓSTICO E LÓGICA DE NEGÓCIO
+            // ============================================
+            $processType = $this->diagnosticarProcesso($item);
+            $destinoInfo = $this->determinarDestinoDeals($processType, $item);
+
+            $combinacoesParaCriar = $this->obterCombinacoesParaCriar($processType, $empresas, $oportunidadesOferecidas, $oportunidadesConvertidas, $oportunidadesMapeadas, $dealId);
+
+            if (empty($combinacoesParaCriar)) {
+                $mensagem = 'Todos os deals já foram criados';
+                LogHelper::logGerarOportunidade("SUCCESS: {$mensagem} para o Deal ID: {$dealId}");
+                echo json_encode(['sucesso' => true, 'mensagem' => $mensagem], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+                return;
+            }
+
+            // ============================================
+            // PARTE 4: CRIAÇÃO E ATUALIZAÇÃO
+            // ============================================
+            $arrayFinalParaCriacao = $this->montarArrayCompletoParaCriacao($combinacoesParaCriar, $camposParaEspelhar, $destinoInfo, $dealId);
+
+            $resultadoCriacao = BitrixDealHelper::criarDeal(
+                $arrayFinalParaCriacao['entityId'],
+                $arrayFinalParaCriacao['categoryId'],
+                $arrayFinalParaCriacao['fields'],
+                5 // Tamanho do lote
+            );
+
+            if ($resultadoCriacao['status'] !== 'sucesso') {
+                throw new Exception("Falha ao criar deals. Mensagem: " . ($resultadoCriacao['mensagem'] ?? 'Erro desconhecido'));
+            }
+
+            // ============================================
+            // PARTE 5: ATUALIZAR NEGÓCIO ORIGINAL
+            // ============================================
+            $resultadoUpdate = $this->atualizarDealOrigem($dealId, $item, $resultadoCriacao);
+            if (isset($resultadoUpdate['status']) && $resultadoUpdate['status'] !== 'sucesso') {
+                // Loga como aviso, pois a criação dos deals foi bem-sucedida
+                LogHelper::logGerarOportunidade("WARNING: Deals criados com sucesso, mas falha ao atualizar o Deal de origem {$dealId}. Mensagem: " . ($resultadoUpdate['mensagem'] ?? ''));
+            }
+
+            // ============================================
+            // PARTE 6: RETORNO FINAL
+            // ============================================
+            LogHelper::logGerarOportunidade("SUCCESS: Processo finalizado para o Deal ID {$dealId}. Criados {$resultadoCriacao['quantidade']} deals.");
+            $this->retornarRespostaFinal($resultadoCriacao, $resultadoUpdate, $dealId, $item, $processType, count($combinacoesParaCriar));
+
+        } catch (Exception $e) {
+            $mensagemErro = $e->getMessage();
+            LogHelper::logGerarOportunidade("ERROR: Falha no processo para o Deal ID {$dealId}. Motivo: {$mensagemErro}");
+            echo json_encode(['sucesso' => false, 'erro' => $mensagemErro], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
             return;
         }
-        
-        // Passo 1: Definir campos a consultar usando Enums
+    }
+
+    private function obterDealId()
+    {
+        return $_GET['deal'] ?? $_GET['id'] ?? null;
+    }
+
+    private function buscarDadosDealPrincipal(int $dealId)
+    {
         $camposBitrix = GeraroptndEnums::getAllFields();
-        
-        // Passo 1: Consultar deal usando BitrixDealHelper
         $camposStr = implode(',', $camposBitrix);
         $resultado = BitrixDealHelper::consultarDeal(2, $dealId, $camposStr);
-        $item = $resultado['result'] ?? [];
-        
-        // Passo 2: Consultar metadados dos campos CRM
-        $crmFields = BitrixHelper::consultarCamposCrm(2);
-        
-        // Debug completo da resposta
-        $debugCrmFieldsCompleto = [
-            'resposta_completa' => $crmFields,
-            'tem_result' => isset($crmFields['result']),
-            'keys_principais' => is_array($crmFields) ? array_keys($crmFields) : 'não é array',
-        ];
-        
-        // Passo 3: Normalizar e extrair empresas, oferecidas, convertidas
-        $empresas = [];
-        if (!empty($item['ufCrm_1689718588']['texto'])) {
-            $empresas = is_array($item['ufCrm_1689718588']['texto']) 
-                ? $item['ufCrm_1689718588']['texto'] 
-                : explode(',', $item['ufCrm_1689718588']['texto']);
-        }
-        
-        $ofer = [];
-        if (!empty($item['ufCrm_1688060696']['texto'])) {
-            $textoOfer = $item['ufCrm_1688060696']['texto'];
-            if (is_array($textoOfer)) {
-                $ofer = array_filter($textoOfer, function($valor) {
-                    return !in_array(strtoupper(trim($valor)), ['N', 'NAO', 'NÃO', 'NENHUMA', 'NONE', '']);
-                });
-            } else {
-                $valores = explode(',', $textoOfer);
-                $ofer = array_filter($valores, function($valor) {
-                    return !in_array(strtoupper(trim($valor)), ['N', 'NAO', 'NÃO', 'NENHUMA', 'NONE', '']);
-                });
-            }
-        }
-        
-        $conv = [];
-        if (!empty($item['ufCrm_1728327366']['texto'])) {
-            $textoConv = $item['ufCrm_1728327366']['texto'];
-            if (is_array($textoConv)) {
-                $conv = array_filter($textoConv, function($valor) {
-                    return !in_array(strtoupper(trim($valor)), ['N', 'NAO', 'NÃO', 'NENHUMA', 'NONE', '']);
-                });
-            } else {
-                $valores = explode(',', $textoConv);
-                $conv = array_filter($valores, function($valor) {
-                    return !in_array(strtoupper(trim($valor)), ['N', 'NAO', 'NÃO', 'NENHUMA', 'NONE', '']);
-                });
-            }
+        return $resultado['result'] ?? [];
+    }
+
+    private function extrairListaDeCampo(array $item, string $campo, bool $filtrarNegativos = false): array
+    {
+        if (empty($item[$campo]['texto'])) {
+            return [];
         }
 
-        // Passo 4: Construir mapa $oportunidades apenas das selecionadas
+        $texto = $item[$campo]['texto'];
+        $valores = is_array($texto) ? $texto : explode(',', $texto);
+
+        if ($filtrarNegativos) {
+            return array_filter($valores, function ($valor) {
+                return !in_array(strtoupper(trim($valor)), ['N', 'NAO', 'NÃO', 'NENHUMA', 'NONE', '']);
+            });
+        }
+
+        return $valores;
+    }
+
+    private function mapearOportunidades(array $item, array $oportunidadesOferecidas, array $oportunidadesConvertidas): array
+    {
         $oportunidades = [];
-        
-        // CORREÇÃO: Usar os dados já mapeados do consultarDeal() ao invés de tentar mapear novamente
-        $oportunidadesSelecionadas = array_merge($ofer, $conv);
-        $oportunidadesSelecionadas = array_unique($oportunidadesSelecionadas);
-        
+        $oportunidadesSelecionadas = array_unique(array_merge($oportunidadesOferecidas, $oportunidadesConvertidas));
+
         // Mapear oferecidas
         if (!empty($item['ufCrm_1688060696']['valor']) && !empty($item['ufCrm_1688060696']['texto'])) {
-            $valoresOfer = $item['ufCrm_1688060696']['valor'];
-            $textosOfer = $item['ufCrm_1688060696']['texto'];
+            $valores = is_array($item['ufCrm_1688060696']['valor']) ? $item['ufCrm_1688060696']['valor'] : [$item['ufCrm_1688060696']['valor']];
+            $textos = is_array($item['ufCrm_1688060696']['texto']) ? $item['ufCrm_1688060696']['texto'] : [$item['ufCrm_1688060696']['texto']];
             
-            for ($i = 0; $i < count($textosOfer); $i++) {
-                $nomeOportunidade = $textosOfer[$i];
-                $idOportunidade = $valoresOfer[$i];
-                
-                if (in_array($nomeOportunidade, $oportunidadesSelecionadas)) {
-                    if (!isset($oportunidades[$nomeOportunidade])) {
-                        $oportunidades[$nomeOportunidade] = [];
-                    }
-                    $oportunidades[$nomeOportunidade]['oferecida'] = $idOportunidade;
-                    $oportunidades[$nomeOportunidade]['oportunidade'] = $idOportunidade; // Para usar na criação
-                }
-            }
-        }
-        
-        // Mapear convertidas (se não for apenas "N")
-        if (!empty($item['ufCrm_1728327366']['valor']) && 
-            !empty($item['ufCrm_1728327366']['texto']) && 
-            $item['ufCrm_1728327366']['texto'] !== 'N') {
-            
-            $valoresConv = is_array($item['ufCrm_1728327366']['valor']) ? 
-                          $item['ufCrm_1728327366']['valor'] : [$item['ufCrm_1728327366']['valor']];
-            $textosConv = is_array($item['ufCrm_1728327366']['texto']) ? 
-                         $item['ufCrm_1728327366']['texto'] : [$item['ufCrm_1728327366']['texto']];
-            
-            for ($i = 0; $i < count($textosConv); $i++) {
-                $nomeOportunidade = $textosConv[$i];
-                $idOportunidade = $valoresConv[$i];
-                
-                if (in_array($nomeOportunidade, $oportunidadesSelecionadas)) {
-                    if (!isset($oportunidades[$nomeOportunidade])) {
-                        $oportunidades[$nomeOportunidade] = [];
-                    }
-                    $oportunidades[$nomeOportunidade]['convertida'] = $idOportunidade;
-                    if (!isset($oportunidades[$nomeOportunidade]['oportunidade'])) {
-                        $oportunidades[$nomeOportunidade]['oportunidade'] = $idOportunidade;
-                    }
+            for ($i = 0; $i < count($textos); $i++) {
+                if (in_array($textos[$i], $oportunidadesSelecionadas)) {
+                    $oportunidades[$textos[$i]]['oferecida'] = $valores[$i];
+                    $oportunidades[$textos[$i]]['oportunidade'] = $valores[$i];
                 }
             }
         }
 
-        // Passo 5: Montar campos base para espelhar usando Enum
+        // Mapear convertidas
+        if (!empty($item['ufCrm_1728327366']['valor']) && !empty($item['ufCrm_1728327366']['texto'])) {
+            $valores = is_array($item['ufCrm_1728327366']['valor']) ? $item['ufCrm_1728327366']['valor'] : [$item['ufCrm_1728327366']['valor']];
+            $textos = is_array($item['ufCrm_1728327366']['texto']) ? $item['ufCrm_1728327366']['texto'] : [$item['ufCrm_1728327366']['texto']];
+
+            for ($i = 0; $i < count($textos); $i++) {
+                if (in_array($textos[$i], $oportunidadesSelecionadas)) {
+                    $oportunidades[$textos[$i]]['convertida'] = $valores[$i];
+                    if (!isset($oportunidades[$textos[$i]]['oportunidade'])) {
+                        $oportunidades[$textos[$i]]['oportunidade'] = $valores[$i];
+                    }
+                }
+            }
+        }
+        return $oportunidades;
+    }
+
+    private function montarCamposParaEspelhar(array $item): array
+    {
         $camposParaEspelhar = [];
         $camposExcluir = GeraroptndEnums::CAMPOS_EXCLUIR;
         
@@ -145,124 +176,158 @@ class GeraroptndController
                 $camposParaEspelhar[$campo] = $valor;
             }
         }
-        
-        // ============================================
-        // PARTE 2: DIAGNÓSTICO DE OPERAÇÃO
-        // ============================================
-        
-        // Passo 1: Definir $processType
+        return $camposParaEspelhar;
+    }
+
+    private function diagnosticarProcesso(array $item): int
+    {
         $etapaAtualId = $item['stageId']['valor'] ?? '';
         $vinculados = $item['ufCrm_1670953245']['valor'] ?? null;
-        
-        // Normalizar $vinculados
-        if ($vinculados) {
-            if (is_array($vinculados)) {
-                $vinculados = array_filter(array_map('trim', $vinculados));
-            } else {
-                $vinculados = array_filter(array_map('trim', explode(',', $vinculados)));
-            }
-        }
-        
-        $processType = 0;
+
         if ($etapaAtualId === GeraroptndEnums::ETAPA_SOLICITAR_DIAGNOSTICO) {
-            $processType = 1; // solicitar diagnóstico
-        } elseif ($etapaAtualId === GeraroptndEnums::ETAPA_CONCLUIDO) {
-            if (empty($vinculados)) {
-                $processType = 2; // concluído sem diagnóstico
-            } else {
-                $processType = 3; // concluído com diagnóstico
+            return 1; // solicitar diagnóstico
+        }
+        
+        if ($etapaAtualId === GeraroptndEnums::ETAPA_CONCLUIDO) {
+            return empty($vinculados) ? 2 : 3; // 2: concluído sem diagnóstico, 3: concluído com diagnóstico
+        }
+
+        return 0; // Tipo de processo não determinado
+    }
+
+    private function obterCombinacoesParaCriar($processType, $empresas, $oportunidadesOferecidas, $oportunidadesConvertidas, $oportunidadesMapeadas, $dealId)
+    {
+        $dealsExistentesResult = BitrixHelper::listarItensCrm(2, [
+            'ufcrm_1707331568' => [$dealId]
+        ], ['companyId', 'ufCrm_1646069163997']);
+        
+        $dealsExistentes = [];
+        if ($dealsExistentesResult['success'] && !empty($dealsExistentesResult['items'])) {
+            foreach ($dealsExistentesResult['items'] as $deal) {
+                if (isset($deal['companyId'], $deal['ufCrm_1646069163997'])) {
+                    $dealsExistentes[] = [
+                        'companyId' => (string)$deal['companyId'],
+                        'opportunityId' => (string)$deal['ufCrm_1646069163997']
+                    ];
+                }
             }
         }
         
-        // Passo 2: Se processType == 3, buscar vinculados existentes
-        $vinculadosList = [];
-        if ($processType == 3) {
-            $vinculadosList = BitrixHelper::listarItensCrm('deal', [
-                'filter' => ['ufcrm_1707331568' => $dealId],
-                'select' => ['companyId', 'ufCrm_1646069163997']
-            ]);
+        $oportunidadesParaUsar = ($processType == 1) ? $oportunidadesOferecidas : $oportunidadesConvertidas;
+        
+        $combinacoesDesejadas = [];
+        foreach ($empresas as $empresa) {
+            foreach ($oportunidadesParaUsar as $nomeOportunidade) {
+                if (isset($oportunidadesMapeadas[$nomeOportunidade]['oportunidade'])) {
+                    $combinacoesDesejadas[] = [
+                        'companyId' => (string)$empresa,
+                        'opportunityId' => (string)$oportunidadesMapeadas[$nomeOportunidade]['oportunidade'],
+                        'opportunityName' => $nomeOportunidade
+                    ];
+                }
+            }
         }
         
-        // ============================================
-        // PARTE 3: DETERMINAÇÃO DE PIPELINE E ETAPA (Passo 1)
-        // ============================================
+        $combinacoesParaCriar = [];
+        foreach ($combinacoesDesejadas as $desejada) {
+            $jaExiste = false;
+            foreach ($dealsExistentes as $existente) {
+                if ($existente['companyId'] === $desejada['companyId'] && $existente['opportunityId'] === $desejada['opportunityId']) {
+                    $jaExiste = true;
+                    break;
+                }
+            }
+            if (!$jaExiste) {
+                $combinacoesParaCriar[] = $desejada;
+            }
+        }
         
-        // Obter tipo de processo operacional para a lógica
-        $tipoProcessoOperacional = $item['ufCrm_1650979003']['valor'] ?? null;
+        return $combinacoesParaCriar;
+    }
+
+    private function determinarDestinoDeals($processType, $item)
+    {
         $tipoProcessoTexto = $item['ufCrm_1650979003']['texto'] ?? 'Não definido';
+        $tipoNormalizado = strtolower(trim($tipoProcessoTexto));
+
+        if ($processType == 1) { // Solicitando Diagnóstico
+            $vaiParaRelatorio = in_array($tipoNormalizado, ['administrativo', 'administrativo (anexo v)', 'administrativo anexo 5', 'contencioso ativo']) || empty($tipoProcessoTexto) || $tipoProcessoTexto === 'Não definido';
+            if ($vaiParaRelatorio) {
+                return ['category_id' => GeraroptndEnums::CATEGORIA_RELATORIO_PRELIMINAR, 'stage_id' => GeraroptndEnums::STAGE_ID_TRIAGEM_RELATORIO];
+            }
+            return ['category_id' => GeraroptndEnums::CATEGORIA_CONTENCIOSO, 'stage_id' => GeraroptndEnums::STAGE_ID_TRIAGEM];
+        }
+
+        if ($processType == 2 || $processType == 3) { // Concluído
+            if ($tipoNormalizado === 'administrativo') {
+                return ['category_id' => GeraroptndEnums::CATEGORIA_OPERACIONAL, 'stage_id' => GeraroptndEnums::STAGE_ID_TRIAGEM_OPERACIONAL];
+            }
+            return ['category_id' => GeraroptndEnums::CATEGORIA_CONTENCIOSO, 'stage_id' => GeraroptndEnums::STAGE_ID_TRIAGEM];
+        }
+
+        return ['category_id' => null, 'stage_id' => null];
+    }
+    
+    private function montarArrayCompletoParaCriacao($combinacoes, $camposParaEspelhar, $destinoInfo, $dealId)
+    {
+        $dealsCompletos = [];
         
-        // Determinar pipeline e etapa de destino - passar o texto diretamente
-        $destinoInfo = $this->determinarDestinoDeals($processType, $tipoProcessoTexto, $empresas, $ofer, $conv);
-        
-        // ============================================
-        // PARTE 3: OBTER COMBINAÇÕES PARA CRIAR
-        // ============================================
-        
-        // Buscar combinações que precisam ser criadas
-        $combinacoesParaCriar = $this->obterCombinacoesParaCriar($processType, $empresas, $ofer, $conv, $oportunidades, $dealId);
-        
-        // Se não há nada para criar
-        if (empty($combinacoesParaCriar)) {
-            header('Content-Type: application/json');
-            echo json_encode([
-                'sucesso' => true,
-                'mensagem' => 'Todos os deals já foram criados',
-                'deals_para_criar' => [
-                    'quantidade' => 0,
-                    'combinacoes' => []
-                ]
-            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-            return;
+        foreach ($combinacoes as $combinacao) {
+            $dealCompleto = [];
+            
+            foreach ($camposParaEspelhar as $campo => $valorCompleto) {
+                if (is_array($valorCompleto) && isset($valorCompleto['valor'])) {
+                    $dealCompleto[$campo] = $valorCompleto['valor'];
+                } else {
+                    $dealCompleto[$campo] = $valorCompleto;
+                }
+            }
+            
+            $dealCompleto['companyId'] = (int)$combinacao['companyId'];
+            $dealCompleto['ufCrm_1646069163997'] = $combinacao['opportunityId'];
+            $dealCompleto['ufcrm_1707331568'] = $dealId;
+            $dealCompleto['stageId'] = $destinoInfo['stage_id'];
+            $dealCompleto['ufCrm_1755632512'] = 'criando DEALS';
+            
+            $dealsCompletos[] = $dealCompleto;
         }
         
-        // ============================================
-        // PARTE 4: MONTAR ARRAY COMPLETO PARA CRIAÇÃO
-        // ============================================
-        
-        $arrayFinalParaCriacao = $this->montarArrayCompletoPoraCriacao($combinacoesParaCriar, $camposParaEspelhar, $destinoInfo, $dealId);
+        return [
+            'entityId' => 2,
+            'categoryId' => $destinoInfo['category_id'],
+            'fields' => $dealsCompletos
+        ];
+    }
 
-        // ============================================
-        // PARTE 4: CRIAR OS DEALS DIRETAMENTE
-        // ============================================
-        
-        // Define o tamanho do lote para criação dos deals
-        $tamanhoLote = 5;
-        
-        $resultadoCriacao = BitrixDealHelper::criarDeal(
-            $arrayFinalParaCriacao['entityId'],
-            $arrayFinalParaCriacao['categoryId'],
-            $arrayFinalParaCriacao['fields'],
-            $tamanhoLote
-        );
-
-        // ============================================
-        // PARTE 5: ATUALIZAR NEGÓCIO ORIGINAL COM VINCULADOS
-        // ============================================
-        
+    private function atualizarDealOrigem(int $dealId, array $item, array $resultadoCriacao)
+    {
         $novosIds = [];
         if (isset($resultadoCriacao['ids']) && !empty($resultadoCriacao['ids'])) {
             $novosIds = explode(', ', $resultadoCriacao['ids']);
         }
-        
-        $vinculadosExistentes = $vinculados ?? [];
-        $vinculadosFinal = array_unique(array_merge($vinculadosExistentes, $novosIds));
-        
-        $resultadoUpdate = null;
-        if (!empty($novosIds)) {
-            $resultadoUpdate = BitrixDealHelper::editarDeal(
-                2, // entityId para deals
-                $dealId,
-                ['ufCrm_1670953245' => $vinculadosFinal]
-            );
+
+        if (empty($novosIds)) {
+            return null;
         }
 
-        // ============================================
-        // RETORNO FINAL - STATUS DA CRIAÇÃO DIRETA
-        // ============================================
-        
+        $vinculadosExistentes = $item['ufCrm_1670953245']['valor'] ?? [];
+        if (!is_array($vinculadosExistentes)) {
+            $vinculadosExistentes = array_filter(array_map('trim', explode(',', $vinculadosExistentes)));
+        }
+
+        $vinculadosFinal = array_unique(array_merge($vinculadosExistentes, $novosIds));
+
+        return BitrixDealHelper::editarDeal(
+            2,
+            $dealId,
+            ['ufCrm_1670953245' => $vinculadosFinal]
+        );
+    }
+
+    private function retornarRespostaFinal(array $resultadoCriacao, ?array $resultadoUpdate, int $dealId, array $item, int $processType, int $combinacoesSolicitadas)
+    {
         $sucesso = ($resultadoCriacao['status'] === 'sucesso');
         
-        header('Content-Type: application/json');
         echo json_encode([
             'sucesso' => $sucesso,
             'criacao_deals' => [
@@ -276,237 +341,15 @@ class GeraroptndController
                 'atualizado' => !empty($resultadoUpdate),
                 'status' => $resultadoUpdate['status'] ?? 'nao_executado',
                 'mensagem' => $resultadoUpdate['mensagem'] ?? 'Nenhum deal novo para vincular.',
-                'total_vinculados' => count($vinculadosFinal)
+                'total_vinculados' => count($resultadoUpdate['ufCrm_1670953245'] ?? [])
             ],
             'contexto_original' => [
                 'deal_origem' => $dealId,
-                'etapa_atual' => $etapaAtualId,
+                'etapa_atual' => $item['stageId']['valor'] ?? '',
                 'process_type' => $processType,
-                'tipo_processo' => $tipoProcessoTexto,
-                'combinacoes_solicitadas' => count($combinacoesParaCriar)
+                'tipo_processo' => $item['ufCrm_1650979003']['texto'] ?? 'Não definido',
+                'combinacoes_solicitadas' => $combinacoesSolicitadas
             ]
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    }
-
-    /**
-     * Obtém as combinações empresa+oportunidade que precisam ser criadas
-     * Faz busca ativa no Bitrix para comparar com o que já existe
-     */
-    private function obterCombinacoesParaCriar($processType, $empresas, $ofer, $conv, $oportunidades, $dealId)
-    {
-        // CORREÇÃO: Buscar deals existentes com filtro correto para campo múltiplo
-        $dealsExistentesResult = BitrixHelper::listarItensCrm(2, [
-            'ufcrm_1707331568' => [$dealId] // Array para campo múltiplo
-        ], ['companyId', 'ufCrm_1646069163997']);
-        
-        $dealsExistentes = [];
-        if ($dealsExistentesResult['success'] && !empty($dealsExistentesResult['items'])) {
-            foreach ($dealsExistentesResult['items'] as $deal) {
-                $companyId = $deal['companyId'] ?? null;
-                $opportunityId = $deal['ufCrm_1646069163997'] ?? null;
-                
-                if ($companyId && $opportunityId) {
-                    $dealsExistentes[] = [
-                        'companyId' => (string)$companyId,    // Normalizar como string
-                        'opportunityId' => (string)$opportunityId // Normalizar como string
-                    ];
-                }
-            }
-        }
-        
-        // DEBUG: Log para acompanhar o que foi encontrado
-        error_log("DEBUG obterCombinacoesParaCriar - DealId: $dealId");
-        error_log("DEBUG obterCombinacoesParaCriar - Deals existentes encontrados: " . count($dealsExistentes));
-        error_log("DEBUG obterCombinacoesParaCriar - Deals existentes: " . json_encode($dealsExistentes));
-        
-        // Determinar quais oportunidades usar baseado no processType
-        $oportunidadesParaUsar = [];
-        if ($processType == 1) {
-            $oportunidadesParaUsar = $ofer; // oferecidas
-        } else {
-            $oportunidadesParaUsar = $conv; // convertidas
-        }
-        
-        // Montar todas as combinações desejadas
-        $combinacoesDesejadas = [];
-        foreach ($empresas as $empresa) {
-            foreach ($oportunidadesParaUsar as $nomeOportunidade) {
-                // Verificar se temos o mapeamento da oportunidade
-                if (!isset($oportunidades[$nomeOportunidade]['oportunidade'])) {
-                    continue; // Pula se não tem o ID mapeado
-                }
-                
-                $combinacoesDesejadas[] = [
-                    'companyId' => (string)$empresa,    // Normalizar como string
-                    'opportunityId' => (string)$oportunidades[$nomeOportunidade]['oportunidade'], // Normalizar como string
-                    'opportunityName' => $nomeOportunidade
-                ];
-            }
-        }
-        
-        error_log("DEBUG obterCombinacoesParaCriar - Combinações desejadas: " . count($combinacoesDesejadas));
-        error_log("DEBUG obterCombinacoesParaCriar - Combinações desejadas: " . json_encode($combinacoesDesejadas));
-        
-        // Filtrar apenas as que NÃO existem ainda com comparação rigorosa
-        $combinacoesParaCriar = [];
-        foreach ($combinacoesDesejadas as $desejada) {
-            $jaExiste = false;
-            
-            foreach ($dealsExistentes as $existente) {
-                if ($existente['companyId'] === $desejada['companyId'] && 
-                    $existente['opportunityId'] === $desejada['opportunityId']) {
-                    $jaExiste = true;
-                    error_log("DEBUG obterCombinacoesParaCriar - EXISTE: Company {$desejada['companyId']} + Opportunity {$desejada['opportunityId']}");
-                    break;
-                }
-            }
-            
-            if (!$jaExiste) {
-                $combinacoesParaCriar[] = $desejada;
-                error_log("DEBUG obterCombinacoesParaCriar - CRIAR: Company {$desejada['companyId']} + Opportunity {$desejada['opportunityId']} ({$desejada['opportunityName']})");
-            }
-        }
-        
-        error_log("DEBUG obterCombinacoesParaCriar - Final: " . count($combinacoesParaCriar) . " combinações para criar");
-        
-        return $combinacoesParaCriar;
-    }
-
-    /**
-     * Determina pipeline e etapa de destino baseado no processType e tipo de processo
-     */
-    private function determinarDestinoDeals($processType, $tipoProcessoTexto, $empresas, $ofer, $conv)
-    {
-        $categoryId = null;
-        $stageId = null;
-        $pipelineName = '';
-        $stageName = '';
-        $oportunidadesOrigem = '';
-        $totalEstimado = 0;
-        
-        // Normalizar tipo de processo para comparação
-        $tipoNormalizado = strtolower(trim($tipoProcessoTexto ?? ''));
-        
-        switch ($processType) {
-            case 1: // Solicitando Diagnóstico
-                $oportunidadesOrigem = 'oferecidas';
-                $totalEstimado = count($empresas) * count($ofer);
-                
-                // Para solicitar diagnóstico: Administrativo, Administrativo Anexo V, Contencioso Ativo ou VAZIO vão para Relatório Preliminar
-                $vaiParaRelatorio = in_array($tipoNormalizado, [
-                    'administrativo', 
-                    'administrativo (anexo v)',
-                    'administrativo anexo 5', 
-                    'contencioso ativo'
-                ]) || empty($tipoProcessoTexto) || $tipoProcessoTexto === 'Não definido';
-                
-                if ($vaiParaRelatorio) {
-                    $categoryId = GeraroptndEnums::CATEGORIA_RELATORIO_PRELIMINAR;
-                    $stageId = GeraroptndEnums::STAGE_ID_TRIAGEM_RELATORIO; // Usar ID real: 493
-                    $pipelineName = 'Relatório Preliminar';
-                    $stageName = 'Coleta de Documentos (Parceiro)';
-                } else {
-                    $categoryId = GeraroptndEnums::CATEGORIA_CONTENCIOSO;
-                    $stageId = GeraroptndEnums::STAGE_ID_TRIAGEM; // Usar ID real: 1067
-                    $pipelineName = 'Contencioso';
-                    $stageName = 'Triagem';
-                }
-                break;
-                
-            case 2: // Concluído sem Diagnóstico
-            case 3: // Concluído com Diagnóstico
-                $oportunidadesOrigem = $processType == 2 ? 'convertidas' : 'convertidas (apenas faltantes)';
-                $totalEstimado = count($empresas) * count($conv);
-                
-                // Para concluído: APENAS "Administrativo" puro vai para Operacional, todos os outros para Contencioso
-                $vaiParaOperacional = ($tipoNormalizado === 'administrativo');
-                
-                if ($vaiParaOperacional) {
-                    $categoryId = GeraroptndEnums::CATEGORIA_OPERACIONAL;
-                    $stageId = GeraroptndEnums::STAGE_ID_TRIAGEM_OPERACIONAL; // Usar ID real: 477
-                    $pipelineName = 'Operacional';
-                    $stageName = 'Triagem (CheckList Operação)';
-                } else {
-                    $categoryId = GeraroptndEnums::CATEGORIA_CONTENCIOSO;
-                    $stageId = GeraroptndEnums::STAGE_ID_TRIAGEM; // Usar ID real: 1067
-                    $pipelineName = 'Contencioso';
-                    $stageName = 'Triagem';
-                }
-                break;
-                
-            default:
-                return [
-                    'erro' => 'ProcessType inválido: ' . $processType,
-                    'total_deals_estimado' => 0
-                ];
-        }
-        
-        return [
-            'category_id' => $categoryId,
-            'stage_id' => $stageId,
-            'pipeline_name' => $pipelineName,
-            'stage_name' => $stageName,
-            'oportunidades_origem' => $oportunidadesOrigem,
-            'decisao_baseada_em' => [
-                'processType' => $processType,
-                'tipo_processo_texto' => $tipoProcessoTexto,
-                'tipo_normalizado' => $tipoNormalizado,
-                'regra_aplicada' => $processType == 1 ? 'solicitar_diagnostico' : 'concluido',
-                'criterio_decisao' => $processType == 1 
-                    ? 'Administrativo/Anexo V/Contencioso Ativo/Vazio → Relatório Preliminar | Outros → Contencioso'
-                    : 'Apenas Administrativo → Operacional | Outros → Contencioso'
-            ],
-            'total_deals_estimado' => $totalEstimado,
-            'calculo_estimativa' => [
-                'empresas' => count($empresas),
-                'oportunidades_origem' => $processType == 1 ? count($ofer) : count($conv),
-                'formula' => 'empresas × oportunidades'
-            ]
-        ];
-    }
-    
-    /**
-     * Monta o array completo com todos os campos para cada deal a ser criado
-     */
-    private function montarArrayCompletoPoraCriacao($combinacoes, $camposParaEspelhar, $destinoInfo, $dealId)
-    {
-        $dealsCompletos = [];
-        
-        foreach ($combinacoes as $combinacao) {
-            // GENÉRICO: Começar com TODOS os campos para espelhar
-            $dealCompleto = [];
-            
-            // 1. Adicionar todos os campos que devem ser espelhados (APENAS valores simples)
-            foreach ($camposParaEspelhar as $campo => $valorCompleto) {
-                // CORREÇÃO ULTRA-RIGOROSA: Sempre extrair apenas valores primitivos
-                if (is_array($valorCompleto)) {
-                    if (isset($valorCompleto['valor'])) {
-                        // Estrutura completa {nome, valor, texto, type} - pegar só o valor
-                        $dealCompleto[$campo] = $valorCompleto['valor'];
-                    } else {
-                        // Array simples - manter como está
-                        $dealCompleto[$campo] = $valorCompleto;
-                    }
-                } else {
-                    // Valor direto (string, int, null)
-                    $dealCompleto[$campo] = $valorCompleto;
-                }
-            }
-            
-            // 2. Sobrescrever/adicionar campos específicos desta combinação
-            $dealCompleto['companyId'] = (int)$combinacao['companyId'];           // Empresa específica como integer
-            $dealCompleto['ufCrm_1646069163997'] = $combinacao['opportunityId'];  // Oportunidade específica
-            $dealCompleto['ufcrm_1707331568'] = $dealId;                          // Negócio Closer (será validado automaticamente)
-            $dealCompleto['stageId'] = $destinoInfo['stage_id'];                  // Etapa de destino
-            $dealCompleto['ufCrm_1755632512'] = 'criando DEALS';                  // Campo fixo - Retorno API
-            
-            $dealsCompletos[] = $dealCompleto;
-        }
-        
-        return [
-            'entityId' => 2, // Deals sempre são entity 2
-            'categoryId' => $destinoInfo['category_id'],
-            'fields' => $dealsCompletos
-        ];
     }
 }
