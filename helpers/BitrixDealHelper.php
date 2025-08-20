@@ -365,4 +365,34 @@ class BitrixDealHelper
         }
     }
 
+    // Adiciona um comentário na timeline de um negócio (deal)
+    public static function adicionarComentarioDeal($entityId, $dealId, $comment, $authorId = null)
+    {
+        $fields = [
+            'COMMENT' => $comment
+        ];
+
+        if ($authorId) {
+            $fields['AUTHOR_ID'] = $authorId;
+        }
+
+        $params = [
+            'entityTypeId' => $entityId,
+            'entityId' => $dealId,
+            'fields' => $fields
+        ];
+
+        $resultado = BitrixHelper::chamarApi('crm.timeline.comment.add', $params, ['log' => false]);
+
+        // Log apenas em caso de erro
+        if (!isset($resultado['result']) || empty($resultado['result'])) {
+            LogHelper::logBitrixHelpers(
+                "FALHA AO ADICIONAR COMENTÁRIO - DealID: $dealId - Erro: " . json_encode($resultado, JSON_UNESCAPED_UNICODE),
+                __CLASS__ . '::' . __FUNCTION__
+            );
+            return ['success' => false, 'error' => $resultado['error_description'] ?? 'Erro desconhecido'];
+        }
+
+        return ['success' => true, 'result' => $resultado['result']];
+    }
 }
