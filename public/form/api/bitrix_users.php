@@ -51,20 +51,18 @@ try {
 
     $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
 
-    // Solução Definitiva: Usar a sintaxe de filtro "contains" (~tilde) do Bitrix
+    // Solução Definitiva: Usar o método user.search com o parâmetro FIND.
+    // Este método é otimizado para busca textual em múltiplos campos.
     $params = [
         'FILTER' => [
             'ACTIVE' => 'Y',
-            'LOGIC' => 'OR',
-            '~NAME' => $q,      // Curinga para "contém" no nome
-            '~LAST_NAME' => $q, // Curinga para "contém" no sobrenome
-            '~EMAIL' => $q,     // Curinga para "contém" no email
         ],
+        'FIND' => $q,
         'ORDER' => ['NAME' => 'ASC'],
         'SELECT' => ['ID', 'NAME', 'LAST_NAME']
     ];
 
-    $data = BitrixHelper::chamarApi('user.get', $params);
+    $data = BitrixHelper::chamarApi('user.search', $params);
 
     if (isset($data['error']) || !isset($data['result'])) {
         throw new Exception("Erro da API Bitrix: " . ($data['error_description'] ?? 'Resposta inválida do helper'));
