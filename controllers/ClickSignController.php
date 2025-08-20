@@ -461,6 +461,7 @@ class ClickSignController
         $spa = $dadosAssinatura['spa'] ?? null;
         $spaKey = 'SPA_' . $spa;
         $secret = $configJson[$spaKey]['clicksign_secret'] ?? null;
+        $token = $configJson[$spaKey]['clicksign_token'] ?? null; // Carrega o token aqui
         $headerSignature = $_SERVER['HTTP_CONTENT_HMAC'] ?? null;
 
         if (!ClickSignHelper::validarHmac($rawBody, $secret, $headerSignature)) {
@@ -516,7 +517,7 @@ class ClickSignController
                 }
                 AplicacaoAcessoDAO::salvarStatus($documentKey, null, null, null, true);
                 LogHelper::logClickSign("Processado evento document_closed e documento marcado como disponível | Documento: $documentKey", 'controller');
-                return self::documentoDisponivel($requestData, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey, $authorId);
+                return self::documentoDisponivel($requestData, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey, $authorId, $token);
 
             default:
                 LogHelper::logClickSign("Evento não tratado: $evento", 'controller');
@@ -624,7 +625,7 @@ class ClickSignController
     }
 
     // Método para tratar eventos Documento disponível para download
-    private static function documentoDisponivel($requestData, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey, $authorId)
+    private static function documentoDisponivel($requestData, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey, $authorId, $token)
     {
         // 1. Validação de parâmetros obrigatórios ANTES de qualquer processamento
         if (empty($spa) || empty($dealId) || empty($documentKey)) {
@@ -684,7 +685,6 @@ class ClickSignController
             $tentativasDownload = 15;
             $esperaDownload = 30;
 
-            $token = $GLOBALS['ACESSO_AUTENTICADO']['clicksign_token'] ?? null;
             if (empty($token)) {
                 LogHelper::logClickSign("ERRO: Token ClickSign ausente ao tentar baixar o arquivo assinado", 'documentoDisponivel');
                 return ['success' => false, 'mensagem' => 'Token ClickSign ausente. Não é possível baixar o arquivo assinado.'];
