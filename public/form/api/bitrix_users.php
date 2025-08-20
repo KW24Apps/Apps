@@ -21,7 +21,6 @@ if (!$cliente) {
 }
 
 try {
-    // CORREÇÃO: Corrigido o erro de digitação no nome de usuário do banco de dados.
     $config = [
         'host' => 'localhost',
         'dbname' => 'kw24co49_api_kwconfig',
@@ -52,20 +51,14 @@ try {
 
     $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
 
-    // Solução Definitiva: Usar a sintaxe de filtro "contains" (~tilde) do Bitrix com o método user.get.
+    // Solução Definitiva: Usar o método user.search, que é o correto para busca textual.
+    // Simplificamos os parâmetros para garantir que o filtro FIND seja aplicado.
     $params = [
-        'FILTER' => [
-            'ACTIVE' => 'Y',
-            'LOGIC' => 'OR',
-            '~NAME' => $q,      // Curinga para "contém" no nome
-            '~LAST_NAME' => $q, // Curinga para "contém" no sobrenome
-            '~EMAIL' => $q,     // Curinga para "contém" no email
-        ],
-        'ORDER' => ['NAME' => 'ASC'],
-        'SELECT' => ['ID', 'NAME', 'LAST_NAME']
+        'FILTER' => ['ACTIVE' => 'Y'],
+        'FIND' => $q
     ];
 
-    $data = BitrixHelper::chamarApi('user.get', $params);
+    $data = BitrixHelper::chamarApi('user.search', $params);
 
     if (isset($data['error']) || !isset($data['result'])) {
         throw new Exception("Erro da API Bitrix: " . ($data['error_description'] ?? 'Resposta inválida do helper'));
@@ -93,6 +86,11 @@ try {
         ];
         $nomesJaAdicionados[$nomeLower] = true;
     }
+    
+    // Ordena os resultados em PHP, já que o parâmetro ORDER foi removido da chamada
+    usort($usuarios, function($a, $b) {
+        return strcasecmp($a['name'], $b['name']);
+    });
 
     echo json_encode($usuarios);
     
