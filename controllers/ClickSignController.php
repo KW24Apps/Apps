@@ -430,7 +430,8 @@ class ClickSignController
 
         if (!empty($fields)) {
             $response = BitrixDealHelper::editarDeal($spa, $dealId, $fields);
-            if (!isset($response['success']) || !$response['success']) {
+            // Corrigido: verificar a chave 'status' que é retornada pelo helper
+            if (!isset($response['status']) || $response['status'] !== 'sucesso') {
                 LogHelper::logClickSign("ERRO ao editar deal em atualizarRetornoBitrix | spa: $spa | dealId: $dealId | fields: " . json_encode($fields) . " | response: " . json_encode($response), 'atualizarRetornoBitrix');
             }
         }
@@ -560,10 +561,11 @@ class ClickSignController
                 $authorId
             );
 
-            if (isset($resultado['success']) && $resultado['success']) {
+            // Corrigido: verificar a chave 'status' que é retornada pelo helper
+            if (isset($resultado['status']) && $resultado['status'] === 'sucesso') {
                 return ['success' => true, 'mensagem' => 'Assinatura processada e retorno atualizado.'];
             } else {
-                $erroDetalhado = isset($resultado['error']) ? $resultado['error'] : json_encode($resultado);
+                $erroDetalhado = json_encode($resultado);
                 LogHelper::logClickSign("ERRO: Falha ao atualizar mensagem de assinatura no Bitrix | erro: $erroDetalhado", 'assinaturaRealizada');
                 return ['success' => false, 'mensagem' => 'Erro ao atualizar mensagem de assinatura no Bitrix.'];
             }
@@ -605,18 +607,9 @@ class ClickSignController
             return ['success' => true, 'mensagem' => "Evento $evento processado com atualização imediata no Bitrix."];
         }
 
-    // 3. Se auto_close: atualiza o status e aguarda o document_closed para baixar o arquivo
+    // 3. Se auto_close: apenas salva o status e aguarda o document_closed para baixar o arquivo e enviar a mensagem final.
     if ($evento === 'auto_close') {
-        self::atualizarRetornoBitrix(
-            ['retorno' => $campoRetorno],
-            $spa,
-            $dealId,
-            true,
-            null,
-            'Documento finalizado, processando arquivo assinado.',
-            $authorId
-        );
-        return ['success' => true, 'mensagem' => 'Evento auto_close salvo, status atualizado no Bitrix. Aguardando document_closed.'];
+        return ['success' => true, 'mensagem' => 'Evento auto_close salvo. Aguardando document_closed para baixar o arquivo.'];
     }
 
         // 4. Outros eventos (não esperado)
@@ -672,10 +665,10 @@ class ClickSignController
                     'retorno' => $campoRetorno
                 ], $spa, $dealId, true, null, 'Documento assinado com sucesso.', $authorId);
 
-                if (isset($resultadoMensagem['success']) && $resultadoMensagem['success']) {
+                if (isset($resultadoMensagem['status']) && $resultadoMensagem['status'] === 'sucesso') {
                     return ['success' => true, 'mensagem' => 'Mensagem final enviada (sem anexo de arquivo).'];
                 } else {
-                    $erroDetalhado = isset($resultadoMensagem['error']) ? $resultadoMensagem['error'] : json_encode($resultadoMensagem);
+                    $erroDetalhado = json_encode($resultadoMensagem);
                     LogHelper::logClickSign("ERRO: Falha ao enviar mensagem final | erro: $erroDetalhado", 'documentoDisponivel');
                     return ['success' => false, 'mensagem' => 'Falha ao enviar mensagem final.'];
                 }
@@ -726,7 +719,7 @@ class ClickSignController
                     for ($k = 0; $k < $tentativasAnexo; $k++) {
                         $resultado = BitrixDealHelper::editarDeal($spa, $dealId, $fields);
 
-                        if (isset($resultado['success']) && $resultado['success']) {
+                        if (isset($resultado['status']) && $resultado['status'] === 'sucesso') {
                             $sucessoAnexo = true;
                             break;
                         } else {
@@ -744,10 +737,10 @@ class ClickSignController
                             'retorno' => $campoRetorno
                         ], $spa, $dealId, true, null, 'Documento assinado e arquivo anexado com sucesso.', $authorId);
 
-                        if (isset($resultadoMensagem['success']) && $resultadoMensagem['success']) {
+                        if (isset($resultadoMensagem['status']) && $resultadoMensagem['status'] === 'sucesso') {
                             return ['success' => true, 'mensagem' => 'Arquivo baixado, anexado e mensagem atualizada no Bitrix.'];
                         } else {
-                            $erroDetalhado = isset($resultadoMensagem['error']) ? $resultadoMensagem['error'] : json_encode($resultadoMensagem);
+                            $erroDetalhado = json_encode($resultadoMensagem);
                             LogHelper::logClickSign("ERRO: Falha ao atualizar mensagem final no Bitrix | erro: $erroDetalhado", 'documentoDisponivel');
                             return ['success' => false, 'mensagem' => 'Arquivo anexado, mas falha ao atualizar mensagem no Bitrix.'];
                         }
