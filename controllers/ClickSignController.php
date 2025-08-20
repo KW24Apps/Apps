@@ -436,7 +436,7 @@ class ClickSignController
         }
 
         // Adiciona comentário independentemente de ter atualizado campos ou não
-        BitrixDealHelper::adicionarComentarioDeal($spa, $dealId, $mensagemRetorno, $authorId);
+        BitrixDealHelper::adicionarComentarioDeal($spa, $dealId, "CLICK SIGN: " . $mensagemRetorno, $authorId);
 
         return $response;
     }
