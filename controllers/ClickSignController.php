@@ -600,10 +600,18 @@ class ClickSignController
             return ['success' => true, 'mensagem' => "Evento $evento processado com atualização imediata no Bitrix."];
         }
 
-        // 3. Se auto_close: só salva, aguarda document_closed para baixar o arquivo
-        if ($evento === 'auto_close') {
-            return ['success' => true, 'mensagem' => 'Evento auto_close salvo, aguardando document_closed.'];
-        }
+    // 3. Se auto_close: atualiza o status e aguarda o document_closed para baixar o arquivo
+    if ($evento === 'auto_close') {
+        self::atualizarRetornoBitrix(
+            ['retorno' => $campoRetorno],
+            $spa,
+            $dealId,
+            true,
+            null,
+            'Documento finalizado, processando arquivo assinado.'
+        );
+        return ['success' => true, 'mensagem' => 'Evento auto_close salvo, status atualizado no Bitrix. Aguardando document_closed.'];
+    }
 
         // 4. Outros eventos (não esperado)
         LogHelper::logClickSign("Evento de fechamento não tratado: $evento", 'controller');
@@ -729,7 +737,7 @@ class ClickSignController
                         // 4.2.5. Atualiza campo de retorno com mensagem de sucesso
                         $resultadoMensagem = self::atualizarRetornoBitrix([
                             'retorno' => $campoRetorno
-                        ], $spa, $dealId, true, null, 'Documento assinado e arquivo enviado para o Bitrix.');
+                        ], $spa, $dealId, true, null, 'Documento assinado e arquivo anexado com sucesso.');
 
                         if (isset($resultadoMensagem['success']) && $resultadoMensagem['success']) {
                             return ['success' => true, 'mensagem' => 'Arquivo baixado, anexado e mensagem atualizada no Bitrix.'];
