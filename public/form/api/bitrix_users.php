@@ -9,8 +9,18 @@ ini_set('error_log', '../logs/debug_bitrix.log');
 
 header('Content-Type: application/json; charset=utf-8');
 
+// Inclui o helper padrão do sistema para chamadas à API
+require_once __DIR__ . '/../../../helpers/BitrixHelper.php';
+use Helpers\BitrixHelper;
+
 $q = $_GET['q'] ?? '';
-$cliente = $_GET['cliente'] ?? 'gnappC93fLq7RxKZVp28HswuAYMe1';
+$cliente = $_GET['cliente'] ?? null;
+
+if (!$cliente) {
+    http_response_code(400);
+    echo json_encode(['erro' => 'Parâmetro cliente é obrigatório']);
+    exit;
+}
 
 try {
     // Conecta diretamente no banco para buscar webhook
@@ -43,58 +53,31 @@ try {
         throw new Exception('Webhook não encontrado para o cliente: ' . $cliente);
     }
 
-    // Busca usuários na API Bitrix com filtro dinâmico
-    $url = rtrim($webhook, '/') . '/user.get.json';
-    
-    error_log("DEBUG: Iniciando busca de usuários com filtro. Query: '$q'");
+    // Define o webhook na variável global que o BitrixHelper espera
+    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
 
-    // Constrói o filtro para buscar em nome, sobrenome ou email
-    $filter = [
-        'ACTIVE' => 'Y',
-        'LOGIC' => 'OR', // Usa OR para que qualquer uma das condições funcione
-        '%NAME' => $q,
-        '%LAST_NAME' => $q,
-        '%EMAIL' => $q,
-    ];
-
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-        'FILTER' => $filter,
+    // Constrói os parâmetros para a chamada da API via Helper
+    $params = [
+        'FILTER' => [
+            'ACTIVE' => 'Y',
+            'LOGIC' => 'OR', // Busca em qualquer um dos campos abaixo
+            '%NAME' => $q,      // Contém a busca no nome
+            '%LAST_NAME' => $q, // Contém a busca no sobrenome
+            '%EMAIL' => $q,     // Contém a busca no email
+        ],
         'ORDER' => ['NAME' => 'ASC'],
         'SELECT' => ['ID', 'NAME', 'LAST_NAME', 'EMAIL']
-    ]));
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    curl_close($ch);
+    ];
 
-    error_log("DEBUG: Resposta da API - HTTP: $httpCode, cURL Error: $curlError");
+    // Chama a API usando o método centralizado e robusto do Helper
+    $data = BitrixHelper::chamarApi('user.get', $params);
 
-    if ($curlError) {
-        throw new Exception("Erro na comunicação com a API: " . $curlError);
-    }
-    if ($httpCode !== 200) {
-        throw new Exception("API do Bitrix retornou erro HTTP $httpCode: " . substr($response, 0, 200));
+    // Valida a resposta do Helper
+    if (isset($data['error']) || !isset($data['result'])) {
+        throw new Exception("Erro da API Bitrix: " . ($data['error_description'] ?? 'Resposta inválida do helper'));
     }
 
-    $data = json_decode($response, true);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        throw new Exception("Erro ao decodificar resposta JSON da API: " . json_last_error_msg());
-    }
-    if (isset($data['error'])) {
-        throw new Exception("Erro da API Bitrix: " . ($data['error_description'] ?? 'Erro desconhecido'));
-    }
-    if (!isset($data['result']) || !is_array($data['result'])) {
-        throw new Exception("Resposta inválida da API Bitrix (sem 'result')");
-    }
-
-    // Formata os usuários encontrados
+    // Formata os usuários encontrados para o frontend
     $usuarios = [];
     $nomesJaAdicionados = [];
     
@@ -119,8 +102,6 @@ try {
         $nomesJaAdicionados[$nomeLower] = true;
     }
 
-    error_log("DEBUG: Retornando " . count($usuarios) . " usuários para a query: '$q'");
-    
     echo json_encode($usuarios);
     
 } catch (Exception $e) {
