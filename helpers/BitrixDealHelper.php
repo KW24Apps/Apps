@@ -10,7 +10,7 @@ use dao\BatchJobDAO;
 class BitrixDealHelper
 {
     // Cria um ou vários negócios no Bitrix24 via API (sempre em batch, sem agendamento)
-    public static function criarDeal($entityId, $categoryId, $fields): array
+    public static function criarDeal($entityId, $categoryId, $fields, int $tamanhoLote = 25): array
     {
         error_log("=== DEBUG CRIAR DEAL ===");
         error_log("EntityId: " . $entityId);
@@ -32,7 +32,7 @@ class BitrixDealHelper
         }
 
         // Sempre executa em batch, mesmo para 1 deal
-        $chunks = array_chunk($fields, 25);
+        $chunks = array_chunk($fields, $tamanhoLote);
         $todosIds = [];
         $totalSucessos = 0;
         $totalErros = 0;
@@ -136,7 +136,7 @@ class BitrixDealHelper
     }
 
     // Edita um ou vários negócios existentes no Bitrix24 via API (sempre em batch, sem agendamento)
-    public static function editarDeal($entityId, $dealId, array $fields): array
+    public static function editarDeal($entityId, $dealId, array $fields, int $tamanhoLote = 25): array
     {
         // Sempre trata $dealId e $fields como arrays múltiplos
         $editData = [];
@@ -155,7 +155,7 @@ class BitrixDealHelper
         }
 
         // Sempre executa em batch, mesmo para 1 edição
-        $chunks = array_chunk($editData, 25);
+        $chunks = array_chunk($editData, $tamanhoLote);
         $todosIds = [];
         $totalSucessos = 0;
         $totalErros = 0;

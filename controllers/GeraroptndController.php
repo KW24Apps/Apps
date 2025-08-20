@@ -13,9 +13,9 @@ class GeraroptndController
 {
     public function executar()
     {
-        // Definir timeout de 30 minutos para criação de múltiplos deals
-        set_time_limit(1800); // 30 minutos = 1800 segundos
-        
+        // Definir timeout de 60 minutos para criação de múltiplos deals
+        set_time_limit(3600); // 60 minutos = 3600 segundos
+
         // ============================================
         // PARTE 1: COLETA DE DADOS
         // ============================================
@@ -222,50 +222,61 @@ class GeraroptndController
         $arrayFinalParaCriacao = $this->montarArrayCompletoPoraCriacao($combinacoesParaCriar, $camposParaEspelhar, $destinoInfo, $dealId);
 
         // ============================================
-        // PARTE 4: CRIAR OS DEALS VIA JOB ASSÍNCRONO
+        // PARTE 4: CRIAR OS DEALS DIRETAMENTE
         // ============================================
         
-        // Ao invés de criar diretamente, enviar para fila de Jobs
-        $resultadoCriacao = BitrixDealHelper::criarJobParaFila(
+        // Define o tamanho do lote para criação dos deals
+        $tamanhoLote = 5;
+        
+        $resultadoCriacao = BitrixDealHelper::criarDeal(
             $arrayFinalParaCriacao['entityId'],
-            $arrayFinalParaCriacao['categoryId'], 
+            $arrayFinalParaCriacao['categoryId'],
             $arrayFinalParaCriacao['fields'],
-            'criar_deals' // Tipo do job
+            $tamanhoLote
         );
-        
+
         // ============================================
-        // PARTE 4: RETORNO IMEDIATO (SEM ATUALIZAR VINCULADOS)
-        // ============================================
-        
-        // Para jobs assíncronos, não podemos atualizar os vinculados imediatamente
-        // Isso será feito pelo processador de jobs quando os deals forem criados
-        
-        // ============================================
-        // RETORNO FINAL - STATUS DO JOB
+        // PARTE 5: ATUALIZAR NEGÓCIO ORIGINAL COM VINCULADOS
         // ============================================
         
-        $jobCriado = ($resultadoCriacao['status'] === 'job_criado');
+        $novosIds = [];
+        if (isset($resultadoCriacao['ids']) && !empty($resultadoCriacao['ids'])) {
+            $novosIds = explode(', ', $resultadoCriacao['ids']);
+        }
+        
+        $vinculadosExistentes = $vinculados ?? [];
+        $vinculadosFinal = array_unique(array_merge($vinculadosExistentes, $novosIds));
+        
+        $resultadoUpdate = null;
+        if (!empty($novosIds)) {
+            $resultadoUpdate = BitrixDealHelper::editarDeal(
+                2, // entityId para deals
+                $dealId,
+                ['ufCrm_1670953245' => $vinculadosFinal]
+            );
+        }
+
+        // ============================================
+        // RETORNO FINAL - STATUS DA CRIAÇÃO DIRETA
+        // ============================================
+        
+        $sucesso = ($resultadoCriacao['status'] === 'sucesso');
         
         header('Content-Type: application/json');
         echo json_encode([
-            'sucesso' => $jobCriado,
-            'job_status' => [
-                'criado' => $jobCriado,
-                'job_id' => $resultadoCriacao['job_id'] ?? null,
-                'mensagem' => $resultadoCriacao['mensagem'] ?? 'Erro ao criar job',
-                'consultar_progresso' => $resultadoCriacao['consultar_status'] ?? null
+            'sucesso' => $sucesso,
+            'criacao_deals' => [
+                'status' => $resultadoCriacao['status'],
+                'quantidade_criada' => $resultadoCriacao['quantidade'],
+                'ids_criados' => $resultadoCriacao['ids'],
+                'mensagem' => $resultadoCriacao['mensagem'],
+                'tempo_execucao_segundos' => $resultadoCriacao['tempo_total_segundos'] ?? 0
             ],
-            'deals_programados' => [
-                'quantidade_total' => count($arrayFinalParaCriacao['fields']),
-                'pipeline_destino' => $destinoInfo['pipeline_name'],
-                'etapa_destino' => $destinoInfo['stage_name'],
-                'modo_processamento' => 'assincrono_via_cron'
-            ],
-            'configuracao_processamento' => [
-                'tipo_job' => 'criar_deals',
-                'entity_id' => $arrayFinalParaCriacao['entityId'],
-                'category_id' => $arrayFinalParaCriacao['categoryId'],
-                'total_deals_no_job' => $resultadoCriacao['total_deals'] ?? 0
+            'update_deal_origem' => [
+                'atualizado' => !empty($resultadoUpdate),
+                'status' => $resultadoUpdate['status'] ?? 'nao_executado',
+                'mensagem' => $resultadoUpdate['mensagem'] ?? 'Nenhum deal novo para vincular.',
+                'total_vinculados' => count($vinculadosFinal)
             ],
             'contexto_original' => [
                 'deal_origem' => $dealId,
@@ -499,4 +510,3 @@ class GeraroptndController
         ];
     }
 }
-
