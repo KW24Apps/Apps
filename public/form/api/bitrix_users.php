@@ -3,13 +3,11 @@ ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
 
-// Log temporário para debug
 ini_set('log_errors', 1);
 ini_set('error_log', '../logs/debug_bitrix.log');
 
 header('Content-Type: application/json; charset=utf-8');
 
-// Inclui o helper padrão do sistema para chamadas à API
 require_once __DIR__ . '/../../../helpers/BitrixHelper.php';
 use Helpers\BitrixHelper;
 
@@ -23,7 +21,6 @@ if (!$cliente) {
 }
 
 try {
-    // Conecta diretamente no banco para buscar webhook
     $config = [
         'host' => 'localhost',
         'dbname' => 'kw24co49_api_kwconfig',
@@ -38,7 +35,6 @@ try {
     );
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    // Busca webhook
     $stmt = $pdo->prepare("
         SELECT ca.webhook_bitrix
         FROM cliente_aplicacoes ca
@@ -53,63 +49,77 @@ try {
         throw new Exception('Webhook não encontrado para o cliente: ' . $cliente);
     }
 
-    // Define o webhook na variável global que o BitrixHelper espera
     $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
 
-    // Constrói os parâmetros para a chamada da API via Helper
-    $params = [
-        'FILTER' => [
-            'ACTIVE' => 'Y',
-            'LOGIC' => 'OR', // Busca em qualquer um dos campos abaixo
-            '%NAME' => $q,      // Contém a busca no nome
-            '%LAST_NAME' => $q, // Contém a busca no sobrenome
-            '%EMAIL' => $q,     // Contém a busca no email
-        ],
-        'ORDER' => ['NAME' => 'ASC'],
-        'SELECT' => ['ID', 'NAME', 'LAST_NAME', 'EMAIL']
-    ];
+    // --- Diagnóstico com Batch ---
+    // Vamos testar várias sintaxes de filtro de uma vez para descobrir a correta.
+    $batch_commands = [];
 
-    // Chama a API usando o método centralizado e robusto do Helper
-    $data = BitrixHelper::chamarApi('user.get', $params);
+    // Teste 1: Sintaxe com % no nome da chave (user.get)
+    $batch_commands['test1_get_percent_key'] = 'user.get?' . http_build_query([
+        'FILTER' => ['ACTIVE' => 'Y', 'LOGIC' => 'OR', '%NAME' => $q, '%LAST_NAME' => $q, '%EMAIL' => $q],
+        'SELECT' => ['ID', 'NAME', 'LAST_NAME']
+    ]);
 
-    // Valida a resposta do Helper
-    if (isset($data['error']) || !isset($data['result'])) {
-        throw new Exception("Erro da API Bitrix: " . ($data['error_description'] ?? 'Resposta inválida do helper'));
+    // Teste 2: Sintaxe com % no valor (user.get)
+    $batch_commands['test2_get_percent_value'] = 'user.get?' . http_build_query([
+        'FILTER' => ['ACTIVE' => 'Y', 'LOGIC' => 'OR', 'NAME' => '%' . $q . '%', 'LAST_NAME' => '%' . $q . '%', 'EMAIL' => '%' . $q . '%'],
+        'SELECT' => ['ID', 'NAME', 'LAST_NAME']
+    ]);
+
+    // Teste 3: Usando o método user.search com o parâmetro FIND
+    $batch_commands['test3_search_find'] = 'user.search?' . http_build_query([
+        'FILTER' => ['ACTIVE' => 'Y'],
+        'FIND' => $q,
+        'SELECT' => ['ID', 'NAME', 'LAST_NAME']
+    ]);
+
+    $params = ['cmd' => $batch_commands];
+    $data = BitrixHelper::chamarApi('batch', $params);
+
+    if (isset($data['error']) || !isset($data['result']['result'])) {
+        throw new Exception("Erro na chamada batch da API: " . ($data['error_description'] ?? 'Resposta inválida'));
     }
 
-    // Formata os usuários encontrados para o frontend
+    $resultados_batch = $data['result']['result'];
+    error_log("Resultados do diagnóstico batch para query '$q': " . print_r($resultados_batch, true));
+
+    // --- Consolidação dos Resultados ---
+    $usuarios_encontrados = [];
+    foreach ($resultados_batch as $key => $resultado_teste) {
+        if (is_array($resultado_teste) && !empty($resultado_teste)) {
+            foreach ($resultado_teste as $user) {
+                $userId = $user['ID'] ?? null;
+                if ($userId) {
+                    $usuarios_encontrados[$userId] = $user; // Usa ID como chave para evitar duplicatas
+                }
+            }
+        }
+    }
+
+    // Formata a saída final
     $usuarios = [];
-    $nomesJaAdicionados = [];
-    
-    foreach ($data['result'] as $user) {
+    foreach ($usuarios_encontrados as $user) {
         $nome = trim(($user['NAME'] ?? '') . ' ' . ($user['LAST_NAME'] ?? ''));
         $userId = $user['ID'] ?? '';
 
-        if (!$nome || !$userId) {
-            continue;
+        if ($nome && $userId) {
+            $usuarios[] = ['id' => $userId, 'name' => $nome];
         }
-
-        // Evita duplicatas pelo nome (case insensitive)
-        $nomeLower = strtolower($nome);
-        if (isset($nomesJaAdicionados[$nomeLower])) {
-            continue;
-        }
-
-        $usuarios[] = [
-            'id' => $userId,
-            'name' => $nome
-        ];
-        $nomesJaAdicionados[$nomeLower] = true;
     }
+    
+    // Ordena por nome
+    usort($usuarios, function($a, $b) {
+        return strcasecmp($a['name'], $b['name']);
+    });
 
     echo json_encode($usuarios);
     
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
-        'erro' => 'Erro interno',
-        'detalhes' => $e->getMessage(),
-        'cliente' => $cliente
+        'erro' => 'Erro interno no diagnóstico',
+        'detalhes' => $e->getMessage()
     ]);
 }
 ?>
