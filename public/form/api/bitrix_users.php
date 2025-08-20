@@ -43,20 +43,26 @@ try {
         throw new Exception('Webhook não encontrado para o cliente: ' . $cliente);
     }
 
-    // Busca usuários diretamente na API do Bitrix usando o filtro FIND
-    $url = rtrim($webhook, '/') . '/user.search.json';
+    // Busca usuários na API Bitrix com filtro dinâmico
+    $url = rtrim($webhook, '/') . '/user.get.json';
     
-    error_log("DEBUG: Iniciando busca de usuários com FIND. Query: '$q'");
+    error_log("DEBUG: Iniciando busca de usuários com filtro. Query: '$q'");
+
+    // Constrói o filtro para buscar em nome, sobrenome ou email
+    $filter = [
+        'ACTIVE' => 'Y',
+        'LOGIC' => 'OR', // Usa OR para que qualquer uma das condições funcione
+        '%NAME' => $q,
+        '%LAST_NAME' => $q,
+        '%EMAIL' => $q,
+    ];
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-        'FILTER' => [
-            'ACTIVE' => 'Y',
-        ],
-        'FIND' => $q, // Usa o parâmetro FIND para busca textual
+        'FILTER' => $filter,
         'ORDER' => ['NAME' => 'ASC'],
         'SELECT' => ['ID', 'NAME', 'LAST_NAME', 'EMAIL']
     ]));
