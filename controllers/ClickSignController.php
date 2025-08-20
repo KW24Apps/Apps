@@ -117,7 +117,7 @@ class ClickSignController
                 $errosValidacao[] = 'Data limite deve ser posterior à data atual';
             }
         }
-
+ 
         // 3. Validar pelo menos um signatário (contratante, contratada ou testemunha)
         $temSignatario = false;
         $signatariosCampos = ['contratante', 'contratada', 'testemunhas'];
