@@ -51,74 +51,54 @@ try {
 
     $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
 
-    // --- Diagnóstico com Batch ---
-    // Vamos testar várias sintaxes de filtro de uma vez para descobrir a correta.
-    $batch_commands = [];
-
-    // Teste 1: Sintaxe com % no nome da chave (user.get)
-    $batch_commands['test1_get_percent_key'] = 'user.get?' . http_build_query([
-        'FILTER' => ['ACTIVE' => 'Y', 'LOGIC' => 'OR', '%NAME' => $q, '%LAST_NAME' => $q, '%EMAIL' => $q],
+    // Solução Definitiva: Usar a sintaxe de filtro "contains" (~tilde) do Bitrix
+    $params = [
+        'FILTER' => [
+            'ACTIVE' => 'Y',
+            'LOGIC' => 'OR',
+            '~NAME' => $q,      // Curinga para "contém" no nome
+            '~LAST_NAME' => $q, // Curinga para "contém" no sobrenome
+            '~EMAIL' => $q,     // Curinga para "contém" no email
+        ],
+        'ORDER' => ['NAME' => 'ASC'],
         'SELECT' => ['ID', 'NAME', 'LAST_NAME']
-    ]);
+    ];
 
-    // Teste 2: Sintaxe com % no valor (user.get)
-    $batch_commands['test2_get_percent_value'] = 'user.get?' . http_build_query([
-        'FILTER' => ['ACTIVE' => 'Y', 'LOGIC' => 'OR', 'NAME' => '%' . $q . '%', 'LAST_NAME' => '%' . $q . '%', 'EMAIL' => '%' . $q . '%'],
-        'SELECT' => ['ID', 'NAME', 'LAST_NAME']
-    ]);
+    $data = BitrixHelper::chamarApi('user.get', $params);
 
-    // Teste 3: Usando o método user.search com o parâmetro FIND
-    $batch_commands['test3_search_find'] = 'user.search?' . http_build_query([
-        'FILTER' => ['ACTIVE' => 'Y'],
-        'FIND' => $q,
-        'SELECT' => ['ID', 'NAME', 'LAST_NAME']
-    ]);
-
-    $params = ['cmd' => $batch_commands];
-    $data = BitrixHelper::chamarApi('batch', $params);
-
-    if (isset($data['error']) || !isset($data['result']['result'])) {
-        throw new Exception("Erro na chamada batch da API: " . ($data['error_description'] ?? 'Resposta inválida'));
+    if (isset($data['error']) || !isset($data['result'])) {
+        throw new Exception("Erro da API Bitrix: " . ($data['error_description'] ?? 'Resposta inválida do helper'));
     }
 
-    $resultados_batch = $data['result']['result'];
-    error_log("Resultados do diagnóstico batch para query '$q': " . print_r($resultados_batch, true));
-
-    // --- Consolidação dos Resultados ---
-    $usuarios_encontrados = [];
-    foreach ($resultados_batch as $key => $resultado_teste) {
-        if (is_array($resultado_teste) && !empty($resultado_teste)) {
-            foreach ($resultado_teste as $user) {
-                $userId = $user['ID'] ?? null;
-                if ($userId) {
-                    $usuarios_encontrados[$userId] = $user; // Usa ID como chave para evitar duplicatas
-                }
-            }
-        }
-    }
-
-    // Formata a saída final
     $usuarios = [];
-    foreach ($usuarios_encontrados as $user) {
+    $nomesJaAdicionados = [];
+    
+    foreach ($data['result'] as $user) {
         $nome = trim(($user['NAME'] ?? '') . ' ' . ($user['LAST_NAME'] ?? ''));
         $userId = $user['ID'] ?? '';
 
-        if ($nome && $userId) {
-            $usuarios[] = ['id' => $userId, 'name' => $nome];
+        if (!$nome || !$userId) {
+            continue;
         }
+
+        $nomeLower = strtolower($nome);
+        if (isset($nomesJaAdicionados[$nomeLower])) {
+            continue;
+        }
+
+        $usuarios[] = [
+            'id' => $userId,
+            'name' => $nome
+        ];
+        $nomesJaAdicionados[$nomeLower] = true;
     }
-    
-    // Ordena por nome
-    usort($usuarios, function($a, $b) {
-        return strcasecmp($a['name'], $b['name']);
-    });
 
     echo json_encode($usuarios);
     
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
-        'erro' => 'Erro interno no diagnóstico',
+        'erro' => 'Erro interno',
         'detalhes' => $e->getMessage()
     ]);
 }
