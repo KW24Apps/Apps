@@ -682,91 +682,75 @@ class ClickSignController
             }
 
             // 4.2. Processar download e anexo do arquivo
-            $tentativasDownload = 15;
-            $esperaDownload = 30;
+            $url = $requestData['document']['downloads']['signed_file_url'] ?? null;
+            $nomeArquivo = $requestData['document']['filename'] ?? "documento_assinado.pdf";
 
-            if (empty($token)) {
-                LogHelper::logClickSign("ERRO: Token ClickSign ausente ao tentar baixar o arquivo assinado", 'documentoDisponivel');
-                return ['success' => false, 'mensagem' => 'Token ClickSign ausente. Não é possível baixar o arquivo assinado.'];
-            }
-
-            for ($j = 0; $j < $tentativasDownload; $j++) {
-                LogHelper::logClickSign("Tentativa " . ($j + 1) . "/$tentativasDownload de buscar documento assinado.", 'documentoDisponivel');
-                $retDoc = ClickSignHelper::buscarDocumento($documentKey, $token);
+            if ($url) {
+                LogHelper::logClickSign("URL do arquivo assinado encontrada no webhook. Tentando baixar.", 'documentoDisponivel');
                 
-                // Log detalhado da resposta da ClickSign
-                LogHelper::logClickSign("Resposta ClickSign (buscarDocumento): " . json_encode($retDoc), 'documentoDisponivel');
+                // 4.2.1. Baixa e converte o arquivo para base64
+                $arquivoInfo = [
+                    'urlMachine' => $url,
+                    'name' => $nomeArquivo
+                ];
+                $arquivoBase64 = UtilHelpers::baixarArquivoBase64($arquivoInfo);
 
-                $url = $retDoc['document']['downloads']['signed_file_url'] ?? null;
-                $nomeArquivo = $retDoc['document']['filename'] ?? "documento_assinado.pdf";
+                if (!$arquivoBase64) {
+                    LogHelper::logClickSign("ERRO: Erro ao baixar/converter arquivo para anexo no negócio", 'documentoDisponivel');
+                    return ['success' => false, 'mensagem' => 'Falha ao converter o arquivo.'];
+                }
 
-                if ($url) {
-                    LogHelper::logClickSign("URL do arquivo assinado encontrada. Tentando baixar.", 'documentoDisponivel');
-                    // 4.2.1. Baixa e converte o arquivo para base64
-                    $arquivoInfo = [
-                        'urlMachine' => $url,
-                        'name' => $nomeArquivo
-                    ];
-                    $arquivoBase64 = UtilHelpers::baixarArquivoBase64($arquivoInfo);
+                // 4.2.2. Prepara estrutura do campo para o Bitrix
+                $arquivoParaBitrix = [[
+                    'filename' => $arquivoBase64['nome'],
+                    'data'     => str_replace('data:' . $arquivoBase64['mime'] . ';base64,', '', $arquivoBase64['base64'])
+                ]];
 
-                    if (!$arquivoBase64) {
-                        LogHelper::logClickSign("ERRO: Erro ao baixar/converter arquivo para anexo no negócio", 'documentoDisponivel');
-                        return ['success' => false, 'mensagem' => 'Falha ao converter o arquivo.'];
-                    }
+                // 4.2.3. Tenta anexar arquivo com retry
+                $fields = [
+                    $campoArquivoAssinado => $arquivoParaBitrix
+                ];
 
-                    // 4.2.2. Prepara estrutura do campo para o Bitrix
-                    $arquivoParaBitrix = [[
-                        'filename' => $arquivoBase64['nome'],
-                        'data'     => str_replace('data:' . $arquivoBase64['mime'] . ';base64,', '', $arquivoBase64['base64'])
-                    ]];
+                $tentativasAnexo = 3; 
+                $sucessoAnexo = false;
+                $ultimoErro = '';
 
-                    // 4.2.3. Tenta anexar arquivo com retry
-                    $fields = [
-                        $campoArquivoAssinado => $arquivoParaBitrix
-                    ];
+                for ($k = 0; $k < $tentativasAnexo; $k++) {
+                    $resultado = BitrixDealHelper::editarDeal($spa, $dealId, $fields);
 
-                    $tentativasAnexo = 3; 
-                    $sucessoAnexo = false;
-                    $ultimoErro = '';
-
-                    for ($k = 0; $k < $tentativasAnexo; $k++) {
-                        $resultado = BitrixDealHelper::editarDeal($spa, $dealId, $fields);
-
-                        if (isset($resultado['status']) && $resultado['status'] === 'sucesso') {
-                            $sucessoAnexo = true;
-                            break;
-                        } else {
-                            $ultimoErro = $resultado['error'] ?? json_encode($resultado);
-                            if ($k < $tentativasAnexo - 1) sleep(10); // Aguarda antes da próxima tentativa
-                        }
-                    }
-
-                    if ($sucessoAnexo) {
-                        // 4.2.4. Aguarda processamento do arquivo no Bitrix (30s)
-                        sleep(30);
-
-                        // 4.2.5. Atualiza campo de retorno com mensagem de sucesso
-                        $resultadoMensagem = self::atualizarRetornoBitrix([
-                            'retorno' => $campoRetorno
-                        ], $spa, $dealId, true, null, 'Documento assinado e arquivo anexado com sucesso.', $authorId);
-
-                        if (isset($resultadoMensagem['status']) && $resultadoMensagem['status'] === 'sucesso') {
-                            return ['success' => true, 'mensagem' => 'Arquivo baixado, anexado e mensagem atualizada no Bitrix.'];
-                        } else {
-                            $erroDetalhado = json_encode($resultadoMensagem);
-                            LogHelper::logClickSign("ERRO: Falha ao atualizar mensagem final no Bitrix | erro: $erroDetalhado", 'documentoDisponivel');
-                            return ['success' => false, 'mensagem' => 'Arquivo anexado, mas falha ao atualizar mensagem no Bitrix.'];
-                        }
+                    if (isset($resultado['status']) && $resultado['status'] === 'sucesso') {
+                        $sucessoAnexo = true;
+                        break;
                     } else {
-                        LogHelper::logClickSign("ERRO: Falha ao anexar arquivo após $tentativasAnexo tentativas | último erro: $ultimoErro", 'documentoDisponivel');
-                        return ['success' => false, 'mensagem' => "Erro ao anexar arquivo no Bitrix após $tentativasAnexo tentativas: $ultimoErro"];
+                        $ultimoErro = $resultado['error'] ?? json_encode($resultado);
+                        if ($k < $tentativasAnexo - 1) sleep(10); // Aguarda antes da próxima tentativa
                     }
                 }
-                sleep($esperaDownload);
-            }
 
-            LogHelper::logClickSign("ERRO: Não foi possível baixar/anexar o arquivo assinado após $tentativasDownload tentativas", 'documentoDisponivel');
-            return ['success' => false, 'mensagem' => 'Não foi possível baixar/anexar o arquivo assinado.'];
+                if ($sucessoAnexo) {
+                    // 4.2.4. Aguarda processamento do arquivo no Bitrix (30s)
+                    sleep(30);
+
+                    // 4.2.5. Atualiza campo de retorno com mensagem de sucesso
+                    $resultadoMensagem = self::atualizarRetornoBitrix([
+                        'retorno' => $campoRetorno
+                    ], $spa, $dealId, true, null, 'Documento assinado e arquivo anexado com sucesso.', $authorId);
+
+                    if (isset($resultadoMensagem['status']) && $resultadoMensagem['status'] === 'sucesso') {
+                        return ['success' => true, 'mensagem' => 'Arquivo baixado, anexado e mensagem atualizada no Bitrix.'];
+                    } else {
+                        $erroDetalhado = json_encode($resultadoMensagem);
+                        LogHelper::logClickSign("ERRO: Falha ao atualizar mensagem final no Bitrix | erro: $erroDetalhado", 'documentoDisponivel');
+                        return ['success' => false, 'mensagem' => 'Arquivo anexado, mas falha ao atualizar mensagem no Bitrix.'];
+                    }
+                } else {
+                    LogHelper::logClickSign("ERRO: Falha ao anexar arquivo após $tentativasAnexo tentativas | último erro: $ultimoErro", 'documentoDisponivel');
+                    return ['success' => false, 'mensagem' => "Erro ao anexar arquivo no Bitrix após $tentativasAnexo tentativas: $ultimoErro"];
+                }
+            } else {
+                LogHelper::logClickSign("ERRO: URL do arquivo assinado não encontrada no corpo do webhook 'document_closed'.", 'documentoDisponivel');
+                return ['success' => false, 'mensagem' => 'URL de download não encontrada no webhook.'];
+            }
         }
 
         // 5. Status inesperado
