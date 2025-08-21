@@ -684,11 +684,17 @@ class ClickSignController
             }
 
             for ($j = 0; $j < $tentativasDownload; $j++) {
+                LogHelper::logClickSign("Tentativa " . ($j + 1) . "/$tentativasDownload de buscar documento assinado.", 'documentoDisponivel');
                 $retDoc = ClickSignHelper::buscarDocumento($documentKey);
+                
+                // Log detalhado da resposta da ClickSign
+                LogHelper::logClickSign("Resposta ClickSign (buscarDocumento): " . json_encode($retDoc), 'documentoDisponivel');
+
                 $url = $retDoc['document']['downloads']['signed_file_url'] ?? null;
                 $nomeArquivo = $retDoc['document']['filename'] ?? "documento_assinado.pdf";
 
                 if ($url) {
+                    LogHelper::logClickSign("URL do arquivo assinado encontrada. Tentando baixar.", 'documentoDisponivel');
                     // 4.2.1. Baixa e converte o arquivo para base64
                     $arquivoInfo = [
                         'urlMachine' => $url,
