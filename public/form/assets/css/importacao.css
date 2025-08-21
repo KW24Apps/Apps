@@ -688,12 +688,15 @@ input:focus, select:focus {
     gap: 0;
 }
 
-/* Garante que os botões dentro de .form-actions não ocupem 100% da largura */
+/* Garante que os botões dentro de .form-actions tenham o estilo correto e não ocupem 100% da largura */
 .form-actions .btn-primary,
 .form-actions button {
-    width: auto; /* Anula o width: 100% do estilo genérico */
-    height: auto; /* Anula a altura fixa */
-    margin-top: 0; /* Remove a margem superior desnecessária */
-    text-transform: none; /* Remove o texto em maiúsculas para um visual mais limpo */
+    width: auto;            /* Anula o width: 100% */
+    height: auto;           /* Anula a altura fixa */
+    margin-top: 0;          /* Remove a margem superior */
+    padding: 12px 24px;     /* Define o padding correto */
+    text-transform: none;   /* Remove o texto em maiúsculas */
     letter-spacing: normal; /* Remove o espaçamento de letras */
+    font-size: 1rem;        /* Garante o tamanho da fonte */
+    font-weight: 600;       /* Garante o peso da fonte */
 }
