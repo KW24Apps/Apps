@@ -203,14 +203,11 @@ input:focus, select:focus {
     text-align: center;
 }
 .autocomplete-list {
-    position: absolute;
     background: #fff;
     border: 2px solid #e0e0e0;
     border-radius: 10px;
     max-height: 180px;
     overflow-y: auto;
-    z-index: 1000;
-    width: 100%;
     display: none;
     box-shadow: 0 3px 12px rgba(0,0,0,0.12);
     top: 100%;
