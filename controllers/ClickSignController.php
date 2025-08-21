@@ -465,6 +465,13 @@ class ClickSignController
         $token = $configJson[$spaKey]['clicksign_token'] ?? null; // Carrega o token aqui
         $headerSignature = $_SERVER['HTTP_CONTENT_HMAC'] ?? null;
 
+        // Adicionado log e validação de credenciais
+        LogHelper::logClickSign("Verificando credenciais para SPA: $spaKey | Token Encontrado: " . ($token ? 'Sim' : 'Não') . " | Secret Encontrado: " . ($secret ? 'Sim' : 'Não'), 'controller');
+        if (empty($secret) || empty($token)) {
+            LogHelper::logClickSign("ERRO: Token ou Secret não configurados para a SPA: $spaKey", 'controller');
+            return ['success' => false, 'mensagem' => 'Credenciais de API não configuradas.'];
+        }
+
         if (!ClickSignHelper::validarHmac($rawBody, $secret, $headerSignature)) {
             LogHelper::logClickSign("Assinatura HMAC inválida", 'controller');
             return ['success' => false, 'mensagem' => 'Assinatura HMAC inválida.'];
