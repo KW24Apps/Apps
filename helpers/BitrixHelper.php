@@ -38,6 +38,12 @@ class BitrixHelper
         $respostaJson = json_decode($resposta, true);
          
         $traceId = defined('TRACE_ID') ? TRACE_ID : 'sem_trace';
+
+        // Prepara parâmetros para o log, ocultando dados sensíveis
+        $paramsParaLog = $params;
+        if (isset($paramsParaLog['webhook'])) {
+            $paramsParaLog['webhook'] = '[WEBHOOK OCULTO]';
+        }
         
         // Log detalhado para debug
         $logCompleto = "[$traceId] Endpoint: $endpoint | HTTP: $httpCode | Tempo: {$tempoExecucao}ms";
@@ -48,7 +54,7 @@ class BitrixHelper
         }
         
         // Adicionar informações da requisição para debug
-        $logCompleto .= " | URL: $url";
+        $logCompleto .= " | URL: " . strtok($url, '?'); // Mostra URL sem query string
         $logCompleto .= " | POST Data Size: " . strlen($postData) . " bytes";
         
         // Log dos parâmetros principais (sempre, para debug)
@@ -59,7 +65,7 @@ class BitrixHelper
         if (isset($params['filter'])) $paramsResumo['filter_keys'] = array_keys($params['filter']);
         if (isset($params['select'])) $paramsResumo['select_fields'] = is_array($params['select']) ? count($params['select']) : 1;
         if (!empty($paramsResumo)) {
-            $logCompleto .= " | Params: " . json_encode($paramsResumo, JSON_UNESCAPED_UNICODE);
+            $logCompleto .= " | Params Resumo: " . json_encode($paramsResumo, JSON_UNESCAPED_UNICODE);
         }
         
         // Verificar se houve erro na resposta da API
@@ -79,7 +85,7 @@ class BitrixHelper
             $logCompleto .= " | Raw Response: " . substr($resposta, 0, 1000) . (strlen($resposta) > 1000 ? '...[truncated]' : '');
             
             // Log dos parâmetros completos em caso de erro
-            $logCompleto .= " | Full Params: " . json_encode($params, JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+            $logCompleto .= " | Full Params: " . json_encode($paramsParaLog, JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
             
         } else {
             // Log de sucesso mais detalhado

@@ -368,6 +368,19 @@ class BitrixDealHelper
     // Adiciona um comentário na timeline de um negócio (deal)
     public static function adicionarComentarioDeal($entityId, $dealId, $comment, $authorId = null)
     {
+        // Se authorId não for passado, tenta buscar da global
+        if (!$authorId) {
+            $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
+            $configJson = $configExtra ? json_decode($configExtra, true) : [];
+            
+            // A chave pode variar, então tentamos a mais comum primeiro
+            // A lógica assume que a estrutura é ['SPA_XXXX' => ['bitrix_user_id_comments' => Y]]
+            if (!empty($configJson)) {
+                $firstSpaKey = array_key_first($configJson);
+                $authorId = $configJson[$firstSpaKey]['bitrix_user_id_comments'] ?? null;
+            }
+        }
+
         $fields = [
             'COMMENT' => $comment
         ];
