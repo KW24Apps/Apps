@@ -386,14 +386,20 @@ class BitrixDealHelper
         ];
 
         if ($authorId) {
-            $fields['AUTHOR_ID'] = $authorId;
+            $fields['AUTHOR_ID'] = (int)$authorId;
         }
 
         $params = [
-            'entityTypeId' => $entityId,
-            'entityId' => $dealId,
-            'fields' => $fields
+            'fields' => [
+                'ENTITY_ID' => (int)$dealId,
+                'ENTITY_TYPE' => 'deal', // Revertendo para 'deal' como estava antes
+                'COMMENT' => $comment
+            ]
         ];
+
+        if ($authorId) {
+            $params['fields']['AUTHOR_ID'] = (int)$authorId;
+        }
 
         $resultado = BitrixHelper::chamarApi('crm.timeline.comment.add', $params, ['log' => false]);
 
