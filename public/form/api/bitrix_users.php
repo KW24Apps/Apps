@@ -68,10 +68,12 @@ try {
 
         $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
 
-        // CORREÇÃO: Lógica de paginação robusta que verifica a propriedade 'next'.
+        // CORREÇÃO FINAL: Lógica de paginação robusta que lida com o caso da última página ter 50 itens.
         $allUsers = [];
         $start = 0;
-        do {
+        $hasMore = true;
+        
+        while ($hasMore) {
             $params = [
                 'FILTER' => ['ACTIVE' => 'Y'],
                 'ORDER' => ['NAME' => 'ASC'],
@@ -85,15 +87,20 @@ try {
             }
 
             $pageUsers = $data['result'];
-            if (is_array($pageUsers)) {
+            if (is_array($pageUsers) && !empty($pageUsers)) {
                 $allUsers = array_merge($allUsers, $pageUsers);
+                // Se a API retornou menos de 50, sabemos que acabou.
+                if (count($pageUsers) < 50) {
+                    $hasMore = false;
+                } else {
+                    // Se retornou exatamente 50, pode haver mais. Prepara para a próxima iteração.
+                    $start += 50;
+                }
+            } else {
+                // Se não retornou usuários, a paginação terminou.
+                $hasMore = false;
             }
-            
-            // A API informa o início da próxima página na propriedade 'next'.
-            // Se 'next' não existir, a paginação terminou.
-            $start = $data['next'] ?? null;
-
-        } while ($start); // Continua o loop enquanto a API indicar que há uma próxima página.
+        }
 
         $_SESSION['bitrix_user_cache'] = [
             'users' => $allUsers,
