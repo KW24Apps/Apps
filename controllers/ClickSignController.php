@@ -43,14 +43,13 @@ class ClickSignController
         $spaKey = 'SPA_' . $entityId;
         $fields = $configJson[$spaKey]['campos'] ?? [];
         $tokenClicksign = $configJson[$spaKey]['clicksign_token'] ?? null;
-        $authorId = $configJson[$spaKey]['bitrix_user_id_comments'] ?? null;
 
         // Adiciona os campos do config ao params
         $params = array_merge($params, $fields);
 
         if (!$tokenClicksign) {
             LogHelper::logClickSign("Token ClickSign ausente", 'controller');
-            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, 'Acesso não autorizado ou incompleto', $authorId);
+            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, 'Acesso não autorizado ou incompleto');
             $response = ['success' => false, 'mensagem' => 'Acesso não autorizado ou incompleto.'];
             echo json_encode($response, JSON_UNESCAPED_UNICODE);
             return $response;
@@ -138,7 +137,7 @@ class ClickSignController
         if (!empty($errosValidacao)) {
             $mensagemErro = 'Campos obrigatórios ausentes ou inválidos: ' . implode(', ', $errosValidacao);
             LogHelper::logClickSign("ERRO - $mensagemErro", 'controller');
-            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagemErro, $authorId);
+            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagemErro);
             echo json_encode(['success' => false, 'error' => $mensagemErro]);
             return;
         }
@@ -220,7 +219,7 @@ class ClickSignController
 
         if ($erroSignatario) {
             LogHelper::logClickSign("Erro: $erroMensagem", 'controller');
-            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $erroMensagem, $authorId);
+            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $erroMensagem);
             $response = ['success' => false, 'mensagem' => $erroMensagem];
             echo json_encode($response, JSON_UNESCAPED_UNICODE);
             return $response;
@@ -253,7 +252,7 @@ class ClickSignController
 
         if (!$arquivoConvertido) {
             LogHelper::logClickSign("Erro ao converter o arquivo", 'controller');
-            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, 'Erro ao converter o arquivo', $authorId);
+            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, 'Erro ao converter o arquivo');
             $response = ['success' => false, 'mensagem' => 'Erro ao converter o arquivo.'];
             echo json_encode($response, JSON_UNESCAPED_UNICODE);
             return $response;
@@ -359,8 +358,7 @@ class ClickSignController
                         'campo_arquivoaserassinado'  => $params['arquivoaserassinado'] ?? null,
                         'campo_arquivoassinado'      => $params['arquivoassinado'] ?? null,
                         'campo_idclicksign'          => $params['idclicksign'] ?? null,
-                        'campo_retorno'              => $params['retorno'] ?? null,
-                        'bitrix_user_id'             => $authorId
+                        'campo_retorno'              => $params['retorno'] ?? null
                     ]);
                     $gravado = true;
                 } catch (PDOException $e) {
@@ -370,7 +368,7 @@ class ClickSignController
             }
 
             if ($gravado) {
-                self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, 'Documento enviado para assinatura', $authorId);
+                self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, 'Documento enviado para assinatura');
                 LogHelper::logClickSign("Documento enviado para assinatura e dados atualizados no Bitrix com sucesso", 'controller');
                 $response = [
                     'success' => true,
@@ -382,7 +380,7 @@ class ClickSignController
                 echo json_encode($response, JSON_UNESCAPED_UNICODE);
                 return $response;
             } else {
-                self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, 'Assinatura criada, mas falha ao gravar no banco', $authorId);
+                self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, 'Assinatura criada, mas falha ao gravar no banco');
                 LogHelper::logClickSign("Documento finalizado, mas erro ao gravar controle de assinatura", 'controller');
                 $response = [
                     'success' => false,
@@ -407,7 +405,7 @@ class ClickSignController
     }
  
     // Função auxiliar para atualizar status e ID no Bitrix
-    private static function atualizarRetornoBitrix($params, $spa, $dealId, $sucesso, $documentKey, $mensagemCustomizada = null, $authorId = null)
+    private static function atualizarRetornoBitrix($params, $spa, $dealId, $sucesso, $documentKey, $mensagemCustomizada = null)
     {
         $campoRetorno = $params['retorno'] ?? null;
         $campoIdClickSign = $params['idclicksign'] ?? null;
@@ -437,7 +435,7 @@ class ClickSignController
         }
 
         // Adiciona comentário independentemente de ter atualizado campos ou não
-        BitrixDealHelper::adicionarComentarioDeal($spa, $dealId, "CLICKSIGN: " . $mensagemRetorno, $authorId);
+        BitrixDealHelper::adicionarComentarioDeal($spa, $dealId, "CLICKSIGN: " . $mensagemRetorno);
 
         return $response;
     }
@@ -487,7 +485,6 @@ class ClickSignController
         $dealId = $dadosAssinatura['deal_id'] ?? null;
         $campoArquivoAssinado = $dadosAssinatura['campo_arquivoassinado'] ?? null;
         $campoRetorno = $dadosAssinatura['campo_retorno'] ?? null;
-        $authorId = $dadosAssinatura['bitrix_user_id'] ?? null;
 
         if (!$campoRetorno) {
             LogHelper::logClickSign("Campo retorno não encontrado | DocumentKey: $documentKey", 'controller');
@@ -505,7 +502,7 @@ class ClickSignController
                     return ['success' => true, 'mensagem' => 'Assinatura já processada.'];
                 }
                 AplicacaoAcessoDAO::salvarStatus($documentKey, null, ($dadosAssinatura['assinatura_processada'] ?? '') . ";" . $assinante);
-                return self::assinaturaRealizada($requestData, $spa, $dealId, $campoRetorno, $authorId);
+                return self::assinaturaRealizada($requestData, $spa, $dealId, $campoRetorno);
 
             case 'deadline':
             case 'cancel':
@@ -514,14 +511,14 @@ class ClickSignController
                     return ['success' => true, 'mensagem' => 'Evento de documento fechado já processado.'];
                 }
                 AplicacaoAcessoDAO::salvarStatus($documentKey, $evento, null, true);
-                return self::documentoFechado($requestData, $spa, $dealId, $documentKey, $campoRetorno, $authorId);
+                return self::documentoFechado($requestData, $spa, $dealId, $documentKey, $campoRetorno);
 
             case 'document_closed':
                 if (!empty($dadosAssinatura['documento_disponivel_processado'])) {
                     return ['success' => true, 'mensagem' => 'Documento já disponível e processado anteriormente.'];
                 }
                 AplicacaoAcessoDAO::salvarStatus($documentKey, null, null, null, true);
-                return self::documentoDisponivel($requestData, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey, $authorId, $token);
+                return self::documentoDisponivel($requestData, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey, $token);
 
             default:
                 return ['success' => true, 'mensagem' => 'Evento recebido sem ação específica.'];
@@ -529,7 +526,7 @@ class ClickSignController
     }
 
     // Método para tratar eventos assinatura de Signatario
-    private static function assinaturaRealizada($requestData, $spa, $dealId, $campoRetorno, $authorId)
+    private static function assinaturaRealizada($requestData, $spa, $dealId, $campoRetorno)
     {
         // 1. Validação de parâmetros obrigatórios
         if (empty($spa) || empty($dealId) || empty($campoRetorno)) {
@@ -559,8 +556,7 @@ class ClickSignController
                 $dealId,
                 true,
                 null, // Não envia documentKey aqui
-                $mensagem,
-                $authorId
+                $mensagem
             );
 
             // Corrigido: verificar a chave 'status' que é retornada pelo helper
@@ -579,7 +575,7 @@ class ClickSignController
     }
 
     // Método para tratar eventos de fechamento de documento
-    private static function documentoFechado($requestData, $spa, $dealId, $documentKey, $campoRetorno, $authorId)
+    private static function documentoFechado($requestData, $spa, $dealId, $documentKey, $campoRetorno)
     {
         // 1. Salva status de fechamento no banco
         try {
@@ -603,8 +599,7 @@ class ClickSignController
                 $dealId,
                 true,
                 null,
-                $mensagem,
-                $authorId
+                $mensagem
             );
             return ['success' => true, 'mensagem' => "Evento $evento processado com atualização imediata no Bitrix."];
         }
@@ -620,7 +615,7 @@ class ClickSignController
     }
 
     // Método para tratar eventos Documento disponível para download
-    private static function documentoDisponivel($requestData, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey, $authorId, $token)
+    private static function documentoDisponivel($requestData, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey, $token)
     {
         // 1. Validação de parâmetros obrigatórios ANTES de qualquer processamento
         if (empty($spa) || empty($dealId) || empty($documentKey)) {
@@ -665,7 +660,7 @@ class ClickSignController
                 // Envia apenas mensagem final sem anexar arquivo
                 $resultadoMensagem = self::atualizarRetornoBitrix([
                     'retorno' => $campoRetorno
-                ], $spa, $dealId, true, null, 'Documento assinado com sucesso.', $authorId);
+                ], $spa, $dealId, true, null, 'Documento assinado com sucesso.');
 
                 if (isset($resultadoMensagem['status']) && $resultadoMensagem['status'] === 'sucesso') {
                     return ['success' => true, 'mensagem' => 'Mensagem final enviada (sem anexo de arquivo).'];
@@ -729,7 +724,7 @@ class ClickSignController
                         // 4.2.5. Atualiza campo de retorno com mensagem de sucesso
                         $resultadoMensagem = self::atualizarRetornoBitrix([
                             'retorno' => $campoRetorno
-                        ], $spa, $dealId, true, null, 'Documento assinado e arquivo anexado com sucesso.', $authorId);
+                        ], $spa, $dealId, true, null, 'Documento assinado e arquivo anexado com sucesso.');
 
                         if (isset($resultadoMensagem['status']) && $resultadoMensagem['status'] === 'sucesso') {
                             LogHelper::logClickSign("Processo de assinatura finalizado com sucesso | Documento: $documentKey", 'controller');
