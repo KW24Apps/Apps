@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function verificarStatus() {
         try {
             const jobsQueryParam = jobIds.join(',');
-            const url = `/Apps/public/form/api/status_job.php?cliente=${encodeURIComponent(cliente)}&jobs=${encodeURIComponent(jobsQueryParam)}`;
+            const url = `/Apps/public/form/api/status_job.php?cliente=${encodeURIComponent(cliente)}&job_id=${encodeURIComponent(jobsQueryParam)}`;
             
             const response = await fetch(url);
             if (!response.ok) {
