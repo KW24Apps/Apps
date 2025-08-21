@@ -380,7 +380,8 @@ class ClickSignController
                 echo json_encode($response, JSON_UNESCAPED_UNICODE);
                 return $response;
             } else {
-                self::atualizarRetornoBitrix($params, $entityId, $id, false, null, 'Erro ao cadastrar assinatura no banco de dados. Os retornos de assinatura não serão enviados.');
+                $mensagemErro = "Erro ao registrar assinatura no banco de dados. AVISO: Os retornos automáticos (quem assinou, documento finalizado) não funcionarão. O acompanhamento deverá ser manual. Entre em contato com o suporte de TI.";
+                self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagemErro);
                 LogHelper::logClickSign("Documento finalizado, mas erro ao gravar controle de assinatura", 'controller');
                 $response = [
                     'success' => false,
