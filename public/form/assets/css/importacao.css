@@ -700,3 +700,57 @@ input:focus, select:focus {
     font-size: 1rem;        /* Garante o tamanho da fonte */
     font-weight: 600;       /* Garante o peso da fonte */
 }
+
+/* --- Estilos para a Página de Sucesso --- */
+
+.status-container {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.status-container h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #495057;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.progress-bar-container {
+    width: 100%;
+    background-color: #e9ecef;
+    border-radius: 10px;
+    height: 20px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    background-color: #007bff;
+    border-radius: 10px;
+    transition: width 0.5s ease-in-out;
+}
+
+.status-text {
+    margin-top: 10px;
+    color: #6c757d;
+    font-weight: 500;
+    text-align: center;
+}
+
+.user-guidance {
+    text-align: center;
+    padding: 15px;
+    background-color: #e7f3ff;
+    border: 1px solid #b3d7ff;
+    border-radius: 10px;
+    color: #004085;
+}
+
+.user-guidance p {
+    margin: 5px 0;
+}
