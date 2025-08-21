@@ -5,9 +5,10 @@ use dao\BatchJobDAO;
 
 header('Content-Type: application/json');
 
-$jobId = $_GET['job_id'] ?? '';
+$jobIdsParam = $_GET['job_id'] ?? '';
 
-if (empty($jobId)) {
+if (empty($jobIdsParam)) {
+    http_response_code(400);
     echo json_encode([
         'sucesso' => false,
         'mensagem' => 'job_id é obrigatório'
@@ -15,8 +16,22 @@ if (empty($jobId)) {
     exit;
 }
 
+// Transforma a string de IDs separados por vírgula em um array
+$jobIds = explode(',', $jobIdsParam);
+
+// Limpa o array para garantir que não haja valores vazios
+$jobIds = array_filter(array_map('trim', $jobIds));
+
+if (empty($jobIds)) {
+    http_response_code(400);
+    echo json_encode([
+        'sucesso' => false,
+        'mensagem' => 'Nenhum job_id válido fornecido'
+    ]);
+    exit;
+}
+
 try {
-    // Como não temos o método buscarJobPorId, vamos fazer a consulta direta
     $config = require __DIR__ . '/../../../config/configdashboard.php';
     $pdo = new PDO(
         "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8mb4",
@@ -25,34 +40,37 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
     
-    $sql = "SELECT * FROM batch_jobs WHERE job_id = ?";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([$jobId]);
-    $job = $stmt->fetch(PDO::FETCH_ASSOC);
+    // Cria os placeholders (?) para a cláusula IN
+    $placeholders = implode(',', array_fill(0, count($jobIds), '?'));
     
-    if (!$job) {
+    // CORREÇÃO: Usa a cláusula IN para buscar múltiplos jobs
+    $sql = "SELECT * FROM batch_jobs WHERE job_id IN ($placeholders)";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($jobIds);
+    $jobs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    if (!$jobs) {
         echo json_encode([
             'sucesso' => false,
-            'mensagem' => 'Job não encontrado'
+            'mensagem' => 'Nenhum job encontrado para os IDs fornecidos'
         ]);
         exit;
     }
     
+    // Soma o progresso de todos os jobs encontrados
+    $totalProcessado = 0;
+    foreach ($jobs as $job) {
+        $totalProcessado += $job['items_processados'] ?? 0;
+    }
+    
     echo json_encode([
         'sucesso' => true,
-        'job' => [
-            'id' => $job['job_id'],
-            'status' => $job['status'],
-            'tipo' => $job['tipo'],
-            'total_items' => $job['total_items'],
-            'items_processados' => $job['items_processados'] ?? 0,
-            'criado_em' => $job['criado_em'],
-            'atualizado_em' => $job['atualizado_em'] ?? null,
-            'resultado' => $job['resultado'] ? json_decode($job['resultado'], true) : null
-        ]
+        'total_processado' => $totalProcessado,
+        'jobs_encontrados' => count($jobs)
     ]);
     
 } catch (Exception $e) {
+    http_response_code(500);
     echo json_encode([
         'sucesso' => false,
         'mensagem' => 'Erro ao consultar status: ' . $e->getMessage()
