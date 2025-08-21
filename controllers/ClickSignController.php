@@ -718,7 +718,7 @@ class ClickSignController
                         $campoArquivoAssinado => $arquivoParaBitrix
                     ];
 
-                    $tentativasAnexo = 3;
+                    $tentativasAnexo = 3; 
                     $sucessoAnexo = false;
                     $ultimoErro = '';
 
