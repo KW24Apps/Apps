@@ -467,6 +467,12 @@ class ClickSignController
 
         // Adicionado log e validação de credenciais
         LogHelper::logClickSign("Verificando credenciais para SPA: $spaKey | Token Encontrado: " . ($token ? 'Sim' : 'Não') . " | Secret Encontrado: " . ($secret ? 'Sim' : 'Não'), 'controller');
+        
+        // Log de debug temporário para inspecionar as chaves
+        $logToken = $token ? substr($token, 0, 4) . '...' . substr($token, -4) : 'N/A';
+        $logSecret = $secret ? substr($secret, 0, 4) . '...' . substr($secret, -4) : 'N/A';
+        LogHelper::logClickSign("[DEBUG] Token: $logToken | Secret: $logSecret", 'controller');
+
         if (empty($secret) || empty($token)) {
             LogHelper::logClickSign("ERRO: Token ou Secret não configurados para a SPA: $spaKey", 'controller');
             return ['success' => false, 'mensagem' => 'Credenciais de API não configuradas.'];
