@@ -380,7 +380,7 @@ class ClickSignController
                 echo json_encode($response, JSON_UNESCAPED_UNICODE);
                 return $response;
             } else {
-                self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, 'Assinatura criada, mas falha ao gravar no banco');
+                self::atualizarRetornoBitrix($params, $entityId, $id, false, null, 'Erro ao cadastrar assinatura no banco de dados. Os retornos de assinatura não serão enviados.');
                 LogHelper::logClickSign("Documento finalizado, mas erro ao gravar controle de assinatura", 'controller');
                 $response = [
                     'success' => false,
