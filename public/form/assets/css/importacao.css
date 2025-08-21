@@ -112,6 +112,14 @@
 .autocomplete-wrapper {
     position: relative;
 }
+
+/* Garante que a lista de autocomplete flutue sobre os outros elementos */
+.autocomplete-list {
+    position: absolute;
+    width: 100%;
+    z-index: 1000; /* Um z-index alto garante que a lista fique na frente */
+}
+
 body {
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', Arial, sans-serif;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
