@@ -33,6 +33,7 @@ $cliente = $_GET['cliente'] ?? null;
 if ($cliente && $slugAplicacao && NOME_APLICACAO !== 'bitrix-sync') {
     AplicacaoAcessoDAO::ValidarClienteAplicacao($cliente, $slugAplicacao);
 }
+
 // Direcionamento com base no prefixo
 switch (NOME_APLICACAO) {
 

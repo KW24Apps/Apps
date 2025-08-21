@@ -6,21 +6,33 @@ require_once __DIR__ . '/../helpers/LogHelper.php';
 class ClickSignHelper
 {
     // Método genérico para enviar requisições à API ClickSign
-    private static function enviarRequisicao($metodo, $endpoint, $dados = [], $versao = 'v1')
+    private static function enviarRequisicao($metodo, $endpoint, $dados = [], $versao = 'v1', $tokenOverride = null)
     {
         if (!is_string($endpoint)) {
             LogHelper::logClickSign('[ERRO] Endpoint não é string: ' . json_encode($endpoint), 'ClickSignHelper');
             return null;
         }
 
-        // Busca token da variável global (mesmo padrão do BitrixHelper)
-        $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
-        $configJson = $configExtra ? json_decode($configExtra, true) : [];
-        
-        // Para ClickSign, precisa especificar qual SPA (entityId)
-        $entityId = $_GET['spa'] ?? $_GET['entityId'] ?? null;
-        $spaKey = 'SPA_' . $entityId;
-        $token = $configJson[$spaKey]['clicksign_token'] ?? null;
+        $token = $tokenOverride;
+        $spaKeyLog = 'N/A'; // Valor padrão para o log
+
+        if (!$token) {
+            // Busca token da variável global (mesmo padrão do BitrixHelper)
+            $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
+            $configJson = $configExtra ? json_decode($configExtra, true) : [];
+            
+            // Para ClickSign, precisa especificar qual SPA (entityId)
+            $entityId = $_GET['spa'] ?? $_GET['entityId'] ?? null;
+            $spaKey = 'SPA_' . $entityId;
+            $spaKeyLog = $spaKey; // Atualiza para o log
+            $token = $configJson[$spaKey]['clicksign_token'] ?? null;
+        }
+
+        // Validação crítica do token antes de qualquer requisição
+        if (empty($token)) {
+            LogHelper::logClickSign("[ERRO CRÍTICO] Tentativa de requisição sem Access Token. SPA Key: $spaKeyLog. Abortando.", 'ClickSignHelper');
+            return ['errors' => 'Access Token não encontrado na configuração.'];
+        }
 
         $url = "https://app.clicksign.com/api/$versao" . $endpoint . '?access_token=' . $token;
 
@@ -57,9 +69,9 @@ class ClickSignHelper
     }
 
     // DOCUMENTO — Consulta (útil para debug de erros de vínculo)
-    public static function buscarDocumento($documentKey)
+    public static function buscarDocumento($documentKey, $token = null)
     {
-        return self::enviarRequisicao('GET', "/documents/$documentKey");
+        return self::enviarRequisicao('GET', "/documents/$documentKey", [], 'v1', $token);
     }
 
     // SIGNATÁRIO — Criação (agora usando método unificado)
@@ -155,5 +167,3 @@ class ClickSignHelper
 
 
 }
-
-

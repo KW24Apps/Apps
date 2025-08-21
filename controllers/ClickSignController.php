@@ -465,6 +465,13 @@ class ClickSignController
         $token = $configJson[$spaKey]['clicksign_token'] ?? null; // Carrega o token aqui
         $headerSignature = $_SERVER['HTTP_CONTENT_HMAC'] ?? null;
 
+        // Adicionado log e validação de credenciais
+        LogHelper::logClickSign("Verificando credenciais para SPA: $spaKey | Token Encontrado: " . ($token ? 'Sim' : 'Não') . " | Secret Encontrado: " . ($secret ? 'Sim' : 'Não'), 'controller');
+        if (empty($secret) || empty($token)) {
+            LogHelper::logClickSign("ERRO: Token ou Secret não configurados para a SPA: $spaKey", 'controller');
+            return ['success' => false, 'mensagem' => 'Credenciais de API não configuradas.'];
+        }
+
         if (!ClickSignHelper::validarHmac($rawBody, $secret, $headerSignature)) {
             LogHelper::logClickSign("Assinatura HMAC inválida", 'controller');
             return ['success' => false, 'mensagem' => 'Assinatura HMAC inválida.'];
@@ -684,11 +691,17 @@ class ClickSignController
             }
 
             for ($j = 0; $j < $tentativasDownload; $j++) {
-                $retDoc = ClickSignHelper::buscarDocumento($documentKey);
+                LogHelper::logClickSign("Tentativa " . ($j + 1) . "/$tentativasDownload de buscar documento assinado.", 'documentoDisponivel');
+                $retDoc = ClickSignHelper::buscarDocumento($documentKey, $token);
+                
+                // Log detalhado da resposta da ClickSign
+                LogHelper::logClickSign("Resposta ClickSign (buscarDocumento): " . json_encode($retDoc), 'documentoDisponivel');
+
                 $url = $retDoc['document']['downloads']['signed_file_url'] ?? null;
                 $nomeArquivo = $retDoc['document']['filename'] ?? "documento_assinado.pdf";
 
                 if ($url) {
+                    LogHelper::logClickSign("URL do arquivo assinado encontrada. Tentando baixar.", 'documentoDisponivel');
                     // 4.2.1. Baixa e converte o arquivo para base64
                     $arquivoInfo = [
                         'urlMachine' => $url,
@@ -712,7 +725,7 @@ class ClickSignController
                         $campoArquivoAssinado => $arquivoParaBitrix
                     ];
 
-                    $tentativasAnexo = 3;
+                    $tentativasAnexo = 3; 
                     $sucessoAnexo = false;
                     $ultimoErro = '';
 
