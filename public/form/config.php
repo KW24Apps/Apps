@@ -17,6 +17,18 @@ $FUNIS_DISPONIVEIS = [
     '147_226_spa' => 'Espaço AMI - Envio de WhatsApp'
 ];
 
+// Links dos funis para a página de sucesso
+// FORMATO: 'entityTypeId_categoryId_type' => 'URL do Funil no Bitrix'
+$LINKS_FUNIS = [
+    '2_43_deal' => '#', // Substituir pelo link correto
+    '2_53_deal' => '#', // Substituir pelo link correto
+    '2_65_deal' => '#', // Substituir pelo link correto
+    '2_73_deal' => '#', // Substituir pelo link correto
+    '2_75_deal' => '#', // Substituir pelo link correto
+    '2_69_deal' => '#', // Substituir pelo link correto
+    '147_226_spa' => '#'  // Substituir pelo link correto
+];
+
 // Configurações de upload
 define('UPLOAD_MAX_SIZE', 10 * 1024 * 1024); // 10MB
 define('ALLOWED_EXTENSIONS', ['.csv', '.xlsx']);
@@ -27,6 +39,7 @@ define('BATCH_SIZE', 25); // Tamanho do lote para processamento
 // Retorna configurações (webhook vem do sistema principal)
 return [
     'funis' => $FUNIS_DISPONIVEIS,
+    'links_funis' => $LINKS_FUNIS,
     'upload' => [
         'max_size' => UPLOAD_MAX_SIZE,
         'extensions' => ALLOWED_EXTENSIONS
