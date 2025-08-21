@@ -36,7 +36,7 @@ try {
             return $_SESSION['bitrix_user_cache']['users'];
         }
 
-        error_log("DEBUG: Cache de usuários vazio ou expirado. Buscando da API...");
+        error_log("DEBUG: Cache de usuários vazio ou expirado. Buscando todos os usuários da API...");
 
         $config = [
             'host' => 'localhost',
@@ -68,7 +68,7 @@ try {
 
         $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
 
-        // CORREÇÃO FINAL: Lógica de paginação robusta que lida com o caso da última página ter 50 itens.
+        // LÓGICA DE PAGINAÇÃO CORRIGIDA E DEFINITIVA
         $allUsers = [];
         $start = 0;
         $hasMore = true;
@@ -87,9 +87,11 @@ try {
             }
 
             $pageUsers = $data['result'];
+            
             if (is_array($pageUsers) && !empty($pageUsers)) {
                 $allUsers = array_merge($allUsers, $pageUsers);
-                // Se a API retornou menos de 50, sabemos que acabou.
+                
+                // Se a API retornou menos de 50 usuários, sabemos que esta é a última página.
                 if (count($pageUsers) < 50) {
                     $hasMore = false;
                 } else {
@@ -97,7 +99,7 @@ try {
                     $start += 50;
                 }
             } else {
-                // Se não retornou usuários, a paginação terminou.
+                // Se não retornou usuários ou o resultado não é um array, a paginação terminou.
                 $hasMore = false;
             }
         }
