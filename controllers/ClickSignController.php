@@ -465,8 +465,7 @@ class ClickSignController
         $token = $configJson[$spaKey]['clicksign_token'] ?? null; // Carrega o token aqui
         $headerSignature = $_SERVER['HTTP_CONTENT_HMAC'] ?? null;
 
-        // Adicionado log e validação de credenciais
-        LogHelper::logClickSign("Verificando credenciais para SPA: $spaKey | Token Encontrado: " . ($token ? 'Sim' : 'Não') . " | Secret Encontrado: " . ($secret ? 'Sim' : 'Não'), 'controller');
+        // Validação de credenciais (sem log positivo)
         if (empty($secret) || empty($token)) {
             LogHelper::logClickSign("ERRO: Token ou Secret não configurados para a SPA: $spaKey", 'controller');
             return ['success' => false, 'mensagem' => 'Credenciais de API não configuradas.'];
@@ -497,11 +496,12 @@ class ClickSignController
 
         // 5. Valida e executa conforme o evento, usando apenas $dadosAssinatura já carregado
         $evento = $requestData['event']['name'] ?? null;
+        LogHelper::logClickSign("Webhook recebido: $evento | Documento: $documentKey", 'controller');
+
         switch ($evento) {
             case 'sign':
                 $assinante = $requestData['event']['data']['signer']['email'] ?? null;
                 if (!empty($dadosAssinatura['assinatura_processada']) && strpos($dadosAssinatura['assinatura_processada'], $assinante) !== false) {
-                    LogHelper::logClickSign("Assinatura duplicada ignorada para $assinante | Documento: $documentKey", 'controller');
                     return ['success' => true, 'mensagem' => 'Assinatura já processada.'];
                 }
                 AplicacaoAcessoDAO::salvarStatus($documentKey, null, ($dadosAssinatura['assinatura_processada'] ?? '') . ";" . $assinante);
@@ -511,24 +511,19 @@ class ClickSignController
             case 'cancel':
             case 'auto_close':
                 if (!empty($dadosAssinatura['documento_fechado_processado'])) {
-                    LogHelper::logClickSign("Evento duplicado ignorado ($evento) | Documento: $documentKey", 'controller');
                     return ['success' => true, 'mensagem' => 'Evento de documento fechado já processado.'];
                 }
                 AplicacaoAcessoDAO::salvarStatus($documentKey, $evento, null, true);
-                LogHelper::logClickSign("Processado evento $evento e marcado como fechado | Documento: $documentKey", 'controller');
                 return self::documentoFechado($requestData, $spa, $dealId, $documentKey, $campoRetorno, $authorId);
 
             case 'document_closed':
                 if (!empty($dadosAssinatura['documento_disponivel_processado'])) {
-                    LogHelper::logClickSign("Documento já disponível, evento duplicado ignorado | Documento: $documentKey", 'controller');
                     return ['success' => true, 'mensagem' => 'Documento já disponível e processado anteriormente.'];
                 }
                 AplicacaoAcessoDAO::salvarStatus($documentKey, null, null, null, true);
-                LogHelper::logClickSign("Processado evento document_closed e documento marcado como disponível | Documento: $documentKey", 'controller');
                 return self::documentoDisponivel($requestData, $spa, $dealId, $campoArquivoAssinado, $campoRetorno, $documentKey, $authorId, $token);
 
             default:
-                LogHelper::logClickSign("Evento não tratado: $evento", 'controller');
                 return ['success' => true, 'mensagem' => 'Evento recebido sem ação específica.'];
         }
     }
@@ -727,18 +722,19 @@ class ClickSignController
                     }
                 }
 
-                if ($sucessoAnexo) {
-                    // 4.2.4. Aguarda processamento do arquivo no Bitrix (30s)
-                    sleep(30);
+                    if ($sucessoAnexo) {
+                        // 4.2.4. Aguarda processamento do arquivo no Bitrix (30s)
+                        sleep(30);
 
-                    // 4.2.5. Atualiza campo de retorno com mensagem de sucesso
-                    $resultadoMensagem = self::atualizarRetornoBitrix([
-                        'retorno' => $campoRetorno
-                    ], $spa, $dealId, true, null, 'Documento assinado e arquivo anexado com sucesso.', $authorId);
+                        // 4.2.5. Atualiza campo de retorno com mensagem de sucesso
+                        $resultadoMensagem = self::atualizarRetornoBitrix([
+                            'retorno' => $campoRetorno
+                        ], $spa, $dealId, true, null, 'Documento assinado e arquivo anexado com sucesso.', $authorId);
 
-                    if (isset($resultadoMensagem['status']) && $resultadoMensagem['status'] === 'sucesso') {
-                        return ['success' => true, 'mensagem' => 'Arquivo baixado, anexado e mensagem atualizada no Bitrix.'];
-                    } else {
+                        if (isset($resultadoMensagem['status']) && $resultadoMensagem['status'] === 'sucesso') {
+                            LogHelper::logClickSign("Processo de assinatura finalizado com sucesso | Documento: $documentKey", 'controller');
+                            return ['success' => true, 'mensagem' => 'Arquivo baixado, anexado e mensagem atualizada no Bitrix.'];
+                        } else {
                         $erroDetalhado = json_encode($resultadoMensagem);
                         LogHelper::logClickSign("ERRO: Falha ao atualizar mensagem final no Bitrix | erro: $erroDetalhado", 'documentoDisponivel');
                         return ['success' => false, 'mensagem' => 'Arquivo anexado, mas falha ao atualizar mensagem no Bitrix.'];
