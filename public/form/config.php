@@ -20,13 +20,13 @@ $FUNIS_DISPONIVEIS = [
 // Links dos funis para a página de sucesso
 // FORMATO: 'entityTypeId_categoryId_type' => 'URL do Funil no Bitrix'
 $LINKS_FUNIS = [
-    '2_43_deal' => '#', // Substituir pelo link correto
-    '2_53_deal' => '#', // Substituir pelo link correto
-    '2_65_deal' => '#', // Substituir pelo link correto
-    '2_73_deal' => '#', // Substituir pelo link correto
-    '2_75_deal' => '#', // Substituir pelo link correto
-    '2_69_deal' => '#', // Substituir pelo link correto
-    '147_226_spa' => '#'  // Substituir pelo link correto
+    '2_43_deal' => 'https://gnapp.bitrix24.com.br/crm/deal/kanban/category/43',
+    '2_53_deal' => 'https://gnapp.bitrix24.com.br/crm/deal/kanban/category/53',
+    '2_65_deal' => 'https://gnapp.bitrix24.com.br/crm/deal/kanban/category/65',
+    '2_73_deal' => 'https://gnapp.bitrix24.com.br/crm/deal/kanban/category/73',
+    '2_75_deal' => 'https://gnapp.bitrix24.com.br/crm/deal/kanban/category/75',
+    '2_69_deal' => 'https://gnapp.bitrix24.com.br/crm/deal/kanban/category/69',
+    '147_226_spa' => 'https://gnapp.bitrix24.com.br/crm/type/147/kanban/category/226'
 ];
 
 // Configurações de upload
