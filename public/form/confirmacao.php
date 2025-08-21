@@ -74,7 +74,7 @@ error_log("dados_importacao completo: " . print_r($dadosImportacao, true));
 error_log("nome_arquivo direto: " . ($dadosImportacao['nome_arquivo'] ?? 'CHAVE NÃO EXISTE'));
 error_log("arquivo direto: " . ($dadosImportacao['arquivo'] ?? 'CHAVE NÃO EXISTE'));
 
-$nomeArquivo = $dadosImportacao['nome_arquivo'] ?? $dadosImportacao['arquivo'] ?? 'Arquivo não identificado';
+$nomeArquivo = $dadosImportacao['arquivo_original'] ?? 'Arquivo não identificado';
 $totalLinhas = $dadosImportacao['total_linhas'] ?? 0;
 
 // Carrega config para mapear o nome do funil corretamente

@@ -105,15 +105,29 @@ try {
         throw new Exception('Erro ao salvar arquivo: ' . ($uploadError['message'] ?? 'Motivo desconhecido'));
     }
 
+    // Conta as linhas do arquivo para exibir na confirmação
+    $totalLinhas = 0;
+    if (($handle = fopen($caminhoArquivo, 'r')) !== false) {
+        // Pula o cabeçalho
+        fgetcsv($handle); 
+        while (fgetcsv($handle) !== false) {
+            $totalLinhas++;
+        }
+        fclose($handle);
+    }
+
     $_SESSION['importacao_form'] = [
         'funil' => $funil,
         'responsavel' => $responsavel,
         'solicitante' => $solicitante,
         'identificador' => $identificador,
-        'arquivo' => $nomeArquivo,
+        'arquivo_salvo' => $nomeArquivo, // Nome do arquivo no servidor
+        'arquivo_original' => $arquivo['name'], // Nome original do arquivo
+        'total_linhas' => $totalLinhas, // Total de registros
         'upload_time' => date('Y-m-d H:i:s')
     ];
 
+    // Reabre o arquivo para pegar os cabeçalhos para o mapeamento
     $headers = [];
     if (($handle = fopen($caminhoArquivo, 'r')) !== false) {
         $headers = fgetcsv($handle, 0, ',', '"', "\\");
