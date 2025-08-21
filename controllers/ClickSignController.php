@@ -447,6 +447,7 @@ class ClickSignController
     {
         // 1. Log do JSON recebido
         $rawBody = file_get_contents('php://input');
+        LogHelper::logClickSign("[WEBHOOK BODY] " . $rawBody, 'controller'); // Log para inspecionar o corpo do webhook
         $documentKey = $requestData['document']['key'] ?? null;
         
         // 2. Valida campos obrigatórios
