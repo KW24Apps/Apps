@@ -1,66 +1,72 @@
 <?php
-$cliente = $_GET['cliente'] ?? '';
-$jobs = $_GET['jobs'] ?? $_GET['job_id'] ?? 'unknown';
-$total = $_GET['total'] ?? 0;
-$chunks = $_GET['chunks'] ?? 1;
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 
-// Se temos múltiplos jobs, separa os IDs
-$jobIds = explode(',', $jobs);
-$isMultipleJobs = count($jobIds) > 1;
+$cliente = $_GET['cliente'] ?? '';
+$jobs = $_GET['jobs'] ?? '';
+$totalRegistros = (int)($_GET['total'] ?? 0);
+
+// Carrega as configurações para encontrar o link do funil
+$config = require_once __DIR__ . '/config.php';
+$funilId = $_SESSION['importacao_form']['funil'] ?? '';
+$linkFunil = $config['links_funis'][$funilId] ?? '#';
+
+// Calcula o tempo estimado (2 segundos por registro)
+$tempoEstimadoSegundos = $totalRegistros * 2;
+$tempoEstimadoFormatado = gmdate("i:s", $tempoEstimadoSegundos);
+
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Importação Iniciada</title>
+    <title>Importação em Andamento</title>
     <link rel="stylesheet" href="/Apps/public/form/assets/css/importacao.css">
 </head>
 <body>
     <div class="import-form">
-        <div class="import-form-title">✅ Importação Iniciada com Sucesso</div>
+        <div class="import-form-title">✅ Importação em Andamento</div>
         
         <div class="import-summary">
-            <h3>Detalhes da Importação:</h3>
-            
-            <?php if ($isMultipleJobs): ?>
-                <p><strong>Total de registros:</strong> <?php echo htmlspecialchars($total); ?></p>
-                <p><strong>Jobs criados:</strong> <?php echo htmlspecialchars($chunks); ?> jobs (máximo 50 registros cada)</p>
-                <p><strong>Status:</strong> Em processamento</p>
-                
-                <h4>IDs dos Jobs:</h4>
-                <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin: 10px 0;">
-                    <?php foreach ($jobIds as $index => $jobId): ?>
-                        <div style="margin: 5px 0; font-family: monospace; font-size: 0.9em;">
-                            <strong>Job <?php echo $index + 1; ?>:</strong> <?php echo htmlspecialchars($jobId); ?>
-                        </div>
-                    <?php endforeach; ?>
+            <h3>Detalhes da Importação</h3>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <label>Total de registros:</label>
+                    <span><?php echo htmlspecialchars($totalRegistros); ?></span>
                 </div>
-            <?php else: ?>
-                <p><strong>Job ID:</strong> <?php echo htmlspecialchars($jobs); ?></p>
-                <p><strong>Total de registros:</strong> <?php echo htmlspecialchars($total); ?></p>
-                <p><strong>Status:</strong> Em processamento</p>
-            <?php endif; ?>
+                <div class="summary-item">
+                    <label>Tempo estimado:</label>
+                    <span>Aproximadamente <?php echo $tempoEstimadoFormatado; ?> minutos</span>
+                </div>
+            </div>
         </div>
 
-        <div class="confirmation-actions">
-            <a href="/Apps/public/form/importacao.php<?php echo $cliente ? '?cliente=' . urlencode($cliente) : ''; ?>" class="confirm-btn">🆕 Nova Importação</a>
-            <a href="/Apps" class="back-btn">🏠 Voltar ao Sistema Principal</a>
+        <div class="status-container">
+            <h3>Status</h3>
+            <div class="progress-bar-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <div id="statusText" class="status-text">Iniciando...</div>
+        </div>
+
+        <div class="user-guidance">
+            <p>🚀 Sua importação foi iniciada e está sendo processada em segundo plano.</p>
+            <p>🔔 **Não é necessário manter esta página aberta.** Você pode fechá-la e continuar trabalhando normalmente.</p>
+        </div>
+
+        <div class="form-actions">
+            <a href="/Apps/public/form/importacao.php<?php echo $cliente ? '?cliente=' . urlencode($cliente) : ''; ?>" class="btn-secondary">Nova Importação</a>
+            <a href="<?php echo htmlspecialchars($linkFunil); ?>" target="_blank" class="btn-primary">Ver Funil no Bitrix</a>
         </div>
     </div>
 
     <script>
-        // Auto-refresh da página a cada 30 segundos para acompanhar o progresso
-        setTimeout(function() {
-            window.location.reload();
-        }, 30000);
-        
-        console.log('Importação iniciada:', {
-            jobs: <?php echo json_encode($jobIds); ?>,
-            total: <?php echo $total; ?>,
-            chunks: <?php echo $chunks; ?>,
-            isMultiple: <?php echo $isMultipleJobs ? 'true' : 'false'; ?>,
-            cliente: '<?php echo addslashes($cliente); ?>'
-        });
+        // Passa os dados do PHP para o JavaScript
+        const jobIds = <?php echo json_encode(explode(',', $jobs)); ?>;
+        const totalRegistros = <?php echo $totalRegistros; ?>;
+        const cliente = '<?php echo addslashes($cliente); ?>';
     </script>
+    <script src="/Apps/public/form/assets/js/sucesso.js"></script>
 </body>
 </html>
