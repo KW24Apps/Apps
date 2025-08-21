@@ -11,12 +11,10 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../../helpers/BitrixHelper.php';
 use Helpers\BitrixHelper;
 
-// Inicia a sessão para usar o cache
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-// Parâmetro para forçar a limpeza do cache durante o desenvolvimento/depuração
 if (isset($_GET['clear_cache']) && $_GET['clear_cache'] === '1') {
     unset($_SESSION['bitrix_user_cache']);
     error_log("DEBUG: Cache de usuários foi forçadamente limpo.");
@@ -32,9 +30,7 @@ if (!$cliente) {
 }
 
 try {
-    // --- Função para buscar e cachear todos os usuários ---
     function obter_usuarios_bitrix($cliente) {
-        // Verifica se o cache existe e não está expirado (duração de 1 hora)
         if (isset($_SESSION['bitrix_user_cache']) && (time() - $_SESSION['bitrix_user_cache']['timestamp'] < 3600)) {
             error_log("DEBUG: Usando cache de usuários com " . count($_SESSION['bitrix_user_cache']['users']) . " registros.");
             return $_SESSION['bitrix_user_cache']['users'];
@@ -72,7 +68,7 @@ try {
 
         $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
 
-        // Lógica confiável de buscar todos os usuários com paginação
+        // CORREÇÃO: Lógica de paginação robusta que verifica a propriedade 'next'.
         $allUsers = [];
         $start = 0;
         do {
@@ -89,13 +85,16 @@ try {
             }
 
             $pageUsers = $data['result'];
-            $allUsers = array_merge($allUsers, $pageUsers);
-            $start += 50;
-            $hasMore = count($pageUsers) === 50;
+            if (is_array($pageUsers)) {
+                $allUsers = array_merge($allUsers, $pageUsers);
+            }
+            
+            // A API informa o início da próxima página na propriedade 'next'.
+            // Se 'next' não existir, a paginação terminou.
+            $start = $data['next'] ?? null;
 
-        } while ($hasMore && $start < 2000); // Limite de segurança para evitar loops infinitos
+        } while ($start); // Continua o loop enquanto a API indicar que há uma próxima página.
 
-        // Salva a lista completa no cache da sessão
         $_SESSION['bitrix_user_cache'] = [
             'users' => $allUsers,
             'timestamp' => time()
@@ -105,7 +104,6 @@ try {
         return $allUsers;
     }
 
-    // --- Lógica Principal ---
     $todos_usuarios = obter_usuarios_bitrix($cliente);
 
     $usuarios_filtrados = [];
