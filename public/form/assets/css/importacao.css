@@ -687,3 +687,13 @@ input:focus, select:focus {
     margin: 0;
     gap: 0;
 }
+
+/* Garante que os botões dentro de .form-actions não ocupem 100% da largura */
+.form-actions .btn-primary,
+.form-actions button {
+    width: auto; /* Anula o width: 100% do estilo genérico */
+    height: auto; /* Anula a altura fixa */
+    margin-top: 0; /* Remove a margem superior desnecessária */
+    text-transform: none; /* Remove o texto em maiúsculas para um visual mais limpo */
+    letter-spacing: normal; /* Remove o espaçamento de letras */
+}
