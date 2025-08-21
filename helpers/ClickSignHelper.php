@@ -22,6 +22,12 @@ class ClickSignHelper
         $spaKey = 'SPA_' . $entityId;
         $token = $configJson[$spaKey]['clicksign_token'] ?? null;
 
+        // Validação crítica do token antes de qualquer requisição
+        if (empty($token)) {
+            LogHelper::logClickSign("[ERRO CRÍTICO] Tentativa de requisição sem Access Token. SPA Key: $spaKey. Abortando.", 'ClickSignHelper');
+            return ['errors' => 'Access Token não encontrado na configuração.'];
+        }
+
         $url = "https://app.clicksign.com/api/$versao" . $endpoint . '?access_token=' . $token;
 
         $ch = curl_init($url);
@@ -155,5 +161,3 @@ class ClickSignHelper
 
 
 }
-
-
