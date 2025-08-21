@@ -4,7 +4,8 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 // Inclui helper para mapear nomes de campos
-require_once __DIR__ . '/helpers/field_mapper.php';
+require_once __DIR__ . '/../../helpers/BitrixHelper.php';
+use Helpers\BitrixHelper;
 
 // Debug session
 error_log("=== DEBUG CONFIRMACAO PAGE ===");
@@ -76,6 +77,19 @@ error_log("arquivo direto: " . ($dadosImportacao['arquivo'] ?? 'CHAVE NÃO EXIST
 
 $nomeArquivo = $dadosImportacao['arquivo_original'] ?? 'Arquivo não identificado';
 $totalLinhas = $dadosImportacao['total_linhas'] ?? 0;
+
+// Busca os nomes dos campos do Bitrix para tradução
+$camposBitrix = [];
+if ($webhook_configurado) {
+    $funilSelecionado = $dadosImportacao['funil'];
+    $dadosFunil = explode('_', $funilSelecionado);
+    $entityTypeId = $dadosFunil[0] ?? 2;
+    
+    // Define o webhook na global para o helper usar
+    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook['webhook_bitrix'];
+    
+    $camposBitrix = BitrixHelper::consultarCamposCrm($entityTypeId);
+}
 
 // Carrega config para mapear o nome do funil corretamente
 $config = require_once __DIR__ . '/config.php';
@@ -155,7 +169,11 @@ error_log("Mapeamento: " . print_r($mapeamento, true));
                             <?php foreach ($mapeamento as $coluna => $campo): ?>
                                 <tr>
                                     <td><?php echo htmlspecialchars($coluna); ?></td>
-                                    <td><?php echo htmlspecialchars(FieldMapper::getFieldName($campo)); ?></td>
+                                    <td><?php 
+                                        // Traduz o ID do campo para o nome amigável
+                                        $nomeCampo = $camposBitrix[$campo]['title'] ?? $campo;
+                                        echo htmlspecialchars($nomeCampo); 
+                                    ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
