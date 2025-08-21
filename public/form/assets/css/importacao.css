@@ -277,47 +277,6 @@ input:focus, select:focus {
     font-size: 0.9rem;
 }
 
-.confirmation-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 20px;
-}
-
-.confirm-btn {
-    background: #007bff;
-    color: white;
-    border: none;
-    padding: 14px 20px;
-    border-radius: 10px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-    width: 100%;
-    text-transform: none;
-}
-
-.confirm-btn:hover {
-    background: #0056b3;
-}
-
-.back-btn {
-    display: inline-block;
-    text-align: center;
-    padding: 10px 16px;
-    background: #6c757d;
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    transition: background 0.2s;
-}
-
-.back-btn:hover {
-    background: #545b62;
-    text-decoration: none;
-}
 
 /* Estilos para página de confirmação melhorada */
 .campos-container {
@@ -662,12 +621,57 @@ input:focus, select:focus {
     box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
 }
 
-/* Ajuste para ações de confirmação no mapeamento */
-.confirmation-actions {
+/* --- Estilos para Ações do Formulário (Botões Voltar/Continuar) --- */
+
+/* Container principal para os botões */
+.form-actions {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
+    justify-content: space-between; /* Alinha os itens nas extremidades */
+    align-items: center;
     margin-top: 24px;
     padding-top: 20px;
     border-top: 1px solid #e9ecef;
+}
+
+/* Estilo base para os botões */
+.btn-primary,
+.btn-secondary {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Botão Primário (Continuar) */
+.btn-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    box-shadow: 0 3px 12px rgba(0,123,255,0.2);
+    min-width: 150px; /* Largura mínima */
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
+    box-shadow: 0 4px 16px rgba(0,123,255,0.3);
+    transform: translateY(-1px);
+}
+
+/* Botão Secundário (Voltar) */
+.btn-secondary {
+    background-color: #f1f3f7;
+    color: #495057;
+    border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+    background-color: #e6eaf1;
+    border-color: #b8bcc4;
+    color: #2c3e50;
 }
