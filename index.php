@@ -34,26 +34,6 @@ if ($cliente && $slugAplicacao && NOME_APLICACAO !== 'bitrix-sync') {
     AplicacaoAcessoDAO::ValidarClienteAplicacao($cliente, $slugAplicacao);
 }
 
-// [LOG DE DIAGNÓSTICO COMPLETO]
-$logMessage = [
-    'uri' => $_SERVER['REQUEST_URI'],
-    'global_definida' => isset($GLOBALS['ACESSO_AUTENTICADO'])
-];
-if (isset($GLOBALS['ACESSO_AUTENTICADO'])) {
-    $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
-    $configJson = $configExtra ? json_decode($configExtra, true) : [];
-    
-    // Tentativa de extrair token e secret de forma genérica, se possível
-    // A lógica exata pode precisar de ajuste dependendo da estrutura do config_extra
-    $firstSpaKey = !empty($configJson) ? array_key_first($configJson) : null;
-    
-    $logMessage['cliente'] = $GLOBALS['ACESSO_AUTENTICADO']['cliente_nome'] ?? 'N/A';
-    $logMessage['token'] = $firstSpaKey ? ($configJson[$firstSpaKey]['clicksign_token'] ?? 'N/A') : 'N/A';
-    $logMessage['secret'] = $firstSpaKey ? ($configJson[$firstSpaKey]['clicksign_secret'] ?? 'N/A') : 'N/A';
-}
-LogHelper::registrar('Index', "[DIAGNÓSTICO COMPLETO] " . json_encode($logMessage));
-
-
 // Direcionamento com base no prefixo
 switch (NOME_APLICACAO) {
 

@@ -692,7 +692,7 @@ class ClickSignController
 
             for ($j = 0; $j < $tentativasDownload; $j++) {
                 LogHelper::logClickSign("Tentativa " . ($j + 1) . "/$tentativasDownload de buscar documento assinado.", 'documentoDisponivel');
-                $retDoc = ClickSignHelper::buscarDocumento($documentKey);
+                $retDoc = ClickSignHelper::buscarDocumento($documentKey, $token);
                 
                 // Log detalhado da resposta da ClickSign
                 LogHelper::logClickSign("Resposta ClickSign (buscarDocumento): " . json_encode($retDoc), 'documentoDisponivel');
