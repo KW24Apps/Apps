@@ -220,11 +220,9 @@ $php_warnings = ob_get_clean();
                 ?>
             </div>
             
-            <div class="confirmation-actions">
-                <button type="submit">Continuar para Confirmação</button>
-                <div class="action-links">
-                    <a href="/Apps/public/form/importacao.php?cliente=<?php echo urlencode($cliente); ?>" class="back-btn">← Voltar para Importação de Leads</a>
-                </div>
+            <div class="form-actions">
+                <a href="/Apps/public/form/importacao.php?cliente=<?php echo urlencode($cliente); ?>" class="btn-secondary">← Voltar</a>
+                <button type="submit" class="btn-primary">Continuar</button>
             </div>
         </form>
     <?php else: ?>

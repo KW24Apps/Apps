@@ -11,12 +11,22 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../../helpers/BitrixHelper.php';
 use Helpers\BitrixHelper;
 
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
 $q = $_GET['q'] ?? '';
 $cliente = $_GET['cliente'] ?? null;
 
 if (!$cliente) {
     http_response_code(400);
     echo json_encode(['erro' => 'Parâmetro cliente é obrigatório']);
+    exit;
+}
+
+// Se a busca for muito curta, retorna vazio para não sobrecarregar a API.
+if (strlen($q) < 2) {
+    echo json_encode([]);
     exit;
 }
 
@@ -51,16 +61,16 @@ try {
 
     $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
 
-    // Solução Definitiva: Usar o método user.search, que é o correto para busca textual.
-    // Simplificamos os parâmetros para garantir que o filtro FIND seja aplicado.
+    // SOLUÇÃO DEFINITIVA: Busca em tempo real usando o método 'user.search'
+    // com o mínimo de parâmetros para evitar conflitos.
     $params = [
-        'FILTER' => ['ACTIVE' => 'Y'],
         'FIND' => $q
     ];
 
     $data = BitrixHelper::chamarApi('user.search', $params);
 
     if (isset($data['error']) || !isset($data['result'])) {
+        error_log("Falha na API user.search. Resposta: " . print_r($data, true));
         throw new Exception("Erro da API Bitrix: " . ($data['error_description'] ?? 'Resposta inválida do helper'));
     }
 
@@ -68,11 +78,12 @@ try {
     $nomesJaAdicionados = [];
     
     foreach ($data['result'] as $user) {
+        // A API user.search retorna campos em maiúsculas
         $nome = trim(($user['NAME'] ?? '') . ' ' . ($user['LAST_NAME'] ?? ''));
         $userId = $user['ID'] ?? '';
 
-        if (!$nome || !$userId) {
-            continue;
+        if (!$nome || !$userId || !($user['ACTIVE'] ?? false)) {
+            continue; // Pula se não tiver nome, ID ou se o usuário estiver inativo
         }
 
         $nomeLower = strtolower($nome);
@@ -87,7 +98,7 @@ try {
         $nomesJaAdicionados[$nomeLower] = true;
     }
     
-    // Ordena os resultados em PHP, já que o parâmetro ORDER foi removido da chamada
+    // Ordena os resultados em PHP
     usort($usuarios, function($a, $b) {
         return strcasecmp($a['name'], $b['name']);
     });

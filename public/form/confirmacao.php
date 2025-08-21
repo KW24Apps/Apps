@@ -191,16 +191,12 @@ error_log("Mapeamento: " . print_r($mapeamento, true));
                 <?php endif; ?>
             </div>
 
-            <div class="confirmation-actions">
-                <form id="confirmForm" method="POST" action="/Apps/public/form/api/processar_importacao.php">
+            <div class="form-actions">
+                <a href="/Apps/public/form/mapeamento.php<?php echo $cliente ? '?cliente=' . urlencode($cliente) : ''; ?>" class="btn-secondary">← Voltar</a>
+                <form id="confirmForm" method="POST" action="/Apps/public/form/api/processar_importacao.php" style="margin: 0;">
                     <input type="hidden" name="cliente" value="<?php echo htmlspecialchars($cliente); ?>">
-                    <button type="submit" class="confirm-btn">Confirmar e Iniciar Importação</button>
+                    <button type="submit" class="btn-primary">Confirmar e Iniciar</button>
                 </form>
-                
-                <div class="action-links">
-                    <a href="/Apps/public/form/mapeamento.php<?php echo $cliente ? '?cliente=' . urlencode($cliente) : ''; ?>" class="back-btn">Voltar ao Mapeamento</a>
-                    <a href="/Apps/public/form/importacao.php<?php echo $cliente ? '?cliente=' . urlencode($cliente) : ''; ?>" class="back-btn">Voltar ao Início</a>
-                </div>
             </div>
         </div>
     <?php endif; ?>
