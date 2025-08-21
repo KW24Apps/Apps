@@ -78,11 +78,27 @@ try {
     }
     $csvFile = $uploadDir . $nomeArquivoSessao;
 
-    // Processa o CSV para criar os deals
+    // Processa o CSV para criar os deals, com logging detalhado
     $deals = [];
+    $linhasLidas = 0;
+    $linhasVazias = 0;
+    $linhasInvalidas = 0;
+
     if (($handle = fopen($csvFile, 'r')) !== FALSE) {
         $header = fgetcsv($handle);
+        $numeroLinha = 1;
+
         while (($row = fgetcsv($handle)) !== FALSE) {
+            $numeroLinha++;
+            $linhasLidas++;
+
+            // Verifica se a linha está completamente vazia
+            if (count(array_filter($row)) == 0) {
+                $linhasVazias++;
+                error_log("DEBUG: Linha $numeroLinha pulada (vazia).");
+                continue;
+            }
+
             $deal = [];
             foreach ($header as $i => $nomeColuna) {
                 $nomeColuna = trim($nomeColuna);
@@ -91,8 +107,13 @@ try {
                     $deal[$codigoBitrix] = $row[$i] ?? '';
                 }
             }
-            if (!empty($deal)) {
+
+            // Validação Mínima: Verifica se o deal não está vazio após o mapeamento
+            if (!empty($deal) && !empty(array_filter($deal))) {
                 $deals[] = $deal;
+            } else {
+                $linhasInvalidas++;
+                error_log("DEBUG: Linha $numeroLinha pulada (inválida ou sem campos mapeados). Dados: " . implode(', ', $row));
             }
         }
         fclose($handle);
@@ -144,6 +165,14 @@ try {
             throw new Exception("Falha ao inserir o job $jobId no banco de dados.");
         }
     }
+
+    // Salva os dados de log na sessão para exibir na página de sucesso
+    $_SESSION['importacao_log'] = [
+        'linhas_lidas' => $linhasLidas,
+        'linhas_vazias' => $linhasVazias,
+        'linhas_invalidas' => $linhasInvalidas,
+        'total_importado' => $totalDealsProcessados
+    ];
 
     // Redireciona para página de sucesso
     $redirectUrl = "/Apps/public/form/sucesso.php?cliente=" . urlencode($cliente) . 
