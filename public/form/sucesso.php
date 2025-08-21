@@ -16,6 +16,11 @@ $linkFunil = $config['links_funis'][$funilId] ?? '#';
 $tempoEstimadoSegundos = $totalRegistros * 2;
 $tempoEstimadoFormatado = gmdate("i:s", $tempoEstimadoSegundos);
 
+// Recupera os dados de log da sessão
+$logData = $_SESSION['importacao_log'] ?? [];
+$linhasLidas = $logData['linhas_lidas'] ?? $totalRegistros; // Fallback para o total
+$linhasPuladas = ($logData['linhas_vazias'] ?? 0) + ($logData['linhas_invalidas'] ?? 0);
+
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -29,11 +34,19 @@ $tempoEstimadoFormatado = gmdate("i:s", $tempoEstimadoSegundos);
         <div class="import-form-title">✅ Importação em Andamento</div>
         
         <div class="import-summary">
-            <h3>Detalhes da Importação</h3>
+            <h3>Resumo do Processamento</h3>
             <div class="summary-grid">
                 <div class="summary-item">
-                    <label>Total de registros:</label>
+                    <label>Linhas lidas do arquivo:</label>
+                    <span><?php echo htmlspecialchars($linhasLidas); ?></span>
+                </div>
+                <div class="summary-item">
+                    <label>Registros importados:</label>
                     <span><?php echo htmlspecialchars($totalRegistros); ?></span>
+                </div>
+                <div class="summary-item">
+                    <label>Linhas puladas (vazias/inválidas):</label>
+                    <span><?php echo htmlspecialchars($linhasPuladas); ?></span>
                 </div>
                 <div class="summary-item">
                     <label>Tempo estimado:</label>
