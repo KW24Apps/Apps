@@ -1,189 +1,174 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Sistema de autocomplete v3.0 - BUSCA DINÂMICA:', new Date().toISOString());
+    // --- Criação do Portal de Autocomplete ---
+    let portal = document.createElement('div');
+    portal.className = 'autocomplete-portal';
+    document.body.appendChild(portal);
 
-    // Não usa mais cache global - busca diretamente conforme digita
+    let currentInput = null;
     let searchTimeout = null;
-    
-    function setupAutocomplete(inputId, listId) {
+    let activeOptionIndex = -1;
+
+    // --- Funções Utilitárias ---
+    function positionPortal() {
+        if (!currentInput || !portal.classList.contains('visible')) return;
+
+        const rect = currentInput.getBoundingClientRect();
+        portal.style.left = `${rect.left}px`;
+        portal.style.top = `${rect.bottom + window.scrollY + 2}px`;
+        portal.style.width = `${rect.width}px`;
+    }
+
+    function showPortal() {
+        portal.classList.add('visible');
+        positionPortal();
+    }
+
+    function hidePortal() {
+        portal.classList.remove('visible');
+        currentInput = null;
+        activeOptionIndex = -1;
+    }
+
+    // --- Lógica do Autocomplete ---
+    function setupAutocomplete(inputId) {
         const input = document.getElementById(inputId);
-        const list = document.getElementById(listId);
-        
-        if (!input || !list) {
-            console.error('Elementos não encontrados:', inputId, listId);
+        if (!input) return;
+
+        input.setAttribute('role', 'combobox');
+        input.setAttribute('aria-expanded', 'false');
+        input.setAttribute('aria-controls', 'autocomplete-listbox');
+
+        input.addEventListener('focus', () => {
+            currentInput = input;
+        });
+
+        input.addEventListener('input', () => {
+            if (searchTimeout) clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => fetchSuggestions(input.value), 300);
+        });
+
+        input.addEventListener('keydown', handleKeyboardNavigation);
+    }
+
+    async function fetchSuggestions(query) {
+        if (query.length < 2) {
+            portal.innerHTML = '';
+            hidePortal();
             return;
         }
 
-        console.log('📋 Configurando autocomplete DINÂMICO para:', inputId);
-        
-        // Função para verificar se deve mostrar a lista acima
-        function checkPosition() {
-            const inputRect = input.getBoundingClientRect();
-            const windowHeight = window.innerHeight;
-            const spaceBelow = windowHeight - inputRect.bottom;
-            const spaceAbove = inputRect.top;
-            
-            // Se há menos espaço abaixo que acima E menos de 200px abaixo
-            if (spaceBelow < 200 && spaceAbove > spaceBelow) {
-                list.classList.add('show-above');
+        const urlParams = new URLSearchParams(window.location.search);
+        const cliente = urlParams.get('cliente') || '';
+        const url = `/Apps/public/form/api/bitrix_users.php?q=${encodeURIComponent(query)}&cliente=${encodeURIComponent(cliente)}`;
+
+        try {
+            const response = await fetch(url);
+            const users = await response.json();
+            renderSuggestions(users);
+        } catch (error) {
+            console.error('Erro ao buscar sugestões:', error);
+        }
+    }
+
+    function renderSuggestions(users) {
+        portal.innerHTML = '';
+        if (users.length === 0) {
+            hidePortal();
+            return;
+        }
+
+        const listbox = document.createElement('div');
+        listbox.id = 'autocomplete-listbox';
+        listbox.setAttribute('role', 'listbox');
+
+        users.forEach((user, index) => {
+            const option = document.createElement('div');
+            option.className = 'option';
+            option.textContent = user.name;
+            option.setAttribute('role', 'option');
+            option.dataset.userid = user.id;
+            option.dataset.index = index;
+
+            option.addEventListener('mousedown', () => selectOption(user));
+            listbox.appendChild(option);
+        });
+
+        portal.appendChild(listbox);
+        showPortal();
+    }
+
+    function selectOption(user) {
+        if (currentInput) {
+            currentInput.value = user.name;
+            currentInput.dataset.userid = user.id;
+        }
+        hidePortal();
+    }
+
+    function handleKeyboardNavigation(e) {
+        const options = portal.querySelectorAll('.option');
+        if (options.length === 0) return;
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                activeOptionIndex = (activeOptionIndex + 1) % options.length;
+                updateHighlightedOption();
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                activeOptionIndex = (activeOptionIndex - 1 + options.length) % options.length;
+                updateHighlightedOption();
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (activeOptionIndex > -1) {
+                    options[activeOptionIndex].dispatchEvent(new Event('mousedown'));
+                }
+                break;
+            case 'Escape':
+                hidePortal();
+                break;
+        }
+    }
+
+    function updateHighlightedOption() {
+        const options = portal.querySelectorAll('.option');
+        options.forEach((option, index) => {
+            if (index === activeOptionIndex) {
+                option.classList.add('highlighted');
+                option.scrollIntoView({ block: 'nearest' });
             } else {
-                list.classList.remove('show-above');
-            }
-        }
-        
-        // Função para buscar usuários dinamicamente
-        function searchUsers(query) {
-            if (query.length < 2) {
-                list.classList.remove('active');
-                list.innerHTML = '';
-                console.log('🧹 Query muito curta:', query);
-                return;
-            }
-            
-            // Obtém parâmetro cliente da URL atual
-            const urlParams = new URLSearchParams(window.location.search);
-            const cliente = urlParams.get('cliente') || '';
-            const clienteParam = cliente ? '&cliente=' + encodeURIComponent(cliente) : '';
-            
-            console.log('🔍 Buscando usuários para:', query);
-            
-            list.innerHTML = '<div style="padding: 12px; color: #666; text-align: center;"><em>🔄 Buscando...</em></div>';
-            list.classList.add('active');
-            
-            fetch('/Apps/public/form/api/bitrix_users.php?q=' + encodeURIComponent(query) + clienteParam + '&cache_bust=' + Date.now())
-                .then(res => {
-                    console.log('📡 Resposta da API:', res.status, res.statusText);
-                    if (!res.ok) {
-                        throw new Error(`Erro HTTP: ${res.status} - ${res.statusText}`);
-                    }
-                    return res.json();
-                })
-                .then(data => {
-                    console.log('📊 Usuários encontrados:', data.length);
-                    console.log('👥 Lista de usuários:', data.slice(0, 10).map(u => u.name));
-                    
-                    if (!Array.isArray(data)) {
-                        console.error('❌ API não retornou array:', typeof data, data);
-                        throw new Error('API não retornou uma lista de usuários');
-                    }
-                    
-                    displayUsers(data);
-                })
-                .catch(error => {
-                    console.error('❌ Erro na busca:', error);
-                    list.innerHTML = '<div style="padding: 12px; color: red; text-align: center;">❌ Erro: ' + error.message + '</div>';
-                    list.classList.add('active');
-                });
-        }
-        
-        // Função para exibir usuários na lista
-        function displayUsers(users) {
-            list.innerHTML = '';
-            
-            if (users.length === 0) {
-                const div = document.createElement('div');
-                div.textContent = 'Nenhum usuário encontrado';
-                div.style.color = '#666';
-                div.style.padding = '8px 12px';
-                div.style.fontStyle = 'italic';
-                list.appendChild(div);
-                list.classList.add('active');
-                return;
-            }
-            
-            console.log('📋 Exibindo', users.length, 'usuários');
-            
-            users.forEach(user => {
-                const div = document.createElement('div');
-                div.textContent = user.name;
-                div.dataset.userid = user.id;
-                div.style.padding = '8px 12px';
-                div.style.cursor = 'pointer';
-                div.style.borderBottom = '1px solid #eee';
-                
-                // Hover effect
-                div.addEventListener('mouseenter', function() {
-                    this.style.backgroundColor = '#f5f5f5';
-                });
-                div.addEventListener('mouseleave', function() {
-                    this.style.backgroundColor = '';
-                });
-                
-                div.onclick = () => {
-                    console.log('👤 Usuário selecionado:', user.name, '(ID:', user.id + ')');
-                    input.value = user.name;
-                    input.dataset.userid = user.id;
-                    list.classList.remove('active');
-                };
-                list.appendChild(div);
-            });
-            
-            list.classList.add('active');
-        }
-        
-        // Event listener principal para input - COM DEBOUNCE
-        input.addEventListener('input', function() {
-            const query = input.value.trim();
-            console.log('⌨️ Digitando:', query);
-            
-            // Limpa seleção anterior
-            input.dataset.userid = '';
-            
-            // Cancela busca anterior
-            if (searchTimeout) {
-                clearTimeout(searchTimeout);
-            }
-            
-            // Verifica posicionamento antes de mostrar
-            checkPosition();
-            
-            // Debounce - espera 500ms após parar de digitar
-            searchTimeout = setTimeout(() => {
-                searchUsers(query);
-            }, 500);
-        });
-        
-        // Event listeners para recalcular posição
-        input.addEventListener('focus', function() {
-            console.log('🎯 Campo focado:', inputId);
-            checkPosition();
-        });
-        
-        window.addEventListener('scroll', checkPosition);
-        window.addEventListener('resize', checkPosition);
-        
-        // Fechar lista quando clica fora
-        document.addEventListener('click', function(e) {
-            if (!list.contains(e.target) && e.target !== input) {
-                list.classList.remove('active');
-                console.log('❌ Lista fechada (clique fora)');
+                option.classList.remove('highlighted');
             }
         });
     }
-    
-    // Inicializa os campos de autocomplete
-    setupAutocomplete('responsavel', 'autocomplete-responsavel');
-    setupAutocomplete('solicitante', 'autocomplete-solicitante');
 
-    // Handler do formulário
+    // --- Event Listeners Globais ---
+    window.addEventListener('resize', positionPortal);
+    window.addEventListener('scroll', positionPortal, true);
+    document.addEventListener('click', (e) => {
+        if (currentInput && !currentInput.contains(e.target) && !portal.contains(e.target)) {
+            hidePortal();
+        }
+    });
+
+    // --- Inicialização ---
+    setupAutocomplete('responsavel');
+    setupAutocomplete('solicitante');
+
+    // (O restante do seu código de formulário, como o handler de submit, permanece o mesmo)
     const form = document.getElementById('importacaoForm');
     if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-            console.log('📝 Enviando formulário...');
-            
             const formData = new FormData(form);
-            
-            // Adiciona os IDs dos usuários selecionados
             const responsavelId = document.getElementById('responsavel').dataset.userid || '';
             const solicitanteId = document.getElementById('solicitante').dataset.userid || '';
             
             formData.append('responsavel_id', responsavelId);
             formData.append('solicitante_id', solicitanteId);
             
-            console.log('👤 Responsável ID:', responsavelId);
-            console.log('👤 Solicitante ID:', solicitanteId);
-            
-            // Mostra loading
             const submitBtn = form.querySelector('button[type="submit"]');
             const originalText = submitBtn.textContent;
             submitBtn.textContent = 'Enviando...';
@@ -193,21 +178,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 body: formData
             })
-            .then(res => {
-                console.log('📡 Resposta do servidor:', res.status, res.statusText);
-                return res.text();
-            })
+            .then(res => res.text())
             .then(text => {
-                console.log('📄 Resposta raw:', text);
                 try {
                     const resp = JSON.parse(text);
-                    console.log('📦 Resposta JSON:', resp);
-                    
                     if (resp.sucesso && resp.next_url) {
-                        console.log('✅ Redirecionando para:', resp.next_url);
                         window.location.href = resp.next_url;
                     } else {
-                        console.log('❌ Erro na resposta:', resp);
                         const mensagem = document.getElementById('mensagem');
                         if (mensagem) {
                             mensagem.textContent = resp.mensagem || 'Erro desconhecido';
@@ -217,8 +194,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         submitBtn.disabled = false;
                     }
                 } catch (e) {
-                    console.error('❌ Erro JSON:', e);
-                    console.log('📄 Texto recebido:', text);
                     const mensagem = document.getElementById('mensagem');
                     if (mensagem) {
                         mensagem.textContent = 'Erro: Resposta inválida do servidor';
@@ -229,7 +204,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('❌ Erro na requisição:', error);
                 const mensagem = document.getElementById('mensagem');
                 if (mensagem) {
                     mensagem.textContent = 'Erro ao enviar: ' + error.message;
@@ -239,7 +213,5 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.disabled = false;
             });
         });
-    } else {
-        console.error('❌ Formulário importacaoForm não encontrado');
     }
 });
