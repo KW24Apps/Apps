@@ -803,26 +803,27 @@ class ClickSignController
                         $spaKey = 'SPA_' . $spa;
                         $camposConfig = $configJson[$spaKey]['campos'] ?? [];
                         
-                        $camposDeVinculo = [
+                        $camposParaLimparComNull = [
                             'contratante', 'contratada', 'testemunhas', 
-                            'signatarios_assinar', 'signatarios_assinaram'
+                            'signatarios_assinar', 'signatarios_assinaram',
+                            'arquivoaserassinado'
                         ];
                         
-                        $camposDeValorUnico = [
-                            'data', 'arquivoaserassinado', 'idclicksign'
+                        $camposParaLimparComStringVazia = [
+                            'data', 'idclicksign'
                         ];
 
                         $fieldsLimpeza = [];
 
-                        // Limpa campos de vínculo (múltiplos) com um array vazio
-                        foreach ($camposDeVinculo as $key) {
+                        // Limpa campos de vínculo/arquivo com null
+                        foreach ($camposParaLimparComNull as $key) {
                             if (isset($camposConfig[$key])) {
-                                $fieldsLimpeza[$camposConfig[$key]] = [];
+                                $fieldsLimpeza[$camposConfig[$key]] = null;
                             }
                         }
 
-                        // Limpa campos de valor único (texto, data, etc.) com uma string vazia
-                        foreach ($camposDeValorUnico as $key) {
+                        // Limpa campos de valor único com string vazia
+                        foreach ($camposParaLimparComStringVazia as $key) {
                             if (isset($camposConfig[$key])) {
                                 $fieldsLimpeza[$camposConfig[$key]] = '';
                             }
