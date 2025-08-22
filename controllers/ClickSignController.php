@@ -692,21 +692,28 @@ class ClickSignController
                     return ['success' => false, 'mensagem' => 'Falha ao converter o arquivo.'];
                 }
 
-                // 4.2.2. Prepara para anexar arquivo, mantendo os existentes (formato oficial da documentação)
+                // 4.2.2. Prepara para anexar todos os arquivos (novos e antigos) para garantir a adição
                 $dealAtual = BitrixDealHelper::consultarDeal($spa, $dealId, [$campoArquivoAssinado]);
                 $arquivosExistentes = $dealAtual['result'][$campoArquivoAssinado]['valor'] ?? [];
 
                 $valorFinalCampoArquivo = [];
+                
+                // Baixa e prepara os arquivos existentes para reenvio
                 if (is_array($arquivosExistentes)) {
-                    foreach ($arquivosExistentes as $arquivo) {
-                        if (isset($arquivo['id'])) {
-                            // Formato para manter arquivos existentes
-                            $valorFinalCampoArquivo[] = ['id' => (int)$arquivo['id']];
+                    foreach ($arquivosExistentes as $arquivoInfoExistente) {
+                        if (isset($arquivoInfoExistente['urlMachine'])) {
+                            $arquivoConvertido = UtilHelpers::baixarArquivoBase64($arquivoInfoExistente);
+                            if ($arquivoConvertido) {
+                                $valorFinalCampoArquivo[] = [
+                                    $arquivoConvertido['nome'],
+                                    str_replace('data:' . $arquivoConvertido['mime'] . ';base64,', '', $arquivoConvertido['base64'])
+                                ];
+                            }
                         }
                     }
                 }
 
-                // Formato para adicionar novo arquivo
+                // Adiciona o novo arquivo assinado à lista
                 $valorFinalCampoArquivo[] = [
                     $arquivoBase64['nome'],
                     str_replace('data:' . $arquivoBase64['mime'] . ';base64,', '', $arquivoBase64['base64'])
