@@ -563,11 +563,12 @@ class ClickSignController
             return ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes para processar assinatura.'];
         }
 
-        // 2. Extrai signatário do evento
+        // 2. Extrai signatário e document key do evento
         $signer = $requestData['event']['data']['signer'] ?? null;
+        $documentKey = $requestData['document']['key'] ?? null;
 
-        // 3. Se encontrou signatário, monta mensagem
-        if ($signer) {
+        // 3. Se encontrou signatário, processa a lógica de movimentação
+        if ($signer && $documentKey) {
             $nome  = $signer['name']  ?? '';
             $email = $signer['email'] ?? '';
 
@@ -576,21 +577,55 @@ class ClickSignController
                 return ['success' => false, 'mensagem' => 'Dados do signatário incompletos.'];
             }
 
-            $mensagem = "Assinatura feita por $nome - $email";
+            // Lógica de movimentação de signatários
+            $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
+            $configJson = $configExtra ? json_decode($configExtra, true) : [];
+            $spaKey = 'SPA_' . $spa;
+            $campos = $configJson[$spaKey]['campos'] ?? [];
+            $campoSignatariosAssinar = $campos['signatarios_assinar'] ?? null;
+            $campoSignatariosAssinaram = $campos['signatarios_assinaram'] ?? null;
 
-            // 4. Atualiza status no Bitrix (NÃO retorna arquivo)
+            if ($campoSignatariosAssinar && $campoSignatariosAssinaram) {
+                $dadosAssinatura = AplicacaoAcessoDAO::obterAssinaturaClickSign($documentKey);
+                $signatariosJson = $dadosAssinatura['Signatarios'] ?? '[]';
+                $todosSignatarios = json_decode($signatariosJson, true);
+                
+                $assinaturasProcessadas = array_filter(explode(';', $dadosAssinatura['assinatura_processada'] ?? ''));
+
+                $idsAssinaram = [];
+                $idsTodos = [];
+
+                foreach ($todosSignatarios as $s) {
+                    $idsTodos[] = $s['id'];
+                    // Compara o e-mail do signatário atual com a lista de e-mails já processados
+                    if (in_array($s['email'], $assinaturasProcessadas)) {
+                        $idsAssinaram[] = $s['id'];
+                    }
+                }
+                
+                $idsAAssinar = array_diff($idsTodos, $idsAssinaram);
+
+                $fieldsUpdate = [
+                    $campoSignatariosAssinar => array_values($idsAAssinar),
+                    $campoSignatariosAssinaram => array_values($idsAssinaram)
+                ];
+
+                BitrixDealHelper::editarDeal($spa, $dealId, $fieldsUpdate);
+            }
+
+            // 4. Atualiza status no Bitrix (comentário e campo de retorno)
+            $mensagem = "Assinatura feita por $nome - $email";
             $resultado = self::atualizarRetornoBitrix(
                 ['retorno' => $campoRetorno],
                 $spa,
                 $dealId,
                 true,
-                null, // Não envia documentKey aqui
+                null,
                 $mensagem
             );
 
-            // Corrigido: verificar a chave 'status' que é retornada pelo helper
             if (isset($resultado['status']) && $resultado['status'] === 'sucesso') {
-                return ['success' => true, 'mensagem' => 'Assinatura processada e retorno atualizado.'];
+                return ['success' => true, 'mensagem' => 'Assinatura processada e campos atualizados.'];
             } else {
                 $erroDetalhado = json_encode($resultado);
                 LogHelper::logClickSign("ERRO: Falha ao atualizar mensagem de assinatura no Bitrix | erro: $erroDetalhado", 'assinaturaRealizada');
