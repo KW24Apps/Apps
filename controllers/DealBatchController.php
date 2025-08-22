@@ -52,12 +52,15 @@ class DealBatchController
             $spa = $dados['spa'] ?? $dados['entityId'] ?? null;
             $categoryId = $dados['category_id'] ?? $dados['categoryId'] ?? null;
             $fields = $dados['deals'] ?? $dados['fields'] ?? [];
+
+            // Define o tamanho do lote com base na entidade (SPA)
+            $tamanhoLote = ($spa == 2) ? 10 : 25;
             
             if ($tipo === 'criar_deals') {
-                $resultado = BitrixDealHelper::criarDeal($spa, $categoryId, $fields);
+                $resultado = BitrixDealHelper::criarDeal($spa, $categoryId, $fields, $tamanhoLote);
             } elseif ($tipo === 'editar_deals') {
                 $dealIds = $dados['deal_ids'] ?? $dados['dealIds'] ?? null;
-                $resultado = BitrixDealHelper::editarDeal($spa, $dealIds, $fields);
+                $resultado = BitrixDealHelper::editarDeal($spa, $dealIds, $fields, $tamanhoLote);
             } else {
                 throw new \Exception('Tipo de job não suportado: ' . $tipo);
             }
