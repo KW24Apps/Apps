@@ -389,7 +389,7 @@ class ClickSignController
                     
                     $fieldsUpdate = [
                         $campoSignatariosAssinar => $idsSignatarios,
-                        $campoSignatariosAssinaram => [] // Limpa o campo de quem já assinou
+                        $campoSignatariosAssinaram => '' // Limpa o campo de quem já assinou
                     ];
                     
                     BitrixDealHelper::editarDeal($entityId, $id, $fieldsUpdate);
