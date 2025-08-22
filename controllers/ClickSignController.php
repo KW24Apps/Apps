@@ -353,12 +353,15 @@ class ClickSignController
 
             while ($tentativas < $maxTentativas && !$gravado) {
                 try {
+                    $jsonSignatarios = json_encode($todosSignatariosParaJson, JSON_UNESCAPED_UNICODE);
+                    LogHelper::logClickSign("JSON de Signatarios para o DAO: " . $jsonSignatarios, 'controller');
+
                     AplicacaoAcessoDAO::registrarAssinaturaClicksign([
                         'document_key'               => $documentKey,
                         'cliente_id'                 => $clienteId,
                         'deal_id'                    => $id,
                         'spa'                        => $entityId,
-                        'Signatarios'                => json_encode($todosSignatariosParaJson, JSON_UNESCAPED_UNICODE),
+                        'Signatarios'                => $jsonSignatarios,
                         'campo_contratante'          => $params['contratante'] ?? null,
                         'campo_contratada'           => $params['contratada'] ?? null,
                         'campo_testemunhas'          => $params['testemunhas'] ?? null,
