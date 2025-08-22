@@ -85,6 +85,21 @@ try {
             }
 
             if (!empty($deal) && !empty(array_filter($deal))) {
+                // Adiciona os dados dos campos fixos, se mapeados
+                $camposFixosMapeados = [
+                    'Responsavel pelo Lead Gerado' => $formData['responsavel_id'] ?? null,
+                    'Identificador da Importacao' => $formData['identificador'] ?? null,
+                    'Solicitante do Import' => $formData['solicitante_id'] ?? null
+                ];
+
+                foreach ($camposFixosMapeados as $nomeCampo => $valor) {
+                    if (isset($mapeamento[$nomeCampo]) && !is_null($valor)) {
+                        $codigoBitrix = $mapeamento[$nomeCampo];
+                        // Adiciona o valor ao deal, sobrescrevendo se necessário
+                        $deal[$codigoBitrix] = $valor;
+                    }
+                }
+                
                 $deals[] = $deal;
             } else {
                 $linhasInvalidas++;

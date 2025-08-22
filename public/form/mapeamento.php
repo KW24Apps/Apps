@@ -104,6 +104,30 @@ if ($csvFile && ($handle = fopen($csvFile, 'r')) !== false) {
     fclose($handle);
 }
 
+// Adiciona os campos fixos do formulário à lista de colunas para mapeamento
+if (!empty($colunas)) {
+    // Garante que os campos fixos não sejam duplicados caso já existam na planilha
+    $camposFixos = [
+        'Responsavel pelo Lead Gerado' => 'responsavel',
+        'Identificador da Importacao' => 'identificador',
+        'Solicitante do Import' => 'solicitante'
+    ];
+
+    foreach ($camposFixos as $nomeAmigavel => $chaveSessao) {
+        // Adiciona apenas se um campo com nome similar não existir na planilha
+        $existe = false;
+        foreach ($colunas as $col) {
+            if (strcasecmp(trim($col), trim($nomeAmigavel)) === 0) {
+                $existe = true;
+                break;
+            }
+        }
+        if (!$existe) {
+            $colunas[] = $nomeAmigavel;
+        }
+    }
+}
+
 // Puxa os campos do funil usando BitrixHelper (adapta para usar pasta Apps)
 require_once __DIR__ . '/../../helpers/BitrixHelper.php';
 use Helpers\BitrixHelper;
@@ -194,28 +218,36 @@ $php_warnings = ob_get_clean();
             
             <div class="campos-container">
                 <?php
-                foreach ($colunas as $col) {
-                    echo '<div class="campo-grupo">';
-                    echo '<label>' . htmlspecialchars($col) . ':</label>';
-                    echo '<select name="map[' . htmlspecialchars($col) . ']" required><option value="">Selecione...</option>';
-                    
+                foreach ($colunas as $index => $col) {
+                    $colunaHtml = htmlspecialchars($col);
+                    $inputId = 'search-input-' . $index;
+                    $listId = 'autocomplete-list-' . $index;
+                    $hiddenInputName = 'map[' . $colunaHtml . ']';
+
+                    // Lógica de auto-matching
+                    $valorDefault = '';
+                    $idDefault = '';
                     if ($camposBitrix && is_array($camposBitrix)) {
-                        $temMatch = false;
                         foreach ($camposBitrix as $campoId => $campoInfo) {
                             $nome = $campoInfo['title'] ?? $campoId;
-                            $selected = '';
-                            
-                            // Auto-matching apenas por nome 100% igual (case insensitive)
-                            if (!$temMatch && strcasecmp(trim($col), trim($nome)) === 0) {
-                                $selected = ' selected';
-                                $temMatch = true;
+                            if (strcasecmp(trim($col), trim($nome)) === 0) {
+                                $valorDefault = htmlspecialchars($nome);
+                                $idDefault = htmlspecialchars($campoId);
+                                break;
                             }
-                            
-                            echo '<option value="' . htmlspecialchars($campoId) . '"' . $selected . '>' . htmlspecialchars($nome) . '</option>';
                         }
                     }
-                    echo '</select>';
-                    echo '</div>';
+
+                    echo <<<HTML
+                    <div class="campo-grupo">
+                        <label for="{$inputId}">{$colunaHtml}:</label>
+                        <div class="autocomplete-wrapper-map">
+                            <input type="text" id="{$inputId}" class="search-input" autocomplete="off" placeholder="Digite para buscar..." value="{$valorDefault}">
+                            <input type="hidden" name="{$hiddenInputName}" value="{$idDefault}" required>
+                            <div id="{$listId}" class="autocomplete-list-map"></div>
+                        </div>
+                    </div>
+HTML;
                 }
                 ?>
             </div>
@@ -240,22 +272,9 @@ $php_warnings = ob_get_clean();
     <?php endif; ?>
 
     <script>
-        // Simula o carregamento dos campos do Bitrix
-        document.addEventListener('DOMContentLoaded', function() {
-            const loadingScreen = document.getElementById('loadingScreen');
-            const mapeamentoForm = document.getElementById('mapeamentoForm');
-            
-            // Simula um delay de carregamento (1.5 segundos)
-            setTimeout(function() {
-                if (loadingScreen) {
-                    loadingScreen.style.display = 'none';
-                }
-                if (mapeamentoForm) {
-                    mapeamentoForm.classList.remove('content-hidden');
-                    mapeamentoForm.classList.add('fade-in');
-                }
-            }, 1500);
-        });
+        // Passa a lista de campos do Bitrix para o JavaScript
+        const camposBitrixDisponiveis = <?php echo json_encode(array_map(function($key, $val) { return ['id' => $key, 'title' => $val['title'] ?? $key]; }, array_keys($camposBitrix), $camposBitrix)); ?>;
     </script>
+    <script src="/Apps/public/form/assets/js/mapeamento.js"></script>
 </body>
 </html>

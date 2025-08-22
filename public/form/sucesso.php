@@ -55,14 +55,6 @@ $linhasPuladas = ($logData['linhas_vazias'] ?? 0) + ($logData['linhas_invalidas'
             </div>
         </div>
 
-        <div class="status-container">
-            <h3>Status</h3>
-            <div class="progress-bar-container">
-                <div id="progressBar" class="progress-bar"></div>
-            </div>
-            <div id="statusText" class="status-text">Iniciando...</div>
-        </div>
-
         <div class="user-guidance">
             <p>🚀 Sua importação foi iniciada e está sendo processada em segundo plano.</p>
             <p>🔔 **Não é necessário manter esta página aberta.** Você pode fechá-la e continuar trabalhando normalmente.</p>
