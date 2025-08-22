@@ -759,8 +759,18 @@ class ClickSignController
                             }
 
                             if ($statusIdAlvo) {
-                                BitrixDealHelper::editarDeal($spa, $dealId, ['stageId' => $statusIdAlvo]);
-                                LogHelper::logClickSign("Deal $dealId movido para a etapa '$etapaConcluidaNome' ($statusIdAlvo)", 'documentoDisponivel');
+                                $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
+                                $configJson = $configExtra ? json_decode($configExtra, true) : [];
+                                $spaKey = 'SPA_' . $spa;
+                                $userId = $configJson[$spaKey]['bitrix_user_id_comments'] ?? null;
+
+                                $fieldsUpdate = ['stageId' => $statusIdAlvo];
+                                if ($userId) {
+                                    $fieldsUpdate['modifiedById'] = $userId;
+                                }
+
+                                BitrixDealHelper::editarDeal($spa, $dealId, $fieldsUpdate);
+                                LogHelper::logClickSign("Deal $dealId movido para a etapa '$etapaConcluidaNome' ($statusIdAlvo) pelo usuário $userId", 'documentoDisponivel');
                             } else {
                                 LogHelper::logClickSign("AVISO: Etapa '$etapaConcluidaNome' não encontrada para a SPA $spa. O deal não foi movido.", 'documentoDisponivel');
                             }
