@@ -393,7 +393,6 @@ class ClickSignController
                     ];
                     
                     BitrixDealHelper::editarDeal($entityId, $id, $fieldsUpdate);
-                    LogHelper::logClickSign("Campos de signatários (a assinar/assinaram) atualizados no Bitrix.", 'controller');
                 }
                 // Fim: Lógica para popular os campos de signatários
 
