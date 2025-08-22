@@ -611,11 +611,15 @@ class ClickSignController
                 }
                 
                 $idsAAssinar = array_diff($idsTodos, $idsAssinaram);
-
+                // Monta o payload para a atualização
                 $fieldsUpdate = [
-                    $campoSignatariosAssinar => array_values($idsAAssinar),
                     $campoSignatariosAssinaram => array_values($idsAssinaram)
                 ];
+                if (empty($idsAAssinar)) {
+                    $fieldsUpdate[$campoSignatariosAssinar] = '';
+                } else {
+                    $fieldsUpdate[$campoSignatariosAssinar] = array_values($idsAAssinar);
+                }
 
                 BitrixDealHelper::editarDeal($spa, $dealId, $fieldsUpdate);
             }
