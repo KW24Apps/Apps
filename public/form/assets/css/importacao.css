@@ -253,9 +253,13 @@ input:focus, select:focus {
 .autocomplete-item-map {
     padding: 12px 14px;
     cursor: pointer;
-    border-radius: 6px;
     font-size: 1rem;
     transition: background 0.15s;
+    border-bottom: 1px solid #e9ecef; /* Linha divisória */
+}
+
+.autocomplete-item-map:last-child {
+    border-bottom: none; /* Remove a borda do último item */
 }
 
 .autocomplete-item-map:hover {
