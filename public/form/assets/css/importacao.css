@@ -193,33 +193,25 @@ input:focus, select:focus {
     text-align: center;
 }
 .autocomplete-wrapper {
+    /* O posicionamento relativo não é mais necessário aqui. */
     position: relative;
-    z-index: 2; /* Garante que o contexto de empilhamento fique acima de outros elementos */
 }
+
 .autocomplete-list {
-    position: absolute;
+    /* Agora posicionado de forma absoluta em relação ao body via JS */
+    position: absolute; 
     background: #fff;
     border: 2px solid #e0e0e0;
     border-radius: 10px;
     max-height: 180px;
     overflow-y: auto;
-    z-index: 1050; /* Z-index alto para sobrepor outros elementos da página */
-    width: 100%;
+    z-index: 1050; /* Z-index alto para sobrepor tudo */
     display: none;
     box-shadow: 0 3px 12px rgba(0,0,0,0.12);
-    top: 100%; /* Posiciona a lista exatamente abaixo do input */
-    left: 0; /* Alinha à esquerda do contêiner */
-    right: 0; /* Garante que a largura seja consistente */
-    margin-top: 2px;
+    /* As propriedades top, left e width são definidas dinamicamente via JavaScript */
 }
 
-/* Lista de autocomplete para campos próximos ao final da tela */
-.autocomplete-list.show-above {
-    top: auto;
-    bottom: 100%;
-    margin-top: 0;
-    margin-bottom: 2px;
-}
+/* A classe .show-above foi removida, pois a lógica agora está no JS */
 .autocomplete-list.active {
     display: block;
 }

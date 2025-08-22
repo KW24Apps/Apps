@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Sistema de autocomplete v3.0 - BUSCA DINÂMICA:', new Date().toISOString());
+    console.log('🚀 Sistema de autocomplete v3.1 - POSICIONAMENTO DINÂMICO:', new Date().toISOString());
 
-    // Não usa mais cache global - busca diretamente conforme digita
     let searchTimeout = null;
     
     function setupAutocomplete(inputId, listId) {
@@ -13,20 +12,31 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        console.log('📋 Configurando autocomplete DINÂMICO para:', inputId);
+        // Move a lista para o body para evitar problemas de clipping com 'overflow'
+        document.body.appendChild(list);
+        console.log('📋 Configurando autocomplete (body-append) para:', inputId);
         
-        // Função para verificar se deve mostrar a lista acima
-        function checkPosition() {
+        // Função para posicionar a lista de acordo com o input
+        function positionList() {
+            if (!list.classList.contains('active')) return;
+
             const inputRect = input.getBoundingClientRect();
             const windowHeight = window.innerHeight;
+            
+            list.style.width = `${inputRect.width}px`;
+            list.style.left = `${inputRect.left}px`;
+            
             const spaceBelow = windowHeight - inputRect.bottom;
             const spaceAbove = inputRect.top;
-            
-            // Se há menos espaço abaixo que acima E menos de 200px abaixo
+
             if (spaceBelow < 200 && spaceAbove > spaceBelow) {
-                list.classList.add('show-above');
+                // Mostra acima
+                list.style.top = 'auto';
+                list.style.bottom = `${windowHeight - inputRect.top + 2}px`;
             } else {
-                list.classList.remove('show-above');
+                // Mostra abaixo
+                list.style.bottom = 'auto';
+                list.style.top = `${inputRect.bottom + 2}px`;
             }
         }
         
@@ -48,6 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             list.innerHTML = '<div style="padding: 12px; color: #666; text-align: center;"><em>🔄 Buscando...</em></div>';
             list.classList.add('active');
+            positionList(); // Posiciona a lista assim que ela aparece
             
             fetch('/Apps/public/form/api/bitrix_users.php?q=' + encodeURIComponent(query) + clienteParam + '&cache_bust=' + Date.now())
                 .then(res => {
@@ -118,6 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             list.classList.add('active');
+            positionList(); // Reposiciona caso o conteúdo mude o tamanho da lista
         }
         
         // Event listener principal para input - COM DEBOUNCE
@@ -133,9 +145,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 clearTimeout(searchTimeout);
             }
             
-            // Verifica posicionamento antes de mostrar
-            checkPosition();
-            
             // Debounce - espera 500ms após parar de digitar
             searchTimeout = setTimeout(() => {
                 searchUsers(query);
@@ -145,11 +154,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Event listeners para recalcular posição
         input.addEventListener('focus', function() {
             console.log('🎯 Campo focado:', inputId);
-            checkPosition();
+            const query = input.value.trim();
+            if (query.length >= 2) {
+                searchUsers(query); // Re-busca ao focar se já houver texto
+            }
         });
         
-        window.addEventListener('scroll', checkPosition);
-        window.addEventListener('resize', checkPosition);
+        window.addEventListener('scroll', positionList, true);
+        window.addEventListener('resize', positionList);
         
         // Fechar lista quando clica fora
         document.addEventListener('click', function(e) {
