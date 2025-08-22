@@ -175,7 +175,7 @@ class ClickSignController
 
         $contatosConsultados = BitrixContactHelper::consultarContatos(
             $idsParaConsultar,
-            ['ID', 'NAME', 'LAST_NAME', 'EMAIL']
+            ['NAME', 'LAST_NAME', 'EMAIL']
         );
 
         $signatarios = [
@@ -184,14 +184,12 @@ class ClickSignController
             'testemunha'  => [],
         ];
 
-        $todosSignatariosParaJson = [];
         $erroSignatario = false;
         $erroMensagem = '';
         $qtdSignatarios = 0;
 
         foreach ($contatosConsultados as $papel => $listaContatos) {
             foreach ($listaContatos as $contato) {
-                $idContato = $contato['ID'] ?? null;
                 $nome = $contato['NAME'] ?? '';
                 $sobrenome = $contato['LAST_NAME'] ?? '';
                 $email = '';
@@ -204,24 +202,19 @@ class ClickSignController
                     }
                 }
 
-                if (!$idContato || !$nome || !$sobrenome || !$email) {
+                if (!$nome || !$sobrenome || !$email) {
                     $erroSignatario = true;
                     $erroMensagem = "Dados faltantes nos signatários ($papel)";
                     break 2;
                 }
 
-                $signatarioInfo = [
+                $signatarios[$papel][] = [
                     'nome' => $nome,
                     'sobrenome' => $sobrenome,
                     'email' => $email,
                 ];
-
-                $signatarios[$papel][] = $signatarioInfo;
-
-                $todosSignatariosParaJson[] = array_merge(['id' => $idContato], $signatarioInfo);
-
                 $qtdSignatarios++;
-            }
+            } 
         }
 
         if ($erroSignatario) {
@@ -358,7 +351,6 @@ class ClickSignController
                         'cliente_id'                 => $clienteId,
                         'deal_id'                    => $id,
                         'spa'                        => $entityId,
-                        'Signatarios'                => json_encode($todosSignatariosParaJson, JSON_UNESCAPED_UNICODE),
                         'campo_contratante'          => $params['contratante'] ?? null,
                         'campo_contratada'           => $params['contratada'] ?? null,
                         'campo_testemunhas'          => $params['testemunhas'] ?? null,
