@@ -814,14 +814,14 @@ class ClickSignController
 
                         $fieldsLimpeza = [];
 
-                        // Limpa campos de vínculo (múltiplos) com um array vazio
+                        // Limpa campos de vínculo com array vazio
                         foreach ($camposDeVinculo as $key) {
                             if (isset($camposConfig[$key])) {
                                 $fieldsLimpeza[$camposConfig[$key]] = [];
                             }
                         }
 
-                        // Limpa campos de valor único (texto, data, etc.) com uma string vazia
+                        // Limpa campos de valor único com string vazia
                         foreach ($camposDeValorUnico as $key) {
                             if (isset($camposConfig[$key])) {
                                 $fieldsLimpeza[$camposConfig[$key]] = '';
@@ -873,6 +873,7 @@ class ClickSignController
             }
         }
 
+        // 5. Status inesperado
         // 5. Status inesperado
         LogHelper::logClickSign("AVISO: Status inesperado encontrado | status: " . ($statusClosed['status_closed'] ?? 'null'), 'documentoDisponivel');
         return ['success' => true, 'mensagem' => 'StatusClosed não tratado.'];
