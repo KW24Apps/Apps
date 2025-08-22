@@ -803,35 +803,18 @@ class ClickSignController
                         $spaKey = 'SPA_' . $spa;
                         $camposConfig = $configJson[$spaKey]['campos'] ?? [];
                         
-                        $camposParaLimparComNull = [
-                            'contratante', 'contratada', 'testemunhas', 
-                            'signatarios_assinar', 'signatarios_assinaram',
-                            'arquivoaserassinado'
+                        $fieldsLimpeza = [
+                            $camposConfig['contratante']           => '',
+                            $camposConfig['contratada']            => '',
+                            $camposConfig['testemunhas']           => '',
+                            $camposConfig['signatarios_assinar']   => '',
+                            $camposConfig['signatarios_assinaram'] => '',
+                            $camposConfig['arquivoaserassinado']   => '',
+                            $camposConfig['data']                  => '',
+                            $camposConfig['idclicksign']           => ''
                         ];
-                        
-                        $camposParaLimparComStringVazia = [
-                            'data', 'idclicksign'
-                        ];
 
-                        $fieldsLimpeza = [];
-
-                        // Limpa campos de vínculo/arquivo com null
-                        foreach ($camposParaLimparComNull as $key) {
-                            if (isset($camposConfig[$key])) {
-                                $fieldsLimpeza[$camposConfig[$key]] = null;
-                            }
-                        }
-
-                        // Limpa campos de valor único com string vazia
-                        foreach ($camposParaLimparComStringVazia as $key) {
-                            if (isset($camposConfig[$key])) {
-                                $fieldsLimpeza[$camposConfig[$key]] = '';
-                            }
-                        }
-
-                        if (!empty($fieldsLimpeza)) {
-                            BitrixDealHelper::editarDeal($spa, $dealId, $fieldsLimpeza);
-                        }
+                        BitrixDealHelper::editarDeal($spa, $dealId, $fieldsLimpeza);
                         // Fim da lógica de limpeza
 
                         // Início da lógica para mudança de etapa
