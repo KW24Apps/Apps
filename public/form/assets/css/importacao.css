@@ -233,7 +233,7 @@ input:focus, select:focus {
 
 .autocomplete-list-map {
     display: none;
-    position: absolute;
+    position: fixed; /* Alterado para fixed para funcionar com o cálculo de JS */
     background: #fff;
     border: 2px solid #e0e0e0;
     border-radius: 10px;
@@ -255,11 +255,11 @@ input:focus, select:focus {
     cursor: pointer;
     font-size: 1rem;
     transition: background 0.15s;
-    border-bottom: 1px solid #e9ecef; /* Linha divisória */
+    border-bottom: 1px solid #dee2e6; /* Linha divisória mais visível */
 }
 
 .autocomplete-item-map:last-child {
-    border-bottom: none; /* Remove a borda do último item */
+    border-bottom: none;
 }
 
 .autocomplete-item-map:hover {
