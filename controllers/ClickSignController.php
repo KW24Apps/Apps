@@ -467,7 +467,11 @@ class ClickSignController
         }
 
         // O comentário na timeline é sempre adicionado.
-        BitrixDealHelper::adicionarComentarioDeal($spa, $dealId, "Retorno ClickSign: " . $mensagemRetorno);
+        $comentario = "Retorno ClickSign: " . $mensagemRetorno;
+        if ($documentKey) {
+            $comentario .= "\nDocumento ID: " . $documentKey;
+        }
+        BitrixDealHelper::adicionarComentarioDeal($spa, $dealId, $comentario);
 
         return $response;
     }
@@ -623,7 +627,7 @@ class ClickSignController
                 $spa,
                 $dealId,
                 true,
-                null,
+                $documentKey,
                 $mensagem
             );
 
@@ -665,7 +669,7 @@ class ClickSignController
                 $spa,
                 $dealId,
                 true,
-                null,
+                $documentKey,
                 $mensagem
             );
             return ['success' => true, 'mensagem' => "Evento $evento processado com atualização imediata no Bitrix."];
@@ -727,7 +731,7 @@ class ClickSignController
                 // Envia apenas mensagem final sem anexar arquivo
                 $resultadoMensagem = self::atualizarRetornoBitrix([
                     'retorno' => $campoRetorno
-                ], $spa, $dealId, true, null, 'Documento assinado com sucesso.');
+                ], $spa, $dealId, true, $documentKey, 'Documento assinado com sucesso.');
 
                 if (isset($resultadoMensagem['status']) && $resultadoMensagem['status'] === 'sucesso') {
                     return ['success' => true, 'mensagem' => 'Mensagem final enviada (sem anexo de arquivo).'];
@@ -791,7 +795,7 @@ class ClickSignController
                         // 4.2.5. Atualiza campo de retorno com mensagem de sucesso
                         $resultadoMensagem = self::atualizarRetornoBitrix([
                             'retorno' => $campoRetorno
-                        ], $spa, $dealId, true, null, 'Documento assinado e arquivo anexado com sucesso.');
+                        ], $spa, $dealId, true, $documentKey, 'Documento assinado e arquivo anexado com sucesso.');
 
                         // Início da lógica para mudança de etapa
                         $etapaConcluidaNome = $statusClosed['etapa_concluida'] ?? null;
