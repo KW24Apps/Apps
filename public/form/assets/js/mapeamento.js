@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Mapeamento de Campos Interativo v2.0 - Posicionamento Dinâmico');
+    console.log('🚀 Mapeamento de Campos Interativo v2.1 - Posicionamento Corrigido');
 
     // Esconde a tela de loading e mostra o formulário
     const loadingScreen = document.getElementById('loadingScreen');
@@ -34,18 +34,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const windowHeight = window.innerHeight;
             
             list.style.width = `${inputRect.width}px`;
-            list.style.left = `${window.scrollX + inputRect.left}px`;
+            list.style.left = `${inputRect.left}px`; // Corrigido: sem scrollX
             
             const spaceBelow = windowHeight - inputRect.bottom;
             const spaceAbove = inputRect.top;
 
             // Decide se mostra acima ou abaixo
-            if (spaceBelow < 250 && spaceAbove > spaceBelow) {
+            if (spaceBelow < 250 && spaceAbove > spaceBelow) { // 250px = max-height
                 list.style.top = 'auto';
-                list.style.bottom = `${windowHeight - inputRect.top - window.scrollY + 2}px`;
+                list.style.bottom = `${windowHeight - inputRect.top + 2}px`; // Corrigido: sem scrollY
             } else {
                 list.style.bottom = 'auto';
-                list.style.top = `${inputRect.bottom + window.scrollY + 2}px`;
+                list.style.top = `${inputRect.bottom + 2}px`; // Corrigido: sem scrollY
             }
         }
 
