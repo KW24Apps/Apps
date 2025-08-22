@@ -104,6 +104,30 @@ if ($csvFile && ($handle = fopen($csvFile, 'r')) !== false) {
     fclose($handle);
 }
 
+// Adiciona os campos fixos do formulário à lista de colunas para mapeamento
+if (!empty($colunas)) {
+    // Garante que os campos fixos não sejam duplicados caso já existam na planilha
+    $camposFixos = [
+        'Responsavel pelo Lead Gerado' => 'responsavel',
+        'Identificador da Importacao' => 'identificador',
+        'Solicitante do Import' => 'solicitante'
+    ];
+
+    foreach ($camposFixos as $nomeAmigavel => $chaveSessao) {
+        // Adiciona apenas se um campo com nome similar não existir na planilha
+        $existe = false;
+        foreach ($colunas as $col) {
+            if (strcasecmp(trim($col), trim($nomeAmigavel)) === 0) {
+                $existe = true;
+                break;
+            }
+        }
+        if (!$existe) {
+            $colunas[] = $nomeAmigavel;
+        }
+    }
+}
+
 // Puxa os campos do funil usando BitrixHelper (adapta para usar pasta Apps)
 require_once __DIR__ . '/../../helpers/BitrixHelper.php';
 use Helpers\BitrixHelper;
