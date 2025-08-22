@@ -87,6 +87,42 @@ try {
     <meta charset="UTF-8">
     <title>Importação de Leads</title>
     <link rel="stylesheet" href="/Apps/public/form/assets/css/importacao.css">
+    <style>
+        /* Estilos injetados para forçar a renderização correta do autocomplete */
+        .autocomplete-list {
+            position: absolute;
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: 100%;
+            display: none;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+            top: 100%;
+            margin-top: 2px;
+        }
+        .autocomplete-list.show-above {
+            top: auto;
+            bottom: 100%;
+            margin-top: 0;
+            margin-bottom: 2px;
+        }
+        .autocomplete-list.active {
+            display: block;
+        }
+        .autocomplete-list div {
+            padding: 12px 14px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: background 0.15s;
+        }
+        .autocomplete-list div:hover {
+            background: #f8f9fa;
+        }
+    </style>
 </head>
 <body>
     <form id="importacaoForm" class="import-form" method="POST" action="/Apps/public/form/api/importacao.php?cliente=<?php echo urlencode($cliente); ?>" enctype="multipart/form-data">
