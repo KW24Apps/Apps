@@ -198,16 +198,15 @@ input:focus, select:focus {
 }
 
 .autocomplete-list {
-    /* Agora posicionado de forma absoluta em relação ao body via JS */
-    position: absolute; 
+    display: none;
+    position: fixed; /* Corrigido: Usar fixed para sobrepor todo o conteúdo */
     background: #fff;
     border: 2px solid #e0e0e0;
     border-radius: 10px;
-    max-height: 180px;
+    max-height: 250px; /* Aumentado para melhor visualização */
     overflow-y: auto;
-    z-index: 1050; /* Z-index alto para sobrepor tudo */
-    display: none;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+    z-index: 1050;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
     /* As propriedades top, left e width são definidas dinamicamente via JavaScript */
 }
 

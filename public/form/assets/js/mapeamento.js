@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Mapeamento de Campos Interativo v3.0 - Lógica Replicada');
+    console.log('🚀 Mapeamento de Campos Interativo v3.1 - Abrir ao Focar');
 
     // Esconde a tela de loading e mostra o formulário
     const loadingScreen = document.getElementById('loadingScreen');
@@ -48,9 +48,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // Função para filtrar e exibir os campos
-        function filterAndShow() {
-            const query = input.value.toLowerCase().trim();
+        // Função para ATUALIZAR a lista, com opção de mostrar todos
+        function updateList(showAll = false) {
+            const query = showAll ? '' : input.value.toLowerCase().trim();
             list.innerHTML = '';
 
             const filteredFields = camposBitrixDisponiveis.filter(campo => 
@@ -78,8 +78,11 @@ document.addEventListener('DOMContentLoaded', function() {
             positionList();
         }
 
-        input.addEventListener('input', filterAndShow);
-        input.addEventListener('focus', filterAndShow);
+        // Mostra a lista completa ao focar
+        input.addEventListener('focus', () => updateList(true));
+        
+        // Filtra a lista ao digitar
+        input.addEventListener('input', () => updateList(false));
 
         // Event listeners para reposicionar a lista
         window.addEventListener('scroll', positionList, true);
