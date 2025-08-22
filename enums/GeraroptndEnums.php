@@ -87,15 +87,8 @@ class GeraroptndEnums
     // FASES/ETAPAS DE DESTINO
     // ============================================
     const FASE_TRIAGEM = 'C55:NEW';              // Contencioso (ID: 1067)
-    const FASE_TRIAGEM_RELATORIO = 'C17:NEW';    // Relatório Preliminar (ID: 493)
+    const FASE_TRIAGEM_RELATORIO = 'C17:PREPARATION';    // Relatório Preliminar (ID: 495)
     const FASE_TRIAGEM_OPERACIONAL = 'C15:NEW';  // Operacional (ID: 477)
-    
-    // ============================================
-    // IDs REAIS DAS ETAPAS (PARA USO DIRETO)
-    // ============================================
-    const STAGE_ID_TRIAGEM = '1067';             // Contencioso - Triagem
-    const STAGE_ID_TRIAGEM_RELATORIO = '493';    // Relatório Preliminar - Coleta de Documentos
-    const STAGE_ID_TRIAGEM_OPERACIONAL = '477';  // Operacional - Triagem CheckList
     
     // IDs de controle (já corretos)
     const STAGE_ID_SOLICITAR_DIAGNOSTICO = '1257'; // C53:UC_1PAPS7 - Solicitar Diagnóstico  

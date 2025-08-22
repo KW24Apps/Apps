@@ -175,7 +175,7 @@ class ClickSignController
 
         $contatosConsultados = BitrixContactHelper::consultarContatos(
             $idsParaConsultar,
-            ['NAME', 'LAST_NAME', 'EMAIL']
+            ['ID', 'NAME', 'LAST_NAME', 'EMAIL']
         );
 
         $signatarios = [
@@ -184,12 +184,14 @@ class ClickSignController
             'testemunha'  => [],
         ];
 
+        $todosSignatariosParaJson = [];
         $erroSignatario = false;
         $erroMensagem = '';
         $qtdSignatarios = 0;
 
         foreach ($contatosConsultados as $papel => $listaContatos) {
             foreach ($listaContatos as $contato) {
+                $idContato = $contato['ID'] ?? null;
                 $nome = $contato['NAME'] ?? '';
                 $sobrenome = $contato['LAST_NAME'] ?? '';
                 $email = '';
@@ -202,19 +204,24 @@ class ClickSignController
                     }
                 }
 
-                if (!$nome || !$sobrenome || !$email) {
+                if (!$idContato || !$nome || !$sobrenome || !$email) {
                     $erroSignatario = true;
                     $erroMensagem = "Dados faltantes nos signatários ($papel)";
                     break 2;
                 }
 
-                $signatarios[$papel][] = [
+                $signatarioInfo = [
                     'nome' => $nome,
                     'sobrenome' => $sobrenome,
                     'email' => $email,
                 ];
+
+                $signatarios[$papel][] = $signatarioInfo;
+
+                $todosSignatariosParaJson[] = array_merge(['id' => $idContato], $signatarioInfo);
+
                 $qtdSignatarios++;
-            } 
+            }
         }
 
         if ($erroSignatario) {
@@ -346,11 +353,15 @@ class ClickSignController
 
             while ($tentativas < $maxTentativas && !$gravado) {
                 try {
+                    $jsonSignatarios = json_encode($todosSignatariosParaJson, JSON_UNESCAPED_UNICODE);
+                    LogHelper::logClickSign("JSON de Signatarios para o DAO: " . $jsonSignatarios, 'controller');
+
                     AplicacaoAcessoDAO::registrarAssinaturaClicksign([
                         'document_key'               => $documentKey,
                         'cliente_id'                 => $clienteId,
                         'deal_id'                    => $id,
                         'spa'                        => $entityId,
+                        'Signatarios'                => $jsonSignatarios,
                         'campo_contratante'          => $params['contratante'] ?? null,
                         'campo_contratada'           => $params['contratada'] ?? null,
                         'campo_testemunhas'          => $params['testemunhas'] ?? null,
@@ -358,7 +369,8 @@ class ClickSignController
                         'campo_arquivoaserassinado'  => $params['arquivoaserassinado'] ?? null,
                         'campo_arquivoassinado'      => $params['arquivoassinado'] ?? null,
                         'campo_idclicksign'          => $params['idclicksign'] ?? null,
-                        'campo_retorno'              => $params['retorno'] ?? null
+                        'campo_retorno'              => $params['retorno'] ?? null,
+                        'etapa_concluida'            => $params['EtapaConcluido'] ?? null
                     ]);
                     $gravado = true;
                 } catch (PDOException $e) {
@@ -368,6 +380,22 @@ class ClickSignController
             }
 
             if ($gravado) {
+                // Início: Lógica para popular os campos de signatários no Bitrix
+                $campoSignatariosAssinar = $params['signatarios_assinar'] ?? null;
+                $campoSignatariosAssinaram = $params['signatarios_assinaram'] ?? null;
+
+                if ($campoSignatariosAssinar && $campoSignatariosAssinaram) {
+                    $idsSignatarios = array_column($todosSignatariosParaJson, 'id');
+                    
+                    $fieldsUpdate = [
+                        $campoSignatariosAssinar => $idsSignatarios,
+                        $campoSignatariosAssinaram => '' // Limpa o campo de quem já assinou
+                    ];
+                    
+                    BitrixDealHelper::editarDeal($entityId, $id, $fieldsUpdate);
+                }
+                // Fim: Lógica para popular os campos de signatários
+
                 self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, 'Documento enviado para assinatura');
                 LogHelper::logClickSign("Documento enviado para assinatura e dados atualizados no Bitrix com sucesso", 'controller');
                 $response = [
@@ -416,27 +444,34 @@ class ClickSignController
             ($mensagemCustomizada ?? "Erro no envio do documento para assinatura");
 
         $fields = [];
+        $mensagemFinalTrigger = 'Documento assinado e arquivo anexado com sucesso.';
 
-        if ($campoRetorno) {
-            $fields[$campoRetorno] = $mensagemRetorno;
+        // Condição para atualizar o campo de retorno: apenas para a mensagem final ou em caso de erro.
+        if ($campoRetorno && (!$sucesso || $mensagemCustomizada === $mensagemFinalTrigger)) {
+            // Se for a mensagem de gatilho, usa o código. Senão, a mensagem de erro.
+            $fields[$campoRetorno] = ($mensagemCustomizada === $mensagemFinalTrigger) ? 'CS405' : $mensagemRetorno;
         }
 
+        // A atualização do ID da ClickSign na criação do documento deve sempre ocorrer.
         if ($sucesso && $campoIdClickSign && $documentKey) {
             $fields[$campoIdClickSign] = $documentKey;
         }
 
-        $response = ['success' => true]; // Inicia com sucesso
+        $response = ['success' => true];
 
         if (!empty($fields)) {
             $response = BitrixDealHelper::editarDeal($spa, $dealId, $fields);
-            // Corrigido: verificar a chave 'status' que é retornada pelo helper
             if (!isset($response['status']) || $response['status'] !== 'sucesso') {
                 LogHelper::logClickSign("ERRO ao editar deal em atualizarRetornoBitrix | spa: $spa | dealId: $dealId | fields: " . json_encode($fields) . " | response: " . json_encode($response), 'atualizarRetornoBitrix');
             }
         }
 
-        // Adiciona comentário independentemente de ter atualizado campos ou não
-        BitrixDealHelper::adicionarComentarioDeal($spa, $dealId, "Retorno ClickSign: " . $mensagemRetorno);
+        // O comentário na timeline é sempre adicionado.
+        $comentario = "Retorno ClickSign: " . $mensagemRetorno;
+        if ($documentKey) {
+            $comentario .= "\nDocumento ID: " . $documentKey;
+        }
+        BitrixDealHelper::adicionarComentarioDeal($spa, $dealId, $comentario);
 
         return $response;
     }
@@ -535,11 +570,12 @@ class ClickSignController
             return ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes para processar assinatura.'];
         }
 
-        // 2. Extrai signatário do evento
+        // 2. Extrai signatário e document key do evento
         $signer = $requestData['event']['data']['signer'] ?? null;
+        $documentKey = $requestData['document']['key'] ?? null;
 
-        // 3. Se encontrou signatário, monta mensagem
-        if ($signer) {
+        // 3. Se encontrou signatário, processa a lógica de movimentação
+        if ($signer && $documentKey) {
             $nome  = $signer['name']  ?? '';
             $email = $signer['email'] ?? '';
 
@@ -548,21 +584,59 @@ class ClickSignController
                 return ['success' => false, 'mensagem' => 'Dados do signatário incompletos.'];
             }
 
-            $mensagem = "Assinatura feita por $nome - $email";
+            // Lógica de movimentação de signatários
+            $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
+            $configJson = $configExtra ? json_decode($configExtra, true) : [];
+            $spaKey = 'SPA_' . $spa;
+            $campos = $configJson[$spaKey]['campos'] ?? [];
+            $campoSignatariosAssinar = $campos['signatarios_assinar'] ?? null;
+            $campoSignatariosAssinaram = $campos['signatarios_assinaram'] ?? null;
 
-            // 4. Atualiza status no Bitrix (NÃO retorna arquivo)
+            if ($campoSignatariosAssinar && $campoSignatariosAssinaram) {
+                $dadosAssinatura = AplicacaoAcessoDAO::obterAssinaturaClickSign($documentKey);
+                $signatariosJson = $dadosAssinatura['Signatarios'] ?? '[]';
+                $todosSignatarios = json_decode($signatariosJson, true);
+                
+                $assinaturasProcessadas = array_filter(explode(';', $dadosAssinatura['assinatura_processada'] ?? ''));
+
+                $idsAssinaram = [];
+                $idsTodos = [];
+
+                foreach ($todosSignatarios as $s) {
+                    $idsTodos[] = $s['id'];
+                    // Compara o e-mail do signatário atual com a lista de e-mails já processados
+                    if (in_array($s['email'], $assinaturasProcessadas)) {
+                        $idsAssinaram[] = $s['id'];
+                    }
+                }
+                
+                $idsAAssinar = array_diff($idsTodos, $idsAssinaram);
+                // Monta o payload para a atualização
+                $fieldsUpdate = [
+                    $campoSignatariosAssinaram => array_values($idsAssinaram)
+                ];
+                if (empty($idsAAssinar)) {
+                    $fieldsUpdate[$campoSignatariosAssinar] = '';
+                } else {
+                    $fieldsUpdate[$campoSignatariosAssinar] = array_values($idsAAssinar);
+                }
+
+                BitrixDealHelper::editarDeal($spa, $dealId, $fieldsUpdate);
+            }
+
+            // 4. Atualiza status no Bitrix (comentário e campo de retorno)
+            $mensagem = "Assinatura feita por $nome - $email";
             $resultado = self::atualizarRetornoBitrix(
                 ['retorno' => $campoRetorno],
                 $spa,
                 $dealId,
                 true,
-                null, // Não envia documentKey aqui
+                $documentKey,
                 $mensagem
             );
 
-            // Corrigido: verificar a chave 'status' que é retornada pelo helper
             if (isset($resultado['status']) && $resultado['status'] === 'sucesso') {
-                return ['success' => true, 'mensagem' => 'Assinatura processada e retorno atualizado.'];
+                return ['success' => true, 'mensagem' => 'Assinatura processada e campos atualizados.'];
             } else {
                 $erroDetalhado = json_encode($resultado);
                 LogHelper::logClickSign("ERRO: Falha ao atualizar mensagem de assinatura no Bitrix | erro: $erroDetalhado", 'assinaturaRealizada');
@@ -599,7 +673,7 @@ class ClickSignController
                 $spa,
                 $dealId,
                 true,
-                null,
+                $documentKey,
                 $mensagem
             );
             return ['success' => true, 'mensagem' => "Evento $evento processado com atualização imediata no Bitrix."];
@@ -661,7 +735,7 @@ class ClickSignController
                 // Envia apenas mensagem final sem anexar arquivo
                 $resultadoMensagem = self::atualizarRetornoBitrix([
                     'retorno' => $campoRetorno
-                ], $spa, $dealId, true, null, 'Documento assinado com sucesso.');
+                ], $spa, $dealId, true, $documentKey, 'Documento assinado com sucesso.');
 
                 if (isset($resultadoMensagem['status']) && $resultadoMensagem['status'] === 'sucesso') {
                     return ['success' => true, 'mensagem' => 'Mensagem final enviada (sem anexo de arquivo).'];
@@ -691,7 +765,7 @@ class ClickSignController
                     return ['success' => false, 'mensagem' => 'Falha ao converter o arquivo.'];
                 }
 
-                // 4.2.2. Prepara estrutura do campo para o Bitrix
+                // 4.2.2. Prepara estrutura do campo para o Bitrix (comportamento padrão: anexa apenas o novo arquivo)
                 $arquivoParaBitrix = [[
                     'filename' => $arquivoBase64['nome'],
                     'data'     => str_replace('data:' . $arquivoBase64['mime'] . ';base64,', '', $arquivoBase64['base64'])
@@ -725,7 +799,49 @@ class ClickSignController
                         // 4.2.5. Atualiza campo de retorno com mensagem de sucesso
                         $resultadoMensagem = self::atualizarRetornoBitrix([
                             'retorno' => $campoRetorno
-                        ], $spa, $dealId, true, null, 'Documento assinado e arquivo anexado com sucesso.');
+                        ], $spa, $dealId, true, $documentKey, 'Documento assinado e arquivo anexado com sucesso.');
+
+                        // Início da lógica de limpeza de campos
+                        $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
+                        $configJson = $configExtra ? json_decode($configExtra, true) : [];
+                        $spaKey = 'SPA_' . $spa;
+                        $camposConfig = $configJson[$spaKey]['campos'] ?? [];
+                        
+                        $fieldsLimpeza = [
+                            $camposConfig['contratante']           => '',
+                            $camposConfig['contratada']            => '',
+                            $camposConfig['testemunhas']           => '',
+                            $camposConfig['signatarios_assinar']   => '',
+                            $camposConfig['signatarios_assinaram'] => '',
+                            $camposConfig['arquivoaserassinado']   => '',
+                            $camposConfig['data']                  => '',
+                            $camposConfig['idclicksign']           => ''
+                        ];
+
+                        BitrixDealHelper::editarDeal($spa, $dealId, $fieldsLimpeza);
+                        // Fim da lógica de limpeza
+
+                        // Início da lógica para mudança de etapa
+                        $etapaConcluidaNome = $statusClosed['etapa_concluida'] ?? null;
+                        if ($etapaConcluidaNome) {
+                            $etapas = BitrixHelper::consultarEtapasPorTipo($spa);
+                            $statusIdAlvo = null;
+                            foreach ($etapas as $etapa) {
+                                if (isset($etapa['NAME']) && strtolower($etapa['NAME']) === strtolower($etapaConcluidaNome)) {
+                                    $statusIdAlvo = $etapa['STATUS_ID'];
+                                    break;
+                                }
+                            }
+
+                            if ($statusIdAlvo) {
+                                // Revertido: Apenas move a etapa, sem tentar alterar o autor
+                                BitrixDealHelper::editarDeal($spa, $dealId, ['stageId' => $statusIdAlvo]);
+                                LogHelper::logClickSign("Deal $dealId movido para a etapa '$etapaConcluidaNome' ($statusIdAlvo)", 'documentoDisponivel');
+                            } else {
+                                LogHelper::logClickSign("AVISO: Etapa '$etapaConcluidaNome' não encontrada para a SPA $spa. O deal não foi movido.", 'documentoDisponivel');
+                            }
+                        }
+                        // Fim da lógica para mudança de etapa
 
                         if (isset($resultadoMensagem['status']) && $resultadoMensagem['status'] === 'sucesso') {
                             LogHelper::logClickSign("Processo de assinatura finalizado com sucesso | Documento: $documentKey", 'controller');

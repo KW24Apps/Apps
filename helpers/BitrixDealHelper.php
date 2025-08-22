@@ -392,7 +392,7 @@ class BitrixDealHelper
         $params = [
             'fields' => [
                 'ENTITY_ID' => (int)$dealId,
-                'ENTITY_TYPE' => 'deal', // Revertendo para 'deal' como estava antes
+                'ENTITY_TYPE' => 'dynamic_' . $entityId,
                 'COMMENT' => $comment
             ]
         ];
