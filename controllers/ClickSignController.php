@@ -358,7 +358,8 @@ class ClickSignController
                         'campo_arquivoaserassinado'  => $params['arquivoaserassinado'] ?? null,
                         'campo_arquivoassinado'      => $params['arquivoassinado'] ?? null,
                         'campo_idclicksign'          => $params['idclicksign'] ?? null,
-                        'campo_retorno'              => $params['retorno'] ?? null
+                        'campo_retorno'              => $params['retorno'] ?? null,
+                        'etapa_concluida'            => $params['EtapaConcluido'] ?? null
                     ]);
                     $gravado = true;
                 } catch (PDOException $e) {
@@ -691,15 +692,33 @@ class ClickSignController
                     return ['success' => false, 'mensagem' => 'Falha ao converter o arquivo.'];
                 }
 
-                // 4.2.2. Prepara estrutura do campo para o Bitrix
-                $arquivoParaBitrix = [[
+                // 4.2.2. Prepara para anexar arquivo, mantendo os existentes
+                // Consulta o deal para obter os arquivos atuais
+                $dealAtual = BitrixDealHelper::consultarDeal($spa, $dealId, [$campoArquivoAssinado]);
+                $arquivosExistentes = $dealAtual['result'][$campoArquivoAssinado]['valor'] ?? [];
+
+                // Extrai os IDs dos arquivos existentes para mantê-los
+                $valorFinalCampoArquivo = [];
+                if (is_array($arquivosExistentes)) {
+                    foreach ($arquivosExistentes as $arquivo) {
+                        if (isset($arquivo['id'])) {
+                            $valorFinalCampoArquivo[] = $arquivo['id'];
+                        }
+                    }
+                }
+
+                // Prepara o novo arquivo para upload
+                $novoArquivoParaUpload = [
                     'filename' => $arquivoBase64['nome'],
                     'data'     => str_replace('data:' . $arquivoBase64['mime'] . ';base64,', '', $arquivoBase64['base64'])
-                ]];
+                ];
+
+                // Adiciona o novo arquivo à lista de IDs existentes
+                $valorFinalCampoArquivo[] = $novoArquivoParaUpload;
 
                 // 4.2.3. Tenta anexar arquivo com retry
                 $fields = [
-                    $campoArquivoAssinado => $arquivoParaBitrix
+                    $campoArquivoAssinado => $valorFinalCampoArquivo
                 ];
 
                 $tentativasAnexo = 3; 
@@ -726,6 +745,27 @@ class ClickSignController
                         $resultadoMensagem = self::atualizarRetornoBitrix([
                             'retorno' => $campoRetorno
                         ], $spa, $dealId, true, null, 'Documento assinado e arquivo anexado com sucesso.');
+
+                        // Início da lógica para mudança de etapa
+                        $etapaConcluidaNome = $statusClosed['etapa_concluida'] ?? null;
+                        if ($etapaConcluidaNome) {
+                            $etapas = BitrixHelper::consultarEtapasPorTipo($spa);
+                            $statusIdAlvo = null;
+                            foreach ($etapas as $etapa) {
+                                if (isset($etapa['NAME']) && strtolower($etapa['NAME']) === strtolower($etapaConcluidaNome)) {
+                                    $statusIdAlvo = $etapa['STATUS_ID'];
+                                    break;
+                                }
+                            }
+
+                            if ($statusIdAlvo) {
+                                BitrixDealHelper::editarDeal($spa, $dealId, ['stageId' => $statusIdAlvo]);
+                                LogHelper::logClickSign("Deal $dealId movido para a etapa '$etapaConcluidaNome' ($statusIdAlvo)", 'documentoDisponivel');
+                            } else {
+                                LogHelper::logClickSign("AVISO: Etapa '$etapaConcluidaNome' não encontrada para a SPA $spa. O deal não foi movido.", 'documentoDisponivel');
+                            }
+                        }
+                        // Fim da lógica para mudança de etapa
 
                         if (isset($resultadoMensagem['status']) && $resultadoMensagem['status'] === 'sucesso') {
                             LogHelper::logClickSign("Processo de assinatura finalizado com sucesso | Documento: $documentKey", 'controller');
