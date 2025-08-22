@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Mapeamento de Campos Interativo v2.1 - Posicionamento Corrigido');
+    console.log('🚀 Mapeamento de Campos Interativo v3.0 - Lógica Replicada');
 
     // Esconde a tela de loading e mostra o formulário
     const loadingScreen = document.getElementById('loadingScreen');
@@ -15,10 +15,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInputs = document.querySelectorAll('.search-input');
     
     searchInputs.forEach(input => {
-        const wrapper = input.closest('.autocomplete-wrapper-map');
+        const wrapper = input.closest('.autocomplete-wrapper');
         if (!wrapper) return;
 
-        const list = wrapper.querySelector('.autocomplete-list-map');
+        const list = wrapper.querySelector('.autocomplete-list');
         const hiddenInput = wrapper.querySelector('input[type="hidden"]');
 
         if (!list || !hiddenInput) return;
@@ -34,18 +34,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const windowHeight = window.innerHeight;
             
             list.style.width = `${inputRect.width}px`;
-            list.style.left = `${inputRect.left}px`; // Corrigido: sem scrollX
+            list.style.left = `${inputRect.left}px`;
             
             const spaceBelow = windowHeight - inputRect.bottom;
             const spaceAbove = inputRect.top;
 
-            // Decide se mostra acima ou abaixo
             if (spaceBelow < 250 && spaceAbove > spaceBelow) { // 250px = max-height
                 list.style.top = 'auto';
-                list.style.bottom = `${windowHeight - inputRect.top + 2}px`; // Corrigido: sem scrollY
+                list.style.bottom = `${windowHeight - inputRect.top + 2}px`;
             } else {
                 list.style.bottom = 'auto';
-                list.style.top = `${inputRect.bottom + 2}px`; // Corrigido: sem scrollY
+                list.style.top = `${inputRect.bottom + 2}px`;
             }
         }
 
@@ -59,11 +58,10 @@ document.addEventListener('DOMContentLoaded', function() {
             );
 
             if (filteredFields.length === 0) {
-                list.innerHTML = '<div class="autocomplete-item-map no-results">Nenhum campo encontrado</div>';
+                list.innerHTML = '<div class="no-results">Nenhum campo encontrado</div>';
             } else {
                 filteredFields.forEach(campo => {
                     const item = document.createElement('div');
-                    item.className = 'autocomplete-item-map';
                     item.textContent = campo.title;
                     
                     item.addEventListener('click', () => {

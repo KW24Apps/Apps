@@ -218,52 +218,20 @@ input:focus, select:focus {
 .autocomplete-list div {
     padding: 12px 14px;
     cursor: pointer;
-    border-radius: 6px;
     font-size: 1rem;
     transition: background 0.15s;
+    border-bottom: 1px solid #e9ecef; /* Linha divisória para todos */
 }
+
+.autocomplete-list div:last-child {
+    border-bottom: none; /* Remove a borda do último item */
+}
+
 .autocomplete-list div:hover {
     background: #f8f9fa;
 }
 
-/* Estilos unificados para todos os autocompletes */
-.autocomplete-wrapper-map {
-    position: relative; /* Necessário para o JS encontrar o wrapper */
-}
-
-.autocomplete-list-map {
-    display: none;
-    position: fixed;
-    background: #fff;
-    border: 2px solid #e0e0e0;
-    border-radius: 10px;
-    max-height: 250px;
-    overflow-y: auto;
-    z-index: 1050;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.12);
-}
-
-.autocomplete-list-map.active {
-    display: block;
-}
-
-.autocomplete-item-map {
-    padding: 12px 14px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background 0.15s;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.autocomplete-item-map:last-child {
-    border-bottom: none;
-}
-
-.autocomplete-item-map:hover {
-    background: #f8f9fa;
-}
-
-.autocomplete-item-map.no-results {
+.autocomplete-list div.no-results {
     color: #6c757d;
     font-style: italic;
     cursor: default;
