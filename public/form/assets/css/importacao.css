@@ -194,6 +194,7 @@ input:focus, select:focus {
 }
 .autocomplete-wrapper {
     position: relative;
+    z-index: 2; /* Garante que o contexto de empilhamento fique acima de outros elementos */
 }
 .autocomplete-list {
     position: absolute;
@@ -202,11 +203,13 @@ input:focus, select:focus {
     border-radius: 10px;
     max-height: 180px;
     overflow-y: auto;
-    z-index: 1000;
+    z-index: 1050; /* Z-index alto para sobrepor outros elementos da página */
     width: 100%;
     display: none;
     box-shadow: 0 3px 12px rgba(0,0,0,0.12);
-    top: 100%;
+    top: 100%; /* Posiciona a lista exatamente abaixo do input */
+    left: 0; /* Alinha à esquerda do contêiner */
+    right: 0; /* Garante que a largura seja consistente */
     margin-top: 2px;
 }
 
