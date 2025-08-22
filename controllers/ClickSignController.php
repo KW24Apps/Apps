@@ -692,29 +692,25 @@ class ClickSignController
                     return ['success' => false, 'mensagem' => 'Falha ao converter o arquivo.'];
                 }
 
-                // 4.2.2. Prepara para anexar arquivo, mantendo os existentes
-                // Consulta o deal para obter os arquivos atuais
+                // 4.2.2. Prepara para anexar arquivo, mantendo os existentes (formato oficial da documentação)
                 $dealAtual = BitrixDealHelper::consultarDeal($spa, $dealId, [$campoArquivoAssinado]);
                 $arquivosExistentes = $dealAtual['result'][$campoArquivoAssinado]['valor'] ?? [];
 
-                // Extrai os IDs dos arquivos existentes para mantê-los
                 $valorFinalCampoArquivo = [];
                 if (is_array($arquivosExistentes)) {
                     foreach ($arquivosExistentes as $arquivo) {
                         if (isset($arquivo['id'])) {
-                            $valorFinalCampoArquivo[] = $arquivo['id'];
+                            // Formato para manter arquivos existentes
+                            $valorFinalCampoArquivo[] = ['id' => (int)$arquivo['id']];
                         }
                     }
                 }
 
-                // Prepara o novo arquivo para upload
-                $novoArquivoParaUpload = [
-                    'filename' => $arquivoBase64['nome'],
-                    'data'     => str_replace('data:' . $arquivoBase64['mime'] . ';base64,', '', $arquivoBase64['base64'])
+                // Formato para adicionar novo arquivo
+                $valorFinalCampoArquivo[] = [
+                    $arquivoBase64['nome'],
+                    str_replace('data:' . $arquivoBase64['mime'] . ';base64,', '', $arquivoBase64['base64'])
                 ];
-
-                // Adiciona o novo arquivo à lista de IDs existentes
-                $valorFinalCampoArquivo[] = $novoArquivoParaUpload;
 
                 // 4.2.3. Tenta anexar arquivo com retry
                 $fields = [
@@ -759,18 +755,9 @@ class ClickSignController
                             }
 
                             if ($statusIdAlvo) {
-                                $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
-                                $configJson = $configExtra ? json_decode($configExtra, true) : [];
-                                $spaKey = 'SPA_' . $spa;
-                                $userId = $configJson[$spaKey]['bitrix_user_id_comments'] ?? null;
-
-                                $fieldsUpdate = ['stageId' => $statusIdAlvo];
-                                if ($userId) {
-                                    $fieldsUpdate['modifiedById'] = $userId;
-                                }
-
-                                BitrixDealHelper::editarDeal($spa, $dealId, $fieldsUpdate);
-                                LogHelper::logClickSign("Deal $dealId movido para a etapa '$etapaConcluidaNome' ($statusIdAlvo) pelo usuário $userId", 'documentoDisponivel');
+                                // Revertido: Apenas move a etapa, sem tentar alterar o autor
+                                BitrixDealHelper::editarDeal($spa, $dealId, ['stageId' => $statusIdAlvo]);
+                                LogHelper::logClickSign("Deal $dealId movido para a etapa '$etapaConcluidaNome' ($statusIdAlvo)", 'documentoDisponivel');
                             } else {
                                 LogHelper::logClickSign("AVISO: Etapa '$etapaConcluidaNome' não encontrada para a SPA $spa. O deal não foi movido.", 'documentoDisponivel');
                             }
