@@ -380,6 +380,23 @@ class ClickSignController
             }
 
             if ($gravado) {
+                // Início: Lógica para popular os campos de signatários no Bitrix
+                $campoSignatariosAssinar = $params['signatarios_assinar'] ?? null;
+                $campoSignatariosAssinaram = $params['signatarios_assinaram'] ?? null;
+
+                if ($campoSignatariosAssinar && $campoSignatariosAssinaram) {
+                    $idsSignatarios = array_column($todosSignatariosParaJson, 'id');
+                    
+                    $fieldsUpdate = [
+                        $campoSignatariosAssinar => $idsSignatarios,
+                        $campoSignatariosAssinaram => [] // Limpa o campo de quem já assinou
+                    ];
+                    
+                    BitrixDealHelper::editarDeal($entityId, $id, $fieldsUpdate);
+                    LogHelper::logClickSign("Campos de signatários (a assinar/assinaram) atualizados no Bitrix.", 'controller');
+                }
+                // Fim: Lógica para popular os campos de signatários
+
                 self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, 'Documento enviado para assinatura');
                 LogHelper::logClickSign("Documento enviado para assinatura e dados atualizados no Bitrix com sucesso", 'controller');
                 $response = [
