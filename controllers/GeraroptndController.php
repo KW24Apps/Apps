@@ -253,16 +253,16 @@ class GeraroptndController
         if ($processType == 1) { // Solicitando Diagnóstico
             $vaiParaRelatorio = in_array($tipoNormalizado, ['administrativo', 'administrativo (anexo v)', 'administrativo anexo 5', 'contencioso ativo']) || empty($tipoProcessoTexto) || $tipoProcessoTexto === 'Não definido';
             if ($vaiParaRelatorio) {
-                return ['category_id' => GeraroptndEnums::CATEGORIA_RELATORIO_PRELIMINAR, 'stage_id' => GeraroptndEnums::STAGE_ID_TRIAGEM_RELATORIO];
+                return ['category_id' => GeraroptndEnums::CATEGORIA_RELATORIO_PRELIMINAR, 'stage_id' => GeraroptndEnums::FASE_TRIAGEM_RELATORIO];
             }
-            return ['category_id' => GeraroptndEnums::CATEGORIA_CONTENCIOSO, 'stage_id' => GeraroptndEnums::STAGE_ID_TRIAGEM];
+            return ['category_id' => GeraroptndEnums::CATEGORIA_CONTENCIOSO, 'stage_id' => GeraroptndEnums::FASE_TRIAGEM];
         }
 
         if ($processType == 2 || $processType == 3) { // Concluído
             if ($tipoNormalizado === 'administrativo') {
-                return ['category_id' => GeraroptndEnums::CATEGORIA_OPERACIONAL, 'stage_id' => GeraroptndEnums::STAGE_ID_TRIAGEM_OPERACIONAL];
+                return ['category_id' => GeraroptndEnums::CATEGORIA_OPERACIONAL, 'stage_id' => GeraroptndEnums::FASE_TRIAGEM_OPERACIONAL];
             }
-            return ['category_id' => GeraroptndEnums::CATEGORIA_CONTENCIOSO, 'stage_id' => GeraroptndEnums::STAGE_ID_TRIAGEM];
+            return ['category_id' => GeraroptndEnums::CATEGORIA_CONTENCIOSO, 'stage_id' => GeraroptndEnums::FASE_TRIAGEM];
         }
 
         return ['category_id' => null, 'stage_id' => null];
