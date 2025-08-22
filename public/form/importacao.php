@@ -123,11 +123,13 @@ try {
             <label for="responsavel">Responsável pelo Lead Gerado:</label>
             <div class="autocomplete-wrapper">
                 <input type="text" id="responsavel" name="responsavel" autocomplete="off" placeholder="Digite para buscar..." required>
+                <div id="autocomplete-responsavel" class="autocomplete-list"></div>
             </div>
             
             <label for="solicitante">Solicitante do Import:</label>
             <div class="autocomplete-wrapper">
                 <input type="text" id="solicitante" name="solicitante" autocomplete="off" placeholder="Digite para buscar..." required>
+                <div id="autocomplete-solicitante" class="autocomplete-list"></div>
             </div>
         </div>
         
