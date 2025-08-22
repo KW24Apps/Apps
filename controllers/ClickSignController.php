@@ -797,6 +797,33 @@ class ClickSignController
                             'retorno' => $campoRetorno
                         ], $spa, $dealId, true, $documentKey, 'Documento assinado e arquivo anexado com sucesso.');
 
+                        // Início da lógica de limpeza de campos
+                        $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
+                        $configJson = $configExtra ? json_decode($configExtra, true) : [];
+                        $spaKey = 'SPA_' . $spa;
+                        $camposConfig = $configJson[$spaKey]['campos'] ?? [];
+                        
+                        $camposParaLimpar = [
+                            $camposConfig['contratante'] ?? null,
+                            $camposConfig['contratada'] ?? null,
+                            $camposConfig['testemunhas'] ?? null,
+                            $camposConfig['data'] ?? null,
+                            $camposConfig['arquivoaserassinado'] ?? null,
+                            $camposConfig['idclicksign'] ?? null,
+                            $camposConfig['signatarios_assinar'] ?? null,
+                            $camposConfig['signatarios_assinaram'] ?? null,
+                        ];
+
+                        $fieldsLimpeza = [];
+                        foreach (array_filter($camposParaLimpar) as $campo) {
+                            $fieldsLimpeza[$campo] = null; // Limpa atribuindo null
+                        }
+
+                        if (!empty($fieldsLimpeza)) {
+                            BitrixDealHelper::editarDeal($spa, $dealId, $fieldsLimpeza);
+                        }
+                        // Fim da lógica de limpeza
+
                         // Início da lógica para mudança de etapa
                         $etapaConcluidaNome = $statusClosed['etapa_concluida'] ?? null;
                         if ($etapaConcluidaNome) {
