@@ -444,26 +444,29 @@ class ClickSignController
             ($mensagemCustomizada ?? "Erro no envio do documento para assinatura");
 
         $fields = [];
+        $mensagemFinalTrigger = 'Documento assinado e arquivo anexado com sucesso.';
 
-        if ($campoRetorno) {
-            $fields[$campoRetorno] = $mensagemRetorno;
+        // Condição para atualizar o campo de retorno: apenas para a mensagem final ou em caso de erro.
+        if ($campoRetorno && (!$sucesso || $mensagemCustomizada === $mensagemFinalTrigger)) {
+            // Se for a mensagem de gatilho, usa o código. Senão, a mensagem de erro.
+            $fields[$campoRetorno] = ($mensagemCustomizada === $mensagemFinalTrigger) ? 'CS405' : $mensagemRetorno;
         }
 
+        // A atualização do ID da ClickSign na criação do documento deve sempre ocorrer.
         if ($sucesso && $campoIdClickSign && $documentKey) {
             $fields[$campoIdClickSign] = $documentKey;
         }
 
-        $response = ['success' => true]; // Inicia com sucesso
+        $response = ['success' => true];
 
         if (!empty($fields)) {
             $response = BitrixDealHelper::editarDeal($spa, $dealId, $fields);
-            // Corrigido: verificar a chave 'status' que é retornada pelo helper
             if (!isset($response['status']) || $response['status'] !== 'sucesso') {
                 LogHelper::logClickSign("ERRO ao editar deal em atualizarRetornoBitrix | spa: $spa | dealId: $dealId | fields: " . json_encode($fields) . " | response: " . json_encode($response), 'atualizarRetornoBitrix');
             }
         }
 
-        // Adiciona comentário independentemente de ter atualizado campos ou não
+        // O comentário na timeline é sempre adicionado.
         BitrixDealHelper::adicionarComentarioDeal($spa, $dealId, "Retorno ClickSign: " . $mensagemRetorno);
 
         return $response;
