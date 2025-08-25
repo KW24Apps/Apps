@@ -13,6 +13,8 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($uri === 'clicksignnew' && $method === 'POST') {
     (new ClickSignController())->GerarAssinatura();
+} elseif ($uri === 'clicksignup' && $method === 'POST') {
+    (new ClickSignController())->atualizarDocumentoClickSign();
 } elseif ($uri === 'clicksignretorno' && $method === 'POST') {
     $requestData = json_decode(file_get_contents('php://input'), true); 
     $evento = $requestData['event']['name'] ?? 'evento_desconhecido';

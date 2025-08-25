@@ -866,4 +866,116 @@ class ClickSignController
         return ['success' => true, 'mensagem' => 'StatusClosed não tratado.'];
     }
 
+    public static function atualizarDocumentoClickSign()
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        $params = $_GET;
+        $action = $params['action'] ?? null;
+        $entityId = $params['spa'] ?? null;
+        $id = $params['deal'] ?? null;
+
+        LogHelper::logClickSign("Início do processo de atualização/cancelamento: Ação '$action'", 'controller');
+
+        if (empty($id) || empty($entityId) || empty($action)) {
+            $mensagem = 'Parâmetros obrigatórios (deal, spa, action) ausentes.';
+            LogHelper::logClickSign($mensagem, 'controller');
+            echo json_encode(['success' => false, 'mensagem' => $mensagem], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // Obter configurações e token
+        $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
+        $configJson = $configExtra ? json_decode($configExtra, true) : [];
+        $spaKey = 'SPA_' . $entityId;
+        $fieldsConfig = $configJson[$spaKey]['campos'] ?? [];
+        $tokenClicksign = $configJson[$spaKey]['clicksign_token'] ?? null;
+
+        if (!$tokenClicksign) {
+            $mensagem = 'Acesso não autorizado ou incompleto.';
+            LogHelper::logClickSign($mensagem, 'controller');
+            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagem);
+            echo json_encode(['success' => false, 'mensagem' => $mensagem], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // Consultar o Deal para obter o ID do documento na ClickSign (Correção: sem formatação prévia)
+        $campoIdClickSignOriginal = $fieldsConfig['idclicksign'] ?? null;
+        if (empty($campoIdClickSignOriginal)) {
+            $mensagem = 'Campo "idclicksign" não configurado para esta SPA.';
+            LogHelper::logClickSign($mensagem, 'controller');
+            echo json_encode(['success' => false, 'mensagem' => $mensagem], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        
+        $dealData = BitrixDealHelper::consultarDeal($entityId, $id, [$campoIdClickSignOriginal]);
+        $campoIdClickSignFormatado = array_key_first(BitrixHelper::formatarCampos([$campoIdClickSignOriginal => null]));
+        $documentKey = $dealData['result'][$campoIdClickSignFormatado]['valor'] ?? null;
+
+        if (empty($documentKey)) {
+            $mensagem = 'ID do documento na ClickSign (document_key) não encontrado no Deal.';
+            LogHelper::logClickSign($mensagem, 'controller');
+            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagem);
+            echo json_encode(['success' => false, 'mensagem' => $mensagem], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        switch ($action) {
+            case 'Cancelar Documento':
+                $resultado = ClickSignHelper::cancelarDocumento($documentKey);
+                if (isset($resultado['document'])) {
+                    $mensagem = "Documento ($documentKey) cancelado com sucesso.";
+                    self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, $mensagem);
+                    echo json_encode(['success' => true, 'mensagem' => $mensagem], JSON_UNESCAPED_UNICODE);
+                } else {
+                    $erro = $resultado['errors'][0] ?? 'Erro desconhecido ao cancelar.';
+                    $mensagem = "Falha ao cancelar documento ($documentKey): $erro";
+                    self::atualizarRetornoBitrix($params, $entityId, $id, false, $documentKey, $mensagem);
+                    echo json_encode(['success' => false, 'mensagem' => $mensagem, 'details' => $resultado], JSON_UNESCAPED_UNICODE);
+                }
+                break;
+
+            case 'Atualizar Documento':
+                // Lógica para atualizar a data (Correção: sem formatação prévia)
+                $campoDataOriginal = $fieldsConfig['data'] ?? null;
+                 if (empty($campoDataOriginal)) {
+                    $mensagem = 'Campo "data" não configurado para esta SPA.';
+                    LogHelper::logClickSign($mensagem, 'controller');
+                    echo json_encode(['success' => false, 'mensagem' => $mensagem], JSON_UNESCAPED_UNICODE);
+                    return;
+                }
+
+                $dealData = BitrixDealHelper::consultarDeal($entityId, $id, [$campoDataOriginal]);
+                $campoDataFormatado = array_key_first(BitrixHelper::formatarCampos([$campoDataOriginal => null]));
+                $novaData = $dealData['result'][$campoDataFormatado]['valor'] ?? null;
+
+                if (empty($novaData)) {
+                    $mensagem = 'Campo de data não encontrado ou vazio no Deal.';
+                    echo json_encode(['success' => false, 'mensagem' => $mensagem], JSON_UNESCAPED_UNICODE);
+                    return;
+                }
+                
+                $novaDataFormatada = substr($novaData, 0, 10); // Formato YYYY-MM-DD
+
+                $payload = ['document' => ['deadline_at' => $novaDataFormatada]];
+                $resultado = ClickSignHelper::atualizarDocumento($documentKey, $payload);
+
+                if (isset($resultado['document'])) {
+                    $mensagem = "Data do documento ($documentKey) atualizada para $novaDataFormatada.";
+                    self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, $mensagem);
+                    echo json_encode(['success' => true, 'mensagem' => $mensagem], JSON_UNESCAPED_UNICODE);
+                } else {
+                    $erro = $resultado['errors'][0] ?? 'Erro desconhecido ao atualizar data.';
+                    $mensagem = "Falha ao atualizar data do documento ($documentKey): $erro";
+                    self::atualizarRetornoBitrix($params, $entityId, $id, false, $documentKey, $mensagem);
+                    echo json_encode(['success' => false, 'mensagem' => $mensagem, 'details' => $resultado], JSON_UNESCAPED_UNICODE);
+                }
+                break;
+
+            default:
+                $mensagem = "Ação '$action' é inválida. Use 'Cancelar Documento' ou 'Atualizar Documento'.";
+                LogHelper::logClickSign($mensagem, 'controller');
+                echo json_encode(['success' => false, 'mensagem' => $mensagem], JSON_UNESCAPED_UNICODE);
+                break;
+        }
+    }
 }

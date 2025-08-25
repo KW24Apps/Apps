@@ -74,6 +74,18 @@ class ClickSignHelper
         return self::enviarRequisicao('GET', "/documents/$documentKey", [], 'v1', $token);
     }
 
+    // DOCUMENTO — Cancelamento
+    public static function cancelarDocumento($documentKey, $token = null)
+    {
+        return self::enviarRequisicao('PATCH', "/documents/$documentKey/cancel", [], 'v1', $token);
+    }
+
+    // DOCUMENTO — Atualização (genérico para data, etc.)
+    public static function atualizarDocumento($documentKey, $payload, $token = null)
+    {
+        return self::enviarRequisicao('PATCH', "/documents/$documentKey", $payload, 'v1', $token);
+    }
+
     // SIGNATÁRIO — Criação (agora usando método unificado)
     public static function criarSignatario($dados)
     {

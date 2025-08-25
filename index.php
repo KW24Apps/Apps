@@ -78,6 +78,9 @@ switch (NOME_APLICACAO) {
     case 'importar':
         require_once __DIR__ . '/routers/importarRoutes.php';
         break;
+    case 'disk':
+        require_once __DIR__ . '/routers/diskRoutes.php';
+        break;
     default:
         LogHelper::registrarRotaNaoEncontrada($uri, $method, __FILE__);
         http_response_code(404);

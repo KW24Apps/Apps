@@ -204,6 +204,8 @@ class UtilHelpers
             $slug = 'bitrix-sync';
         } elseif (strpos($uri, 'importar') === 0) {
             $slug = 'importar';
+        } elseif (strpos($uri, 'disk') === 0) {
+            $slug = 'disk';
         }
         if (!defined('NOME_APLICACAO')) {
             define('NOME_APLICACAO', $slug ?: 'desconhecida');
