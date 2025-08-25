@@ -8,7 +8,7 @@ $uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 $method = $_SERVER['REQUEST_METHOD'];
 
 // Rota para renomear a pasta e atualizar o deal
-if ($uri === 'diskrename' && $method === 'GET') {
+if ($uri === 'diskrename' && $method === 'POST') {
     (new DiskController())->RenomearPasta();
 } else {
     http_response_code(404);
