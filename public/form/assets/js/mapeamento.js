@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Mapeamento de Campos Interativo v2.0 - Posicionamento Dinâmico');
+    console.log('🚀 Mapeamento de Campos Interativo v3.1 - Abrir ao Focar');
 
     // Esconde a tela de loading e mostra o formulário
     const loadingScreen = document.getElementById('loadingScreen');
@@ -15,10 +15,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInputs = document.querySelectorAll('.search-input');
     
     searchInputs.forEach(input => {
-        const wrapper = input.closest('.autocomplete-wrapper-map');
+        const wrapper = input.closest('.autocomplete-wrapper');
         if (!wrapper) return;
 
-        const list = wrapper.querySelector('.autocomplete-list-map');
+        const list = wrapper.querySelector('.autocomplete-list');
         const hiddenInput = wrapper.querySelector('input[type="hidden"]');
 
         if (!list || !hiddenInput) return;
@@ -34,24 +34,23 @@ document.addEventListener('DOMContentLoaded', function() {
             const windowHeight = window.innerHeight;
             
             list.style.width = `${inputRect.width}px`;
-            list.style.left = `${window.scrollX + inputRect.left}px`;
+            list.style.left = `${inputRect.left}px`;
             
             const spaceBelow = windowHeight - inputRect.bottom;
             const spaceAbove = inputRect.top;
 
-            // Decide se mostra acima ou abaixo
-            if (spaceBelow < 250 && spaceAbove > spaceBelow) {
+            if (spaceBelow < 250 && spaceAbove > spaceBelow) { // 250px = max-height
                 list.style.top = 'auto';
-                list.style.bottom = `${windowHeight - inputRect.top - window.scrollY + 2}px`;
+                list.style.bottom = `${windowHeight - inputRect.top + 2}px`;
             } else {
                 list.style.bottom = 'auto';
-                list.style.top = `${inputRect.bottom + window.scrollY + 2}px`;
+                list.style.top = `${inputRect.bottom + 2}px`;
             }
         }
 
-        // Função para filtrar e exibir os campos
-        function filterAndShow() {
-            const query = input.value.toLowerCase().trim();
+        // Função para ATUALIZAR a lista, com opção de mostrar todos
+        function updateList(showAll = false) {
+            const query = showAll ? '' : input.value.toLowerCase().trim();
             list.innerHTML = '';
 
             const filteredFields = camposBitrixDisponiveis.filter(campo => 
@@ -59,11 +58,10 @@ document.addEventListener('DOMContentLoaded', function() {
             );
 
             if (filteredFields.length === 0) {
-                list.innerHTML = '<div class="autocomplete-item-map no-results">Nenhum campo encontrado</div>';
+                list.innerHTML = '<div class="no-results">Nenhum campo encontrado</div>';
             } else {
                 filteredFields.forEach(campo => {
                     const item = document.createElement('div');
-                    item.className = 'autocomplete-item-map';
                     item.textContent = campo.title;
                     
                     item.addEventListener('click', () => {
@@ -80,8 +78,11 @@ document.addEventListener('DOMContentLoaded', function() {
             positionList();
         }
 
-        input.addEventListener('input', filterAndShow);
-        input.addEventListener('focus', filterAndShow);
+        // Mostra a lista completa ao focar
+        input.addEventListener('focus', () => updateList(true));
+        
+        // Filtra a lista ao digitar
+        input.addEventListener('input', () => updateList(false));
 
         // Event listeners para reposicionar a lista
         window.addEventListener('scroll', positionList, true);

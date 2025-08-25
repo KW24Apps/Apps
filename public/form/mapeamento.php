@@ -241,10 +241,10 @@ $php_warnings = ob_get_clean();
                     echo <<<HTML
                     <div class="campo-grupo">
                         <label for="{$inputId}">{$colunaHtml}:</label>
-                        <div class="autocomplete-wrapper-map">
+                        <div class="autocomplete-wrapper">
                             <input type="text" id="{$inputId}" class="search-input" autocomplete="off" placeholder="Digite para buscar..." value="{$valorDefault}">
                             <input type="hidden" name="{$hiddenInputName}" value="{$idDefault}" required>
-                            <div id="{$listId}" class="autocomplete-list-map"></div>
+                            <div id="{$listId}" class="autocomplete-list"></div>
                         </div>
                     </div>
 HTML;
