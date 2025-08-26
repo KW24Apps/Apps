@@ -4,10 +4,12 @@ namespace Controllers;
 
 require_once __DIR__ . '/../helpers/BitrixDiskHelper.php';
 require_once __DIR__ . '/../helpers/BitrixCompanyHelper.php';
+require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../helpers/LogHelper.php';
 
 use Helpers\BitrixDiskHelper;
 use Helpers\BitrixCompanyHelper;
+use Helpers\BitrixHelper;
 use Helpers\LogHelper;
 
 class DiskController
@@ -20,7 +22,9 @@ class DiskController
         $fieldIdDominioAntigo = 'UF_CRM_1756209754';
         $fieldIdDominioAtual = 'UF_CRM_1656592471';
         $fieldNomeEmpresaAntigo = 'UF_CRM_1756209679';
-        $fieldRetorno = 'UF_CRM_1750450438';
+        // O campo de retorno foi removido, agora usamos a timeline
+
+        $companyid = null; // Inicializa para o bloco catch
 
         try {
             // 1. Obter e validar os parâmetros da URL
@@ -62,39 +66,45 @@ class DiskController
                 throw new \Exception('Erro ao renomear a pasta: ' . ($renameResult['error_description'] ?? 'Resposta inválida da API.'));
             }
 
-            // 7. Extrair o link da pasta e atualizar os campos na Company
-            $linkPasta = $renameResult['result']['DETAIL_URL'] ?? null;
-            $fieldLinkPasta = 'UF_CRM_1660100679';
-
+            // 7. Atualizar os campos na Company (sem o campo de retorno)
             $companyUpdateData = [
                 'id' => $companyid,
-                $fieldNomeEmpresaAntigo => $nomePadraoEmpresa, // Atualiza o nome antigo com o nome atual
-                $fieldIdDominioAntigo => $idDominioAtual,   // Atualiza o ID antigo com o ID atual
-                $fieldLinkPasta => $linkPasta,               // Adiciona o link da pasta
-                $fieldRetorno => 'BD101'                     // Seta o código de retorno
+                $fieldNomeEmpresaAntigo => $nomePadraoEmpresa,
+                $fieldIdDominioAntigo => $idDominioAtual
             ];
             $updateResult = BitrixCompanyHelper::editarCamposEmpresa($companyUpdateData);
             if (isset($updateResult['error'])) {
                 throw new \Exception('Erro ao atualizar a company: ' . ($updateResult['error_description'] ?? 'Erro desconhecido.'));
             }
 
-            // 8. Retornar sucesso
+            // 8. Adicionar comentário de sucesso na timeline
+            $mensagemSucesso = "Pasta renomeada com sucesso para: '{$novoNomePasta}'.";
+            BitrixHelper::adicionarComentarioTimeline('company', (int)$companyid, $mensagemSucesso);
+
+            // 9. Retornar sucesso
             http_response_code(200);
             echo json_encode([
                 'status' => 'sucesso',
-                'mensagem' => "Pasta ID {$idPastaAlvo} renomeada para '{$novoNomePasta}' e Company ID {$companyid} atualizada.",
+                'mensagem' => "Pasta ID {$idPastaAlvo} renomeada e comentário adicionado na Company ID {$companyid}.",
                 'resultado_rename' => $renameResult,
                 'resultado_update' => $updateResult
             ]);
 
         } catch (\InvalidArgumentException $e) {
-            http_response_code(400); // Bad Request for missing params
+            http_response_code(400);
             LogHelper::logDisk("Erro de parâmetro: " . $e->getMessage(), __CLASS__ . '::' . __FUNCTION__);
             echo json_encode(['erro' => $e->getMessage()]);
         } catch (\Exception $e) {
-            http_response_code(500); // Internal Server Error for other issues
-            LogHelper::logDisk("Exceção capturada: " . $e->getMessage(), __CLASS__ . '::' . __FUNCTION__);
-            echo json_encode(['erro' => $e->getMessage()]);
+            http_response_code(500);
+            $mensagemErro = $e->getMessage();
+            LogHelper::logDisk("Exceção capturada: " . $mensagemErro, __CLASS__ . '::' . __FUNCTION__);
+            
+            // Adiciona comentário de erro na timeline se tivermos o ID da empresa
+            if ($companyid) {
+                BitrixHelper::adicionarComentarioTimeline('company', (int)$companyid, "ERRO na automação de renomear pasta: " . $mensagemErro);
+            }
+            
+            echo json_encode(['erro' => $mensagemErro]);
         }
     }
 }

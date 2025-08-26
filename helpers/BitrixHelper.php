@@ -314,9 +314,7 @@ class BitrixHelper
         ];
     }
 
-    /**
-     * Formata valor baseado no tipo do campo
-     */
+    // Formatar Valor por Tipo
     private static function formatarValorPorTipo($valor, $tipo, $isMultiple)
     {
         if ($valor === null || $valor === '') {
@@ -343,5 +341,53 @@ class BitrixHelper
                 }
                 return is_array($valor) ? implode(', ', $valor) : (string)$valor;
         }
+    }
+
+     /**
+     * Adiciona um comentário na timeline de qualquer entidade do Bitrix24.
+     *
+     * @param string $entityType O tipo da entidade (ex: 'deal', 'company', 'dynamic_191').
+     * @param int $entityId O ID da entidade.
+     * @param string $comment O texto do comentário.
+     * @param int|null $authorId O ID do autor do comentário (opcional).
+     * @return array A resposta da API.
+     */
+     public static function adicionarComentarioTimeline(string $entityType, int $entityId, string $comment, ?int $authorId = null)
+    {
+        // Se authorId não for passado, tenta buscar da global
+        if (!$authorId) {
+            $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
+            $configJson = $configExtra ? json_decode($configExtra, true) : [];
+            
+            if (!empty($configJson)) {
+                $firstSpaKey = array_key_first($configJson);
+                $authorId = $configJson[$firstSpaKey]['bitrix_user_id_comments'] ?? null;
+            }
+        }
+
+        $params = [
+            'fields' => [
+                'ENTITY_ID' => $entityId,
+                'ENTITY_TYPE' => $entityType,
+                'COMMENT' => $comment
+            ]
+        ];
+
+        if ($authorId) {
+            $params['fields']['AUTHOR_ID'] = (int)$authorId;
+        }
+
+        $resultado = self::chamarApi('crm.timeline.comment.add', $params, ['log' => false]);
+
+        // Log apenas em caso de erro
+        if (!isset($resultado['result']) || empty($resultado['result'])) {
+            LogHelper::logBitrixHelpers(
+                "FALHA AO ADICIONAR COMENTÁRIO - EntityID: $entityId, EntityType: $entityType - Erro: " . json_encode($resultado, JSON_UNESCAPED_UNICODE),
+                __CLASS__ . '::' . __FUNCTION__
+            );
+            return ['success' => false, 'error' => $resultado['error_description'] ?? 'Erro desconhecido'];
+        }
+
+        return ['success' => true, 'result' => $resultado['result']];
     }
 }
