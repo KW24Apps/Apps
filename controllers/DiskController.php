@@ -78,7 +78,7 @@ class DiskController
             }
 
             // 8. Adicionar comentário de sucesso na timeline
-            $mensagemSucesso = "Pasta renomeada com sucesso para: '{$novoNomePasta}'.";
+            $mensagemSucesso = "Pasta da Contabilidade foi renomeada para: '{$novoNomePasta}'.";
             BitrixHelper::adicionarComentarioTimeline('company', (int)$companyid, $mensagemSucesso);
 
             // 9. Retornar sucesso
