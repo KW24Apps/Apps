@@ -960,12 +960,12 @@ class ClickSignController
                 $resultado = ClickSignHelper::atualizarDocumento($documentKey, $payload);
 
                 if (isset($resultado['document'])) {
-                    $mensagem = "Data do documento ($documentKey) atualizada para $novaDataFormatada.";
+                    $mensagem = "Data do documento atualizada para $novaDataFormatada.";
                     self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, $mensagem);
                     echo json_encode(['success' => true, 'mensagem' => $mensagem], JSON_UNESCAPED_UNICODE);
                 } else {
                     $erro = $resultado['errors'][0] ?? 'Erro desconhecido ao atualizar data.';
-                    $mensagem = "Falha ao atualizar data do documento ($documentKey): $erro";
+                    $mensagem = "Falha ao atualizar data do documento: $erro";
                     self::atualizarRetornoBitrix($params, $entityId, $id, false, $documentKey, $mensagem);
                     echo json_encode(['success' => false, 'mensagem' => $mensagem, 'details' => $resultado], JSON_UNESCAPED_UNICODE);
                 }
