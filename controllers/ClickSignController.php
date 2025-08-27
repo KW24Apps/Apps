@@ -257,6 +257,19 @@ class ClickSignController
         $arquivoInfo = ['urlMachine' => $urlMachine];
         $arquivoConvertido = UtilHelpers::baixarArquivoBase64($arquivoInfo);
 
+        // Validação do tipo de arquivo
+        if ($arquivoConvertido) {
+            $extensoesPermitidas = ['pdf', 'docx', 'doc', 'png', 'jpg', 'jpeg'];
+            $extensaoArquivo = strtolower($arquivoConvertido['extensao']);
+            if (!in_array($extensaoArquivo, $extensoesPermitidas)) {
+                $mensagemErro = 'Tipo de arquivo inválido. Apenas (' . implode(', ', $extensoesPermitidas) . ') são permitidos.';
+                LogHelper::logClickSign("ERRO - $mensagemErro", 'controller');
+                self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagemErro);
+                echo json_encode(['success' => false, 'error' => $mensagemErro]);
+                return;
+            }
+        }
+
         if (!$arquivoConvertido) {
             LogHelper::logClickSign("Erro ao converter o arquivo", 'controller');
             self::atualizarRetornoBitrix($params, $entityId, $id, false, null, 'Erro ao converter o arquivo');
