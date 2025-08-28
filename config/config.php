@@ -1,17 +1,17 @@
 <?php
 
-$ambiente = getenv('APP_ENV') ?: 'producao';
+global $ambiente;
 
 $config = [];
 
-if ($ambiente === 'local') {
+if ($ambiente === 0) { // 0 = Local
     $config = [
         'host' => 'localhost',
         'dbname' => 'apis_local',
         'usuario' => 'root',
         'senha' => ''
     ];
-} else {
+} else { // 1 = Produção
     $config = [
         'host' => 'localhost',
         'dbname' => 'kw24co49_api_kwconfig',

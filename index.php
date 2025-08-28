@@ -31,7 +31,16 @@ LogHelper::registrarEntradaGlobal($uri, $method);
 // --- Autenticação global: busca e valida cliente ---
 $cliente = $_GET['cliente'] ?? null;
 if ($cliente && $slugAplicacao && NOME_APLICACAO !== 'bitrix-sync') {
-    AplicacaoAcessoDAO::ValidarClienteAplicacao($cliente, $slugAplicacao);
+    $acesso = AplicacaoAcessoDAO::ValidarClienteAplicacao($cliente, $slugAplicacao);
+    if (!$acesso) {
+        http_response_code(401); // Unauthorized
+        $response = [
+            'success' => false,
+            'message' => 'Acesso negado. Verifique a chave do cliente e as permissões da aplicação.'
+        ];
+        echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
+    }
 }
 
 // Direcionamento com base no prefixo

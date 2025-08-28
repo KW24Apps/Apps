@@ -266,7 +266,7 @@ class ClickSignController
                 LogHelper::logClickSign("ERRO - $mensagemErro", 'controller');
                 self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagemErro);
                 echo json_encode(['success' => false, 'error' => $mensagemErro]);
-                return;
+                exit;
             }
         }
 
@@ -275,7 +275,7 @@ class ClickSignController
             self::atualizarRetornoBitrix($params, $entityId, $id, false, null, 'Erro ao converter o arquivo');
             $response = ['success' => false, 'mensagem' => 'Erro ao converter o arquivo.'];
             echo json_encode($response, JSON_UNESCAPED_UNICODE);
-            return $response;
+            exit;
         }
 
         // Monta o payload para ClickSign
@@ -925,11 +925,11 @@ class ClickSignController
         $documentKey = $dealData['result'][$campoIdClickSignFormatado]['valor'] ?? null;
 
         if (empty($documentKey)) {
-            $mensagem = 'ID do documento na ClickSign (document_key) não encontrado no Deal.';
-            LogHelper::logClickSign($mensagem, 'controller');
-            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagem);
-            echo json_encode(['success' => false, 'mensagem' => $mensagem], JSON_UNESCAPED_UNICODE);
-            return;
+            // Silenciosamente ignora a requisição se o document_key não existir.
+            // Isso evita erros em cénarios de disparo múltiplo de gatilhos.
+            LogHelper::logClickSign("Ação de atualização ignorada: document_key não encontrado no Deal $id. Provavelmente um disparo de gatilho concorrente.", 'controller');
+            echo json_encode(['success' => true, 'mensagem' => 'Ação ignorada, nenhum documento para atualizar.'], JSON_UNESCAPED_UNICODE);
+            exit;
         }
 
         switch ($action) {
