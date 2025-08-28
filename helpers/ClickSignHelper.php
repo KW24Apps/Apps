@@ -118,40 +118,6 @@ class ClickSignHelper
         return self::enviarRequisicao('POST', '/notifications', $payload);
     }
 
-    // DOCUMENTO — Assinatura (sempre V1/signatures)
-    public static function obterMimeDoArquivo(string $url): ?string
-    {
-        $headers = get_headers($url, 1);
-        return $headers['Content-Type'] ?? null;
-    }
-
-    // DOCUMENTO — Assinatura (sempre V1/signatures)
-    public static function mimeParaExtensao(string $mime): ?string
-    {
-        $map = [
-            'application/pdf' => 'pdf',
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            // adiciona outros conforme necessidade
-        ];
-
-        return $map[strtolower($mime)] ?? null;
-    }
-
-    // DOCUMENTO — Assinatura (sempre V1/signatures)
-    public static function extensaoParaMime(string $extensao): ?string
-    {
-        $map = [
-            'pdf' => 'application/pdf',
-            'jpg' => 'image/jpeg',
-            'jpeg' => 'image/jpeg',
-            'png' => 'image/png',
-            // adiciona outros conforme necessidade
-        ];
-
-        return $map[strtolower($extensao)] ?? null;
-    }
-
     // Validação HMAC
         public static function validarHmac($body, $secret, $headerSignature)
     {

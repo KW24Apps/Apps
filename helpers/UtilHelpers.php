@@ -27,8 +27,8 @@ class UtilHelpers
         }
         $hashArquivo = md5($conteudo);
         $base64 = base64_encode($conteudo);
-        $mime = ClickSignHelper::obterMimeDoArquivo($url);
-        $extensao = ClickSignHelper::mimeParaExtensao($mime) ?? pathinfo($nome, PATHINFO_EXTENSION);
+        $mime = self::obterMimeDoArquivo($url);
+        $extensao = self::mimeParaExtensao($mime) ?? pathinfo($nome, PATHINFO_EXTENSION);
 
         if (strtolower(pathinfo($nome, PATHINFO_EXTENSION)) !== strtolower($extensao)) {
             $nome .= '.' . $extensao;
@@ -213,4 +213,21 @@ class UtilHelpers
         return $slug ?: 'desconhecida';
     }
 
+    public static function obterMimeDoArquivo(string $url): ?string
+    {
+        $headers = get_headers($url, 1);
+        return $headers['Content-Type'] ?? null;
+    }
+
+    public static function mimeParaExtensao(string $mime): ?string
+    {
+        $map = [
+            'application/pdf' => 'pdf',
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            // adiciona outros conforme necessidade
+        ];
+
+        return $map[strtolower($mime)] ?? null;
+    }
 }
