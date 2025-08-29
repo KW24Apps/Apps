@@ -2,9 +2,18 @@
 // demo.php - Arquivo de demonstração e teste
 
 try {
-    // Carrega configurações (que já define o webhook globalmente)
-    $config = require_once __DIR__ . '/config.php';
-    
+    // Carrega configurações do JSON para o cliente de demonstração
+    $cliente_demo = 'gnappC93fLq7RxKZVp28HswuAYMe1';
+    $config = ['funis' => [], 'batch_size' => 25]; // Default
+    $configFile = __DIR__ . '/config_clientes.json';
+    if (file_exists($configFile)) {
+        $json_data = json_decode(file_get_contents($configFile), true);
+        if (isset($json_data[$cliente_demo]['funis'])) {
+            $config['funis'] = $json_data[$cliente_demo]['funis'];
+        }
+    }
+
+    // Lógica do webhook permanece a mesma
     // Verifica se o webhook foi configurado
     if (isset($GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) && 
         $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix']) {

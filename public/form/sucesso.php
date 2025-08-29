@@ -7,10 +7,19 @@ $cliente = $_GET['cliente'] ?? '';
 $jobs = $_GET['jobs'] ?? '';
 $totalRegistros = (int)($_GET['total'] ?? 0);
 
-// Carrega as configurações para encontrar o link do funil
-$config = require_once __DIR__ . '/config.php';
+// Carrega as configurações de links de funis do novo arquivo JSON
+$linkFunil = '#';
 $funilId = $_SESSION['importacao_form']['funil'] ?? '';
-$linkFunil = $config['links_funis'][$funilId] ?? '#';
+$configFile = __DIR__ . '/config_clientes.json';
+
+if ($funilId && file_exists($configFile)) {
+    $json_data = json_decode(file_get_contents($configFile), true);
+    // Validação Estrita: Verifica se a chave do cliente e o link do funil existem
+    if (isset($json_data[$cliente]) && isset($json_data[$cliente]['links_funis'][$funilId])) {
+        $linkFunil = $json_data[$cliente]['links_funis'][$funilId];
+    }
+    // Se não encontrar, o $linkFunil continuará como '#', o que é seguro.
+}
 
 // Calcula o tempo estimado (2 segundos por registro)
 $tempoEstimadoSegundos = $totalRegistros * 2;

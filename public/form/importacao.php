@@ -63,9 +63,24 @@ try {
     $webhook_configurado = true;
     $webhook_value = $webhook;
     
-    // Carrega configurações dos funis (ainda usando config local para funis específicos)
-    $config = require_once __DIR__ . '/config.php';
-    $config_carregado = is_array($config) && isset($config['funis']) && is_array($config['funis']);
+    // Carrega configurações de funis do novo arquivo JSON
+    $funis = [];
+    $config_carregado = false;
+    $configFile = __DIR__ . '/config_clientes.json';
+
+    if (file_exists($configFile)) {
+        $json_data = json_decode(file_get_contents($configFile), true);
+        // Validação Estrita: Verifica se a chave do cliente existe no JSON
+        if (isset($json_data[$cliente]) && isset($json_data[$cliente]['funis'])) {
+            $funis = $json_data[$cliente]['funis'];
+            $config_carregado = true;
+        } else {
+            // Se não encontrar, lança uma exceção
+            throw new Exception('Configuração de funis não encontrada para o cliente: ' . $cliente);
+        }
+    } else {
+        throw new Exception('Arquivo de configuração de clientes (config_clientes.json) não encontrado.');
+    }
     
     // Define variável para debug
     $bitrix_constant = defined('BITRIX_WEBHOOK') && BITRIX_WEBHOOK;
@@ -106,7 +121,7 @@ try {
                 <option value="">Selecione...</option>
                 <?php 
                 if ($config_carregado): 
-                    foreach ($config['funis'] as $id => $nome): ?>
+                    foreach ($funis as $id => $nome): ?>
                         <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($nome); ?></option>
                     <?php endforeach; 
                 else: ?>
