@@ -91,16 +91,16 @@ if ($webhook_configurado) {
     $camposBitrix = BitrixHelper::consultarCamposCrm($entityTypeId);
 }
 
-// Carrega config para mapear o nome do funil corretamente
-$config = require_once __DIR__ . '/config.php';
-$funilId = $dadosImportacao['funil'] ?? '';
+// Carrega o nome do funil a partir do novo config_clientes.json
 $nomeFunil = 'Funil não identificado';
+$funilId = $dadosImportacao['funil'] ?? '';
+$configFile = __DIR__ . '/config_clientes.json';
 
-if ($funilId && isset($config['funis'][$funilId])) {
-    $nomeFunil = $config['funis'][$funilId];
-} else {
-    // Fallback para identificador se não encontrar o funil
-    $nomeFunil = $dadosImportacao['identificador'] ?? 'Funil não identificado';
+if ($funilId && file_exists($configFile)) {
+    $json_data = json_decode(file_get_contents($configFile), true);
+    if (isset($json_data[$cliente]) && isset($json_data[$cliente]['funis'][$funilId])) {
+        $nomeFunil = $json_data[$cliente]['funis'][$funilId];
+    }
 }
 
 $colunas = $dadosImportacao['colunas'] ?? [];

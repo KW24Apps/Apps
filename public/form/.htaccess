@@ -7,10 +7,6 @@ RewriteEngine On
 DirectoryIndex index.php
 
 # Proteger arquivos de configuração
-<Files "config.php">
-    Order Allow,Deny
-    Deny from all
-</Files>
 
 # Proteger logs
 <FilesMatch "\.(log|txt)$">
