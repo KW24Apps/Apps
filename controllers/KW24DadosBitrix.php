@@ -5,13 +5,13 @@ require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../helpers/BitrixTaskHelper.php';
 require_once __DIR__ . '/../helpers/BitrixCompanyHelper.php';
 require_once __DIR__ . '/../helpers/LogHelper.php';
-require_once __DIR__ . '/../dao/KW24DadosBitrixDAO.php';
+require_once __DIR__ . '/../Repositories/KW24DadosBitrixDAO.php';
 
 use Helpers\BitrixHelper;
 use Helpers\BitrixTaskHelper;
 use Helpers\BitrixCompanyHelper;
 use Helpers\LogHelper;
-use dao\KW24DadosBitrixDAO;
+use Repositories\KW24DadosBitrixDAO;
 
 class KW24DadosBitrix 
 {

@@ -2,10 +2,10 @@
 namespace Helpers;
 
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
-require_once __DIR__ . '/../dao/BatchJobDAO.php';
+require_once __DIR__ . '/../Repositories/BatchJobDAO.php';
 
 use Helpers\BitrixHelper;
-use dao\BatchJobDAO;
+use Repositories\BatchJobDAO;
 
 class BitrixDealHelper
 {

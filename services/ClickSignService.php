@@ -5,7 +5,7 @@ require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
 require_once __DIR__ . '/../helpers/BitrixContactHelper.php';
 require_once __DIR__ . '/../helpers/ClickSignHelper.php';
 require_once __DIR__ . '/../helpers/LogHelper.php';
-require_once __DIR__ . '/../dao/AplicacaoAcessoDAO.php';
+require_once __DIR__ . '/../Repositories/AplicacaoAcessoDAO.php';
 require_once __DIR__ . '/../helpers/UtilHelpers.php';
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
 
@@ -13,7 +13,7 @@ use Helpers\BitrixDealHelper;
 use Helpers\BitrixContactHelper;
 use Helpers\ClickSignHelper;
 use Helpers\LogHelper;
-use dao\AplicacaoAcessoDAO;
+use Repositories\AplicacaoAcessoDAO;
 use Helpers\BitrixHelper;
 use Helpers\UtilHelpers;
 use PDOException;

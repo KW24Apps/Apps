@@ -125,12 +125,12 @@ try {
                         break;
                         
                     case 'database':
-                        require_once __DIR__ . '/../../dao/BatchJobDAO.php';
-                        
-                        $dao = new dao\BatchJobDAO();
-                        $testData = ['test' => true];
+                        require_once __DIR__ . '/../../Repositories/BatchJobDAO.php';
+
                         $testId = 'test_' . time();
-                        
+                        $dao = new Repositories\BatchJobDAO();
+                        $testData = ['test' => true];
+
                         if ($dao->criarJob($testId, 'test', $testData, 1)) {
                             echo '<div class="status success">✅ Conexão com banco OK! Job de teste criado.</div>';
                         } else {

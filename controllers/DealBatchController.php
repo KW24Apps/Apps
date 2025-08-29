@@ -1,11 +1,11 @@
 <?php
 namespace Controllers;
 
-require_once __DIR__ . '/../dao/BatchJobDAO.php';
+require_once __DIR__ . '/../Repositories/BatchJobDAO.php';
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
 require_once __DIR__ . '/../helpers/LogHelper.php';
 
-use dao\BatchJobDAO;
+use Repositories\BatchJobDAO;
 use Helpers\BitrixDealHelper;
 use Helpers\LogHelper;
 

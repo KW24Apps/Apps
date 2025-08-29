@@ -8,8 +8,8 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 // Inclui o DAO para salvar os jobs diretamente, contornando o helper
-require_once __DIR__ . '/../../../dao/BatchJobDAO.php';
-use dao\BatchJobDAO;
+require_once __DIR__ . '/../../../Repositories/BatchJobDAO.php';
+use Repositories\BatchJobDAO;
 
 $cliente = $_GET['cliente'] ?? $_POST['cliente'] ?? null;
 if (!$cliente) {

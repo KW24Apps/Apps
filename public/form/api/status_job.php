@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . '/../../../dao/BatchJobDAO.php';
+require_once __DIR__ . '/../../../Repositories/BatchJobDAO.php';
 
-use dao\BatchJobDAO;
+use Repositories\BatchJobDAO;
 
 header('Content-Type: application/json');
 

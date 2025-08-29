@@ -3,10 +3,10 @@ set_time_limit(120); // Define o timeout para 120 segundos
 date_default_timezone_set('America/Sao_Paulo');
 require_once __DIR__ . '/helpers/UtilHelpers.php';
 require_once __DIR__ . '/helpers/LogHelper.php';
-require_once __DIR__ . '/dao/AplicacaoAcessoDAO.php';
+require_once __DIR__ . '/Repositories/AplicacaoAcessoDAO.php';
 
 use Helpers\LogHelper;
-use dao\AplicacaoAcessoDAO;
+use Repositories\AplicacaoAcessoDAO;
 use Helpers\UtilHelpers;
 
 $uri = $_SERVER['REQUEST_URI'];
