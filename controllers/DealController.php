@@ -3,7 +3,9 @@ namespace Controllers;
 
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
+require_once __DIR__ . '/../services/DealService.php';
 use Helpers\BitrixDealHelper;
+use Services\DealService;
 
 class DealController
     {
@@ -32,8 +34,13 @@ class DealController
             return $isUfCrm || $isCrmField;
         }, ARRAY_FILTER_USE_KEY);
 
+        // Trata campos com nomes amigáveis antes de criar o deal
+        $dealService = new DealService();
+        $entityTypeId = $spa ?? 2; // 2 é o ID padrão para Deals Clássicos
+        $camposTratados = $dealService->tratarCamposAmigaveis($fields, $entityTypeId);
+
         // Comportamento normal - 1 deal
-        $resultado = BitrixDealHelper::criarDeal($spa, $categoryId, $fields);
+        $resultado = BitrixDealHelper::criarDeal($spa, $categoryId, $camposTratados);
 
         header('Content-Type: application/json');
         echo json_encode($resultado);
