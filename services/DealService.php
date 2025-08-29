@@ -8,62 +8,102 @@ use Helpers\LogHelper;
 class DealService
 {
     private $camposMetadata = [];
+    private $mapeamentoTitulos = [];
 
     /**
-     * Processa os campos de um deal para converter nomes amigáveis (ex: UFs) em IDs.
+     * Processa os campos de um deal para converter nomes amigáveis (ex: CNPJ/CPF, UFs) em seus respectivos campos técnicos e IDs.
      *
-     * @param array $campos Os campos recebidos na requisição.
+     * @param array $campos Os campos recebidos na requisição (da URL).
      * @param int $entityTypeId O ID da entidade no Bitrix (geralmente 2 para Deals).
-     * @return array Os campos com os valores devidamente tratados.
+     * @return array O payload final, enxuto e mapeado, pronto para ser enviado à API do Bitrix.
      */
     public function tratarCamposAmigaveis(array $campos, int $entityTypeId): array
     {
         if (empty($campos) || !$entityTypeId) {
-            return $campos;
+            return [];
         }
 
-        // Cache simples para os metadados dos campos na mesma instância
+        $this->carregarMetadata($entityTypeId);
         if (empty($this->camposMetadata[$entityTypeId])) {
-            $this->camposMetadata[$entityTypeId] = BitrixHelper::consultarCamposCrm($entityTypeId);
+            return $campos; // Retorna os campos originais se não houver metadados
         }
 
-        $metadata = $this->camposMetadata[$entityTypeId];
+        $payloadFinal = [];
+
+        foreach ($campos as $nomeCampoUrl => $valorCampo) {
+            $nomeCampoTecnico = null;
+            $definicaoCampo = null;
+
+            // 1. Verifica se o nome do campo da URL já é um nome técnico
+            if (isset($this->camposMetadata[$entityTypeId][$nomeCampoUrl])) {
+                $nomeCampoTecnico = $nomeCampoUrl;
+                $definicaoCampo = $this->camposMetadata[$entityTypeId][$nomeCampoUrl];
+            } 
+            // 2. Se não for, busca pelo nome amigável (title)
+            elseif (isset($this->mapeamentoTitulos[$entityTypeId][strtolower($nomeCampoUrl)])) {
+                $nomeCampoTecnico = $this->mapeamentoTitulos[$entityTypeId][strtolower($nomeCampoUrl)];
+                $definicaoCampo = $this->camposMetadata[$entityTypeId][$nomeCampoTecnico];
+            }
+
+            // Se encontrou o campo correspondente no Bitrix
+            if ($nomeCampoTecnico && $definicaoCampo) {
+                $valorFinal = $this->converterValorSeNecessario($valorCampo, $definicaoCampo);
+                $payloadFinal[$nomeCampoTecnico] = $valorFinal;
+            } else {
+                LogHelper::logBitrixHelpers("Campo da URL '$nomeCampoUrl' nao foi encontrado no Bitrix e sera ignorado.", __CLASS__ . '::' . __FUNCTION__);
+            }
+        }
+
+        return $payloadFinal;
+    }
+
+    /**
+     * Carrega os metadados da entidade do Bitrix e cria um mapa de títulos para nomes técnicos.
+     */
+    private function carregarMetadata(int $entityTypeId)
+    {
+        // Cache para evitar múltiplas chamadas na mesma requisição
+        if (!empty($this->camposMetadata[$entityTypeId])) {
+            return;
+        }
+
+        $metadata = BitrixHelper::consultarCamposCrm($entityTypeId);
         if (empty($metadata)) {
             LogHelper::logBitrixHelpers("Nao foi possivel obter metadados para a entidade $entityTypeId.", __CLASS__ . '::' . __FUNCTION__);
-            return $campos; // Retorna os campos originais se não encontrar metadados
+            return;
         }
 
-        $camposTratados = $campos;
-
-        foreach ($campos as $nomeCampo => $valorCampo) {
-            // Ignora valores que já são numéricos (provavelmente IDs) ou vazios
-            if (is_numeric($valorCampo) || empty($valorCampo) || is_array($valorCampo)) {
-                continue;
-            }
-
-            // Procura a definição do campo nos metadados
-            if (isset($metadata[$nomeCampo]) && $metadata[$nomeCampo]['type'] === 'enumeration') {
-                $definicaoCampo = $metadata[$nomeCampo];
-
-                // Procura o ID correspondente ao valor amigável
-                $idEncontrado = null;
-                foreach ($definicaoCampo['items'] as $item) {
-                    // Comparação insensível a maiúsculas/minúsculas e acentos
-                    if (strcasecmp($item['VALUE'], $valorCampo) == 0) {
-                        $idEncontrado = $item['ID'];
-                        break;
-                    }
-                }
-
-                if ($idEncontrado !== null) {
-                    $camposTratados[$nomeCampo] = $idEncontrado;
-                    LogHelper::logBitrixHelpers("Campo '$nomeCampo': Valor '$valorCampo' convertido para ID '$idEncontrado'.", __CLASS__ . '::' . __FUNCTION__);
-                } else {
-                    LogHelper::logBitrixHelpers("Campo '$nomeCampo': Valor amigavel '$valorCampo' nao encontrado nos metadados. O valor original sera mantido.", __CLASS__ . '::' . __FUNCTION__);
-                }
+        $this->camposMetadata[$entityTypeId] = $metadata;
+        
+        // Cria o mapa de Título => Nome Técnico
+        $mapa = [];
+        foreach ($metadata as $nomeTecnico => $definicao) {
+            if (!empty($definicao['title'])) {
+                // Chave do mapa em minúsculas para busca case-insensitive
+                $mapa[strtolower($definicao['title'])] = $nomeTecnico;
             }
         }
+        $this->mapeamentoTitulos[$entityTypeId] = $mapa;
+    }
 
-        return $camposTratados;
+    /**
+     * Converte o valor de um campo do tipo 'enumeration' de texto para ID.
+     */
+    private function converterValorSeNecessario($valor, array $definicaoCampo)
+    {
+        // Se o campo é do tipo lista e o valor recebido não é numérico
+        if ($definicaoCampo['type'] === 'enumeration' && !is_numeric($valor) && !empty($valor)) {
+            foreach ($definicaoCampo['items'] as $item) {
+                // Comparação insensível a maiúsculas/minúsculas
+                if (strcasecmp($item['VALUE'], $valor) == 0) {
+                    LogHelper::logBitrixHelpers("Valor '{$valor}' convertido para ID '{$item['ID']}' para o campo '{$definicaoCampo['title']}'.", __CLASS__ . '::' . __FUNCTION__);
+                    return $item['ID']; // Retorna o ID correspondente
+                }
+            }
+            LogHelper::logBitrixHelpers("Valor '{$valor}' nao encontrado nas opcoes do campo '{$definicaoCampo['title']}'. O valor original sera mantido.", __CLASS__ . '::' . __FUNCTION__);
+        }
+        
+        // Para todos os outros casos, retorna o valor original
+        return $valor;
     }
 }

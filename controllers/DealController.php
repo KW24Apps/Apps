@@ -19,20 +19,9 @@ class DealController
         $spa = $params['spa'] ?? null;
         $categoryId = $params['CATEGORY_ID'] ?? null;
 
-        // Filtra campos customizados e campos padrão do CRM dinamicamente
-        $fields = array_filter($params, function ($key) {
-            // Aceita campos UF_CRM_ em qualquer formato (maiúsculo, minúsculo, camelCase)
-            $keyUpper = strtoupper($key);
-            $isUfCrm = strpos($keyUpper, 'UF_CRM_') === 0 || 
-                       strpos($keyUpper, 'UFCRM_') === 0 || 
-                       strpos($key, 'ufCrm_') === 0 ||
-                       strpos($key, 'ufcrm_') === 0;
-            
-            // Aceita também campos padrão do CRM
-            $isCrmField = in_array($key, ['companyId', 'contactId', 'stageId', 'sourceId', 'title']);
-            
-            return $isUfCrm || $isCrmField;
-        }, ARRAY_FILTER_USE_KEY);
+        // Remove os parâmetros de controle para isolar apenas os campos do deal
+        $fields = $params;
+        unset($fields['cliente'], $fields['spa'], $fields['CATEGORY_ID']);
 
         // Trata campos com nomes amigáveis antes de criar o deal
         $dealService = new DealService();
