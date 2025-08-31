@@ -823,7 +823,7 @@ class ClickSignService
     {
         LogHelper::logClickSign("Início do job de adiamento de prazos.", 'service');
         $summary = ['clientes_processados' => 0, 'documentos_verificados' => 0, 'documentos_adiados' => 0, 'erros' => 0];
-        $hoje = date('Y-m-d');
+        $amanha = date('Y-m-d', strtotime('+1 day'));
 
         $configuracoes = AplicacaoAcessoDAO::obterConfiguracoesClickSignAtivas();
         if (empty($configuracoes)) {
@@ -868,9 +868,11 @@ class ClickSignService
                     $summary['documentos_verificados']++;
                     $deadline = substr($documento['deadline_at'], 0, 10);
 
-                    if ($documento['status'] === 'running' && $deadline === $hoje) {
+                    // Verifica se o documento vence amanhã
+                    if ($documento['status'] === 'running' && $deadline === $amanha) {
                         try {
-                            $novaData = UtilHelpers::calcularDataUtil(2);
+                            // Adia o prazo em 2 dias úteis a partir da data de amanhã
+                            $novaData = UtilHelpers::calcularDataUtil(2, date_create($amanha));
                             $novaDataFormatada = $novaData->format('Y-m-d');
                             $documentKey = $documento['key'];
 
@@ -893,20 +895,21 @@ class ClickSignService
 
                                         $fieldsUpdate = [];
                                         if ($campoData) {
-                                            $fieldsUpdate[$campoData] = $novaDataFormatada;
-                                        }
-                                        if ($campoRetorno) {
-                                            $fieldsUpdate[$campoRetorno] = ClickSignCodes::PRAZO_ESTENDIDO_AUTO;
-                                        }
+                                        $fieldsUpdate[$campoData] = $novaDataFormatada;
+                                    }
+                                    if ($campoRetorno) {
+                                        $fieldsUpdate[$campoRetorno] = ClickSignCodes::PRAZO_ESTENDIDO_AUTO;
+                                    }
 
-                                        if (!empty($fieldsUpdate)) {
-                                            BitrixDealHelper::editarDeal($spa, $dealId, $fieldsUpdate);
-                                        }
-                                        
-                                        $mensagem = "CLICK SIGN: O prazo de assinatura do documento foi estendido automaticamente para $novaDataFormatada.\nDocumento ID: $documentKey";
-                                        BitrixDealHelper::adicionarComentarioDeal($spa, $dealId, $mensagem);
-                                        
-                                        LogHelper::logClickSign("Documento $documentKey adiado para $novaDataFormatada e retorno " . ClickSignCodes::PRAZO_ESTENDIDO_AUTO . " enviado.", 'service');
+                                    if (!empty($fieldsUpdate)) {
+                                        BitrixDealHelper::editarDeal($spa, $dealId, $fieldsUpdate);
+                                    }
+                                    
+                                    $dataParaComentario = $novaData->format('d/m/Y');
+                                    $mensagem = "CLICK SIGN: O prazo de assinatura do documento foi estendido automaticamente para $dataParaComentario.\nDocumento ID: $documentKey";
+                                    BitrixDealHelper::adicionarComentarioDeal($spa, $dealId, $mensagem);
+                                    
+                                    LogHelper::logClickSign("Documento $documentKey adiado para $novaDataFormatada e retorno " . ClickSignCodes::PRAZO_ESTENDIDO_AUTO . " enviado.", 'service');
                                         $summary['documentos_adiados']++;
                                     } else {
                                         LogHelper::logClickSign("Configuração não encontrada para o cliente ID: " . $dadosAssinatura['cliente_id'], 'service');
