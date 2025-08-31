@@ -838,9 +838,9 @@ class ClickSignService
     public static function processarAdiamentoDePrazos(): array
     {
         LogHelper::logClickSign("Início do job de adiamento de prazos.", 'service');
-        $summary = ['clientes_processados' => 0, 'documentos_verificados' => 0, 'documentos_adiados' => 0, 'erros' => 0, 'documentos_encontrados_api' => [], 'respostas_api_brutas' => []];
+        $summary = ['clientes_processados' => 0, 'documentos_verificados' => 0, 'documentos_adiados' => 0, 'erros' => 0];
         $amanha = date('Y-m-d', strtotime('+1 day'));
-        $clientesJaProcessados = []; // Array para evitar contagem duplicada
+        $clientesJaProcessados = [];
 
         $assinaturasAtivas = AplicacaoAcessoDAO::obterAssinaturasAtivasParaVerificacao();
         if (empty($assinaturasAtivas)) {
@@ -854,12 +854,11 @@ class ClickSignService
             $documentKey = $assinatura['document_key'];
 
             if (empty($token)) {
-                LogHelper::logClickSign("Token não encontrado nos dados de conexão para o document_key: " . $documentKey, 'service');
+                LogHelper::logClickSign("Token não encontrado para o document_key: " . $documentKey, 'service');
                 $summary['erros']++;
                 continue;
             }
 
-            // Carrega a configuração do cliente para o BitrixHelper funcionar
             $configCliente = AplicacaoAcessoDAO::obterConfiguracaoPorClienteId((int)$assinatura['cliente_id'], 'clicksign');
             if ($configCliente) {
                 $GLOBALS['ACESSO_AUTENTICADO'] = $configCliente;
@@ -867,12 +866,10 @@ class ClickSignService
 
             $documento = ClickSignHelper::buscarDocumento($documentKey, $token);
             $summary['documentos_verificados']++;
-            $summary['respostas_api_brutas'][] = $documento; // Adiciona a resposta bruta para debug
 
             if (isset($documento['document'])) {
                 $doc = $documento['document'];
                 $deadline = substr($doc['deadline_at'], 0, 10);
-                $summary['documentos_encontrados_api'][] = ['key' => $doc['key'], 'status' => $doc['status'], 'deadline_at' => $deadline];
 
                 if ($doc['status'] === 'running' && $deadline === $amanha) {
                     try {
@@ -895,6 +892,9 @@ class ClickSignService
                                 $clientesJaProcessados[] = $assinatura['cliente_id'];
                             }
                             $summary['documentos_adiados']++;
+                            
+                            // Marca que o prazo foi adiado para não rodar novamente
+                            AplicacaoAcessoDAO::salvarStatus($documentKey, null, null, null, null, true);
 
                             $fieldsUpdate = [];
                             if (!empty($assinatura['campo_data'])) {
@@ -912,9 +912,9 @@ class ClickSignService
                             $mensagem = "CLICK SIGN: O prazo de assinatura do documento foi estendido automaticamente para $dataParaComentario.\nDocumento ID: $documentKey";
                             BitrixDealHelper::adicionarComentarioDeal($assinatura['spa'], $assinatura['deal_id'], $mensagem);
                             
-                            LogHelper::logClickSign("Documento $documentKey adiado para $novaDataFormatada e retorno " . ClickSignCodes::PRAZO_ESTENDIDO_AUTO . " enviado.", 'service');
+                            LogHelper::logClickSign("Documento $documentKey adiado para $novaDataFormatada.", 'service');
                         } else {
-                            LogHelper::logClickSign("Falha ao adiar documento $documentKey na ClickSign. Resposta: " . json_encode($resultadoUpdate), 'service');
+                            LogHelper::logClickSign("Falha ao adiar documento $documentKey. Resposta: " . json_encode($resultadoUpdate), 'service');
                             $summary['erros']++;
                         }
                     } catch (\Exception $e) {
@@ -923,7 +923,7 @@ class ClickSignService
                     }
                 }
             } else {
-                LogHelper::logClickSign("Documento $documentKey não encontrado na ClickSign ou erro na API.", 'service');
+                LogHelper::logClickSign("Documento $documentKey não encontrado na ClickSign. Resposta: " . json_encode($documento), 'service');
                 $summary['erros']++;
             }
         }

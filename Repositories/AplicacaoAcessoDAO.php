@@ -87,7 +87,7 @@ class AplicacaoAcessoDAO
     }
 
     // Método para salvar o status_closed de uma assinatura ClickSign
-    public static function salvarStatus(string $documentKey, ?string $statusClosed = null, ?string $assinaturaProcessada = null, ?bool $documentoFechadoProcessado = null, ?bool $documentoDisponivelProcessado = null): bool
+    public static function salvarStatus(string $documentKey, ?string $statusClosed = null, ?string $assinaturaProcessada = null, ?bool $documentoFechadoProcessado = null, ?bool $documentoDisponivelProcessado = null, ?bool $prazoAdiado = null): bool
     {
         $config = require __DIR__ . '/../config/config.php';
 
@@ -120,6 +120,11 @@ class AplicacaoAcessoDAO
             if ($documentoDisponivelProcessado !== null) {
                 $updates[] = 'documento_disponivel_processado = :docDisponivelProc';
                 $params[':docDisponivelProc'] = $documentoDisponivelProcessado;
+            }
+
+            if ($prazoAdiado !== null) {
+                $updates[] = 'prazo_adiado = :prazoAdiado';
+                $params[':prazoAdiado'] = $prazoAdiado;
             }
 
             if (empty($updates)) {
@@ -189,6 +194,7 @@ class AplicacaoAcessoDAO
                 FROM assinaturas_clicksign
                 WHERE (documento_disponivel_processado = 0 OR documento_disponivel_processado IS NULL)
                 AND (status_closed IS NULL OR status_closed NOT IN ('cancel', 'deadline'))
+                AND (prazo_adiado = 0 OR prazo_adiado IS NULL)
                 AND dados_conexao IS NOT NULL
             ";
 
