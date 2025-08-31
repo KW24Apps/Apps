@@ -824,6 +824,7 @@ class ClickSignService
         LogHelper::logClickSign("Início do job de adiamento de prazos.", 'service');
         $summary = ['clientes_processados' => 0, 'documentos_verificados' => 0, 'documentos_adiados' => 0, 'erros' => 0, 'documentos_encontrados_api' => []];
         $amanha = date('Y-m-d', strtotime('+1 day'));
+        $clientesJaProcessados = []; // Array para evitar contagem duplicada
 
         $configuracoes = AplicacaoAcessoDAO::obterConfiguracoesClickSignAtivas();
         if (empty($configuracoes)) {
@@ -832,7 +833,6 @@ class ClickSignService
         }
 
         foreach ($configuracoes as $config) {
-            $summary['clientes_processados']++;
             $configJson = json_decode($config['config_extra'], true);
             if (empty($configJson)) {
                 continue;
@@ -863,6 +863,12 @@ class ClickSignService
                     }
                     $pagina++;
                 } while (!empty($documentosPagina));
+
+                // Apenas se encontrarmos documentos, contamos o cliente (se ainda não foi contado)
+                if (!empty($todosDocumentos) && !in_array($config['id'], $clientesJaProcessados)) {
+                    $summary['clientes_processados']++;
+                    $clientesJaProcessados[] = $config['id'];
+                }
 
                 foreach ($todosDocumentos as $documento) {
                     $summary['documentos_verificados']++;
