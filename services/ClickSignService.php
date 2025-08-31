@@ -385,11 +385,27 @@ class ClickSignService
         $maxTentativas = 3;
         while ($tentativas < $maxTentativas) {
             try {
-                // Garante que as novas chaves existam para evitar erros no execute()
-                $dados['dados_conexao'] = $dados['dados_conexao'] ?? null;
-                $dados['ids_signatarios'] = $dados['ids_signatarios'] ?? null;
+                // Filtra e passa apenas os parâmetros esperados pelo DAO
+                $dadosParaSalvar = [
+                    'document_key'               => $dados['document_key'],
+                    'cliente_id'                 => $dados['cliente_id'],
+                    'deal_id'                    => $dados['deal_id'],
+                    'spa'                        => $dados['spa'],
+                    'Signatarios'                => $dados['Signatarios'],
+                    'campo_contratante'          => $dados['contratante'] ?? null,
+                    'campo_contratada'           => $dados['contratada'] ?? null,
+                    'campo_testemunhas'          => $dados['testemunhas'] ?? null,
+                    'campo_data'                 => $dados['data'] ?? null,
+                    'campo_arquivoaserassinado'  => $dados['arquivoaserassinado'] ?? null,
+                    'campo_arquivoassinado'      => $dados['arquivoassinado'] ?? null,
+                    'campo_idclicksign'          => $dados['idclicksign'] ?? null,
+                    'campo_retorno'              => $dados['retorno'] ?? null,
+                    'etapa_concluida'            => $dados['etapa_concluida'] ?? null,
+                    'dados_conexao'              => $dados['dados_conexao'] ?? null,
+                    'ids_signatarios'            => $dados['ids_signatarios'] ?? null
+                ];
 
-                AplicacaoAcessoDAO::registrarAssinaturaClicksign($dados);
+                AplicacaoAcessoDAO::registrarAssinaturaClicksign($dadosParaSalvar);
                 return true;
             } catch (PDOException $e) {
                 $tentativas++;
