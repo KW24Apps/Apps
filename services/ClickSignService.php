@@ -822,7 +822,7 @@ class ClickSignService
     public static function processarAdiamentoDePrazos(): array
     {
         LogHelper::logClickSign("Início do job de adiamento de prazos.", 'service');
-        $summary = ['clientes_processados' => 0, 'documentos_verificados' => 0, 'documentos_adiados' => 0, 'erros' => 0];
+        $summary = ['clientes_processados' => 0, 'documentos_verificados' => 0, 'documentos_adiados' => 0, 'erros' => 0, 'documentos_encontrados_api' => []];
         $amanha = date('Y-m-d', strtotime('+1 day'));
 
         $configuracoes = AplicacaoAcessoDAO::obterConfiguracoesClickSignAtivas();
@@ -867,6 +867,11 @@ class ClickSignService
                 foreach ($todosDocumentos as $documento) {
                     $summary['documentos_verificados']++;
                     $deadline = substr($documento['deadline_at'], 0, 10);
+                    $summary['documentos_encontrados_api'][] = [
+                        'key' => $documento['key'],
+                        'status' => $documento['status'],
+                        'deadline_at' => $deadline
+                    ];
 
                     // Verifica se o documento vence amanhã
                     if ($documento['status'] === 'running' && $deadline === $amanha) {
