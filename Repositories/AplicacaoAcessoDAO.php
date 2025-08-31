@@ -192,8 +192,6 @@ class AplicacaoAcessoDAO
                 WHERE a.slug = 'clicksign'
                 AND ca.ativo = 1
                 AND ca.config_extra IS NOT NULL
-                AND JSON_UNQUOTE(JSON_EXTRACT(ca.config_extra, '$.\"SPA_1\".clicksign_token')) IS NOT NULL
-                AND JSON_UNQUOTE(JSON_EXTRACT(ca.config_extra, '$.\"SPA_1\".clicksign_token')) <> ''
             ";
 
             $stmt = $pdo->prepare($sql);
