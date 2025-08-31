@@ -869,6 +869,7 @@ class ClickSignService
                     continue; // Pula para a próxima configuração de SPA
                 }
 
+                LogHelper::logClickSign("Consultando API com token: " . substr($token, 0, 4) . "..." . substr($token, -4) . " para cliente " . $config['cliente_nome'], 'service');
                 $todosDocumentos = [];
                 $pagina = 1;
                 do {
