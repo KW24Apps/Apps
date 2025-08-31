@@ -171,8 +171,8 @@ class AplicacaoAcessoDAO
         }
     }
 
-    // Método para obter todas as configurações de clientes com integração ClickSign ativa
-    public static function obterConfiguracoesClickSignAtivas(): ?array
+    // Método para obter todas as assinaturas ativas que precisam de verificação de prazo
+    public static function obterAssinaturasAtivasParaVerificacao(): ?array
     {
         $config = require __DIR__ . '/../config/config.php';
 
@@ -185,13 +185,11 @@ class AplicacaoAcessoDAO
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             $sql = "
-                SELECT ca.*, c.nome as cliente_nome
-                FROM clientes c
-                JOIN cliente_aplicacoes ca ON ca.cliente_id = c.id
-                JOIN aplicacoes a ON ca.aplicacao_id = a.id
-                WHERE a.slug = 'clicksign'
-                AND ca.ativo = 1
-                AND ca.config_extra IS NOT NULL
+                SELECT document_key, dados_conexao, cliente_id, spa, deal_id, campo_data, campo_retorno
+                FROM assinaturas_clicksign
+                WHERE (documento_disponivel_processado = 0 OR documento_disponivel_processado IS NULL)
+                AND (status_closed IS NULL OR status_closed NOT IN ('cancel', 'deadline'))
+                AND dados_conexao IS NOT NULL
             ";
 
             $stmt = $pdo->prepare($sql);
@@ -199,7 +197,7 @@ class AplicacaoAcessoDAO
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         } catch (PDOException $e) {
-            LogHelper::logClickSign("ERRO PDO ao obter configurações ativas: " . $e->getMessage(), 'dao');
+            LogHelper::logClickSign("ERRO PDO ao obter assinaturas ativas para verificação: " . $e->getMessage(), 'dao');
             return null;
         }
     }

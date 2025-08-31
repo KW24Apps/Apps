@@ -838,133 +838,94 @@ class ClickSignService
     public static function processarAdiamentoDePrazos(): array
     {
         LogHelper::logClickSign("Início do job de adiamento de prazos.", 'service');
-        $summary = ['clientes_processados' => 0, 'documentos_verificados' => 0, 'documentos_adiados' => 0, 'erros' => 0, 'documentos_encontrados_api' => []];
+        $summary = ['clientes_processados' => 0, 'documentos_verificados' => 0, 'documentos_adiados' => 0, 'erros' => 0, 'documentos_encontrados_api' => [], 'respostas_api_brutas' => []];
         $amanha = date('Y-m-d', strtotime('+1 day'));
         $clientesJaProcessados = []; // Array para evitar contagem duplicada
 
-        $configuracoes = AplicacaoAcessoDAO::obterConfiguracoesClickSignAtivas();
-        if (empty($configuracoes)) {
-            LogHelper::logClickSign("Nenhuma configuração de cliente ClickSign ativa encontrada.", 'service');
-            return ['success' => true, 'mensagem' => 'Nenhum cliente para processar.', 'summary' => $summary];
+        $assinaturasAtivas = AplicacaoAcessoDAO::obterAssinaturasAtivasParaVerificacao();
+        if (empty($assinaturasAtivas)) {
+            LogHelper::logClickSign("Nenhuma assinatura ativa encontrada para verificação.", 'service');
+            return ['success' => true, 'mensagem' => 'Nenhuma assinatura ativa para processar.', 'summary' => $summary];
         }
 
-        foreach ($configuracoes as $config) {
-            $configJson = json_decode($config['config_extra'], true);
-            if (empty($configJson)) {
+        foreach ($assinaturasAtivas as $assinatura) {
+            $dadosConexao = isset($assinatura['dados_conexao']) ? json_decode($assinatura['dados_conexao'], true) : [];
+            $token = $dadosConexao['clicksign_token'] ?? null;
+            $documentKey = $assinatura['document_key'];
+
+            if (empty($token)) {
+                LogHelper::logClickSign("Token não encontrado nos dados de conexão para o document_key: " . $documentKey, 'service');
+                $summary['erros']++;
                 continue;
             }
 
-            // Itera sobre todas as configurações de SPA (SPA_1, SPA_2, etc.)
-            foreach ($configJson as $spaKey => $spaConfig) {
-                if (strpos($spaKey, 'SPA_') !== 0) {
-                    continue;
-                }
+            // Carrega a configuração do cliente para o BitrixHelper funcionar
+            $configCliente = AplicacaoAcessoDAO::obterConfiguracaoPorClienteId((int)$assinatura['cliente_id'], 'clicksign');
+            if ($configCliente) {
+                $GLOBALS['ACESSO_AUTENTICADO'] = $configCliente;
+            }
 
-                $token = $spaConfig['clicksign_token'] ?? null;
-                if (empty($token)) {
-                    // Loga apenas se for um SPA com outras configurações, mas sem token.
-                    if (!empty($spaConfig)) {
-                        LogHelper::logClickSign("Token não encontrado para o cliente: " . $config['cliente_nome'] . " na configuração " . $spaKey, 'service');
-                    }
-                    continue; // Pula para a próxima configuração de SPA
-                }
+            $documento = ClickSignHelper::buscarDocumento($documentKey, $token);
+            $summary['documentos_verificados']++;
+            $summary['respostas_api_brutas'][] = $documento; // Adiciona a resposta bruta para debug
 
-                LogHelper::logClickSign("Consultando API com token: " . substr($token, 0, 4) . "..." . substr($token, -4) . " para cliente " . $config['cliente_nome'], 'service');
-                $todosDocumentos = [];
-                $pagina = 1;
-                do {
-                    $resposta = ClickSignHelper::listarDocumentos($pagina, $token);
-                    $documentosPagina = $resposta['documents'] ?? [];
-                    if (!empty($documentosPagina)) {
-                        $todosDocumentos = array_merge($todosDocumentos, $documentosPagina);
-                    }
-                    $pagina++;
-                } while (!empty($documentosPagina));
+            if (isset($documento['document'])) {
+                $doc = $documento['document'];
+                $deadline = substr($doc['deadline_at'], 0, 10);
+                $summary['documentos_encontrados_api'][] = ['key' => $doc['key'], 'status' => $doc['status'], 'deadline_at' => $deadline];
 
-                // Apenas se encontrarmos documentos, contamos o cliente (se ainda não foi contado)
-                if (!empty($todosDocumentos) && !in_array($config['id'], $clientesJaProcessados)) {
-                    $summary['clientes_processados']++;
-                    $clientesJaProcessados[] = $config['id'];
-                }
-
-                foreach ($todosDocumentos as $documento) {
-                    $summary['documentos_verificados']++;
-                    $deadline = substr($documento['deadline_at'], 0, 10);
-                    $summary['documentos_encontrados_api'][] = [
-                        'key' => $documento['key'],
-                        'status' => $documento['status'],
-                        'deadline_at' => $deadline
-                    ];
-
-                    // Verifica se o documento vence amanhã
-                    if ($documento['status'] === 'running' && $deadline === $amanha) {
-                        try {
-                            // Adia o prazo em 2 dias úteis a partir da data de amanhã
-                            $novaData = date_create($amanha);
-                            $diasAdicionados = 0;
-                            while ($diasAdicionados < 2) {
-                                $novaData->modify('+1 day');
-                                if ($novaData->format('N') < 6) { // Conta apenas dias de semana (1=Seg, 5=Sex)
-                                    $diasAdicionados++;
-                                }
+                if ($doc['status'] === 'running' && $deadline === $amanha) {
+                    try {
+                        $novaData = date_create($amanha);
+                        $diasAdicionados = 0;
+                        while ($diasAdicionados < 2) {
+                            $novaData->modify('+1 day');
+                            if ($novaData->format('N') < 6) {
+                                $diasAdicionados++;
                             }
-                            $novaDataFormatada = $novaData->format('Y-m-d');
-                            $documentKey = $documento['key'];
+                        }
+                        $novaDataFormatada = $novaData->format('Y-m-d');
 
-                            $payload = ['document' => ['deadline_at' => $novaDataFormatada]];
-                            $resultadoUpdate = ClickSignHelper::atualizarDocumento($documentKey, $payload, $token);
+                        $payload = ['document' => ['deadline_at' => $novaDataFormatada]];
+                        $resultadoUpdate = ClickSignHelper::atualizarDocumento($documentKey, $payload, $token);
 
-                            if (isset($resultadoUpdate['document'])) {
-                                $dadosAssinatura = AplicacaoAcessoDAO::obterAssinaturaClickSign($documentKey);
-                                if ($dadosAssinatura && isset($dadosAssinatura['cliente_id'])) {
-                                    // Carrega a configuração específica do cliente na variável global
-                                    // para que os helpers do Bitrix funcionem corretamente.
-                                    $configCliente = AplicacaoAcessoDAO::obterConfiguracaoPorClienteId((int)$dadosAssinatura['cliente_id'], 'clicksign');
-                                    if ($configCliente) {
-                                        $GLOBALS['ACESSO_AUTENTICADO'] = $configCliente;
-
-                                        $spa = $dadosAssinatura['spa'];
-                                        $dealId = $dadosAssinatura['deal_id'];
-                                        $campoData = $dadosAssinatura['campo_data'] ?? null;
-                                        $campoRetorno = $dadosAssinatura['campo_retorno'] ?? null;
-
-                                        $fieldsUpdate = [];
-                                        if ($campoData) {
-                                        $fieldsUpdate[$campoData] = $novaDataFormatada;
-                                    }
-                                    if ($campoRetorno) {
-                                        $fieldsUpdate[$campoRetorno] = ClickSignCodes::PRAZO_ESTENDIDO_AUTO;
-                                    }
-
-                                    if (!empty($fieldsUpdate)) {
-                                        BitrixDealHelper::editarDeal($spa, $dealId, $fieldsUpdate);
-                                    }
-                                    
-                                    $dataParaComentario = $novaData->format('d/m/Y');
-                                    $mensagem = "CLICK SIGN: O prazo de assinatura do documento foi estendido automaticamente para $dataParaComentario.\nDocumento ID: $documentKey";
-                                    BitrixDealHelper::adicionarComentarioDeal($spa, $dealId, $mensagem);
-                                    
-                                    LogHelper::logClickSign("Documento $documentKey adiado para $novaDataFormatada e retorno " . ClickSignCodes::PRAZO_ESTENDIDO_AUTO . " enviado.", 'service');
-                                        $summary['documentos_adiados']++;
-                                    } else {
-                                        LogHelper::logClickSign("Configuração não encontrada para o cliente ID: " . $dadosAssinatura['cliente_id'], 'service');
-                                        $summary['erros']++;
-                                    }
-                                } else {
-                                    LogHelper::logClickSign("Documento $documentKey adiado na ClickSign, mas dados de assinatura não encontrados no BD local.", 'service');
-                                    $summary['erros']++;
-                                }
-                            } else {
-                                LogHelper::logClickSign("Falha ao adiar documento $documentKey na ClickSign. Resposta: " . json_encode($resultadoUpdate), 'service');
-                                $summary['erros']++;
+                        if (isset($resultadoUpdate['document'])) {
+                            if (!in_array($assinatura['cliente_id'], $clientesJaProcessados)) {
+                                $summary['clientes_processados']++;
+                                $clientesJaProcessados[] = $assinatura['cliente_id'];
                             }
-                        } catch (\Exception $e) {
-                            LogHelper::logClickSign("Exceção ao processar documento: " . $e->getMessage(), 'service');
+                            $summary['documentos_adiados']++;
+
+                            $fieldsUpdate = [];
+                            if (!empty($assinatura['campo_data'])) {
+                                $fieldsUpdate[$assinatura['campo_data']] = $novaDataFormatada;
+                            }
+                            if (!empty($assinatura['campo_retorno'])) {
+                                $fieldsUpdate[$assinatura['campo_retorno']] = ClickSignCodes::PRAZO_ESTENDIDO_AUTO;
+                            }
+
+                            if (!empty($fieldsUpdate)) {
+                                BitrixDealHelper::editarDeal($assinatura['spa'], $assinatura['deal_id'], $fieldsUpdate);
+                            }
+                            
+                            $dataParaComentario = $novaData->format('d/m/Y');
+                            $mensagem = "CLICK SIGN: O prazo de assinatura do documento foi estendido automaticamente para $dataParaComentario.\nDocumento ID: $documentKey";
+                            BitrixDealHelper::adicionarComentarioDeal($assinatura['spa'], $assinatura['deal_id'], $mensagem);
+                            
+                            LogHelper::logClickSign("Documento $documentKey adiado para $novaDataFormatada e retorno " . ClickSignCodes::PRAZO_ESTENDIDO_AUTO . " enviado.", 'service');
+                        } else {
+                            LogHelper::logClickSign("Falha ao adiar documento $documentKey na ClickSign. Resposta: " . json_encode($resultadoUpdate), 'service');
                             $summary['erros']++;
                         }
+                    } catch (\Exception $e) {
+                        LogHelper::logClickSign("Exceção ao processar documento $documentKey: " . $e->getMessage(), 'service');
+                        $summary['erros']++;
                     }
                 }
-            } // Fecha o loop de SPAs
+            } else {
+                LogHelper::logClickSign("Documento $documentKey não encontrado na ClickSign ou erro na API.", 'service');
+                $summary['erros']++;
+            }
         }
 
         LogHelper::logClickSign("Job de adiamento de prazos finalizado. Sumário: " . json_encode($summary), 'service');
