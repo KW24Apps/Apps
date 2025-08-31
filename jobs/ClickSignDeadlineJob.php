@@ -28,7 +28,7 @@ try {
 
 } catch (Exception $e) {
     LogHelper::logCronMonitor('ERRO_FATAL');
-    LogHelper::logClickSignController('EXCECAO_GERAL_JOB: ' . $e->getMessage());
+    LogHelper::logClickSign('EXCECAO_GERAL_JOB: ' . $e->getMessage(), 'ClickSignDeadlineJob');
     if (php_sapi_name() === 'cli') {
         echo "ERRO: " . $e->getMessage() . "\n";
     }

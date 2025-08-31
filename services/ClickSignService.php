@@ -907,7 +907,7 @@ class ClickSignService
                                 $summary['erros']++;
                             }
                         } else {
-                            LogHelper::logClickSign("Falha ao adiar documento $documentKey na ClickSign.", 'service', $resultadoUpdate);
+                            LogHelper::logClickSign("Falha ao adiar documento $documentKey na ClickSign. Resposta: " . json_encode($resultadoUpdate), 'service');
                             $summary['erros']++;
                         }
                     } catch (\Exception $e) {
@@ -918,7 +918,7 @@ class ClickSignService
             }
         }
 
-        LogHelper::logClickSign("Job de adiamento de prazos finalizado.", 'service', $summary);
+        LogHelper::logClickSign("Job de adiamento de prazos finalizado. Sumário: " . json_encode($summary), 'service');
         return ['success' => true, 'mensagem' => 'Rotina de adiamento de prazos executada.', 'summary' => $summary];
     }
 }
