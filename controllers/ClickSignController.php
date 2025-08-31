@@ -63,4 +63,24 @@ class ClickSignController
         echo json_encode($response, JSON_UNESCAPED_UNICODE);
         return $response;
     }
+
+    /**
+     * Job para verificar documentos prestes a vencer e estender o prazo.
+     * 
+     * Este método é projetado para ser chamado por um cron job. Ele irá:
+     * 1. Buscar documentos na ClickSign com status 'running'.
+     * 2. Identificar aqueles que vencem no dia da execução.
+     * 3. Estender o prazo desses documentos em 2 dias úteis.
+     * 4. Atualizar o Bitrix24 com a nova data e um comentário.
+     *
+     * @return array Resultado da operação.
+     */
+    public static function extendDeadlineForDueDocuments()
+    {
+        // A lógica principal será delegada para o ClickSignService
+        // para manter o padrão do controller.
+        $response = ClickSignService::processarAdiamentoDePrazos();
+
+        return $response;
+    }
 }

@@ -86,6 +86,12 @@ class ClickSignHelper
         return self::enviarRequisicao('PATCH', "/documents/$documentKey", $payload, 'v1', $token);
     }
 
+    // DOCUMENTO — Listagem com paginação
+    public static function listarDocumentos($page = 1, $token = null)
+    {
+        return self::enviarRequisicao('GET', "/documents?page=$page", [], 'v1', $token);
+    }
+
     // SIGNATÁRIO — Criação (agora usando método unificado)
     public static function criarSignatario($dados)
     {

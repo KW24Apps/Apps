@@ -8,6 +8,7 @@ require_once __DIR__ . '/../helpers/LogHelper.php';
 require_once __DIR__ . '/../Repositories/AplicacaoAcessoDAO.php';
 require_once __DIR__ . '/../helpers/UtilHelpers.php';
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
+require_once __DIR__ . '/../enums/ClickSignCodes.php';
 
 use Helpers\BitrixDealHelper;
 use Helpers\BitrixContactHelper;
@@ -16,6 +17,7 @@ use Helpers\LogHelper;
 use Repositories\AplicacaoAcessoDAO;
 use Helpers\BitrixHelper;
 use Helpers\UtilHelpers;
+use Enums\ClickSignCodes;
 use PDOException;
 
 class ClickSignService
@@ -29,8 +31,9 @@ class ClickSignService
         $id = $params['deal'] ?? $params['id'] ?? null;
 
         if (empty($id) || empty($entityId)) {
-            LogHelper::logClickSign("Parâmetros obrigatórios ausentes", 'service');
-            return ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes.'];
+            $mensagem = ClickSignCodes::PARAMS_AUSENTES . " - Parâmetros obrigatórios ausentes.";
+            LogHelper::logClickSign($mensagem, 'service');
+            return ['success' => false, 'mensagem' => $mensagem];
         }
 
         $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
@@ -42,17 +45,19 @@ class ClickSignService
         $params = array_merge($params, $fields);
 
         if (!$tokenClicksign) {
-            LogHelper::logClickSign("Token ClickSign ausente", 'service');
-            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, 'Acesso não autorizado ou incompleto');
-            return ['success' => false, 'mensagem' => 'Acesso não autorizado ou incompleto.'];
+            $mensagem = ClickSignCodes::ACESSO_NAO_AUTORIZADO . " - Acesso não autorizado ou incompleto.";
+            LogHelper::logClickSign($mensagem, 'service');
+            self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagem);
+            return ['success' => false, 'mensagem' => $mensagem];
         }
 
         $registro = BitrixDealHelper::consultarDeal($entityId, $id, $fields);
         $dados = $registro['result'] ?? [];
 
         if (!isset($dados['id']) || (is_array($dados['id']) && (!isset($dados['id']['valor']) || $dados['id']['valor'] === null))) {
-            LogHelper::logClickSign("ERRO - Deal não encontrado | ID: $entityId", 'service');
-            return ['success' => false, 'error' => 'Deal não encontrado'];
+            $mensagem = ClickSignCodes::DEAL_NAO_ENCONTRADO . " - Deal não encontrado | ID: $entityId";
+            LogHelper::logClickSign("ERRO - $mensagem", 'service');
+            return ['success' => false, 'error' => $mensagem];
         }
 
         $camposNecessarios = ['contratante', 'contratada', 'testemunhas', 'data', 'arquivoaserassinado', 'arquivoassinado', 'idclicksign', 'retorno'];
@@ -66,7 +71,8 @@ class ClickSignService
 
         $errosValidacao = self::validarCamposEssenciais($dados, $mapCampos);
         if (!empty($errosValidacao)) {
-            $mensagemErro = 'Campos obrigatórios ausentes ou inválidos: ' . implode(', ', $errosValidacao);
+            $detalhesErro = implode(', ', $errosValidacao);
+            $mensagemErro = ClickSignCodes::CAMPOS_INVALIDOS . " - Campos obrigatórios ausentes ou inválidos: $detalhesErro";
             LogHelper::logClickSign("ERRO - $mensagemErro", 'service');
             self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagemErro);
             return ['success' => false, 'error' => $mensagemErro];
@@ -87,6 +93,7 @@ class ClickSignService
 
         $resultadoSignatarios = self::processarSignatarios($idsContratante, $idsContratada, $idsTestemunhas);
         if (!$resultadoSignatarios['success']) {
+            // O código de erro já vem formatado de processarSignatarios
             LogHelper::logClickSign("Erro: " . $resultadoSignatarios['mensagem'], 'service');
             self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $resultadoSignatarios['mensagem']);
             return $resultadoSignatarios;
@@ -100,6 +107,7 @@ class ClickSignService
         $campoArquivo = isset($mapCampos['arquivoaserassinado']) && isset($dados[$mapCampos['arquivoaserassinado']]) ? $dados[$mapCampos['arquivoaserassinado']] : null;
         $arquivoConvertido = self::processarArquivo($campoArquivo);
         if (!$arquivoConvertido['success']) {
+            // O código de erro já vem formatado de processarArquivo
             LogHelper::logClickSign($arquivoConvertido['mensagem'], 'service');
             self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $arquivoConvertido['mensagem']);
             return $arquivoConvertido;
@@ -119,8 +127,9 @@ class ClickSignService
         $retornoClickSign = ClickSignHelper::criarDocumento($payloadClickSign);
 
         if (!isset($retornoClickSign['document']['key'])) {
-            LogHelper::logClickSign("Erro ao criar documento na ClickSign", 'service');
-            return ['success' => false, 'mensagem' => 'Erro ao criar documento na ClickSign.'];
+            $mensagem = ClickSignCodes::FALHA_VINCULO_SIGNATARIOS . " - Erro ao criar documento na ClickSign."; // Usando um código genérico de falha
+            LogHelper::logClickSign($mensagem, 'service');
+            return ['success' => false, 'mensagem' => $mensagem];
         }
         
         $documentKey = $retornoClickSign['document']['key'];
@@ -128,9 +137,10 @@ class ClickSignService
 
         $resultadoVinculo = self::vincularSignatarios($documentKey, $signatarios);
         if (!$resultadoVinculo['success']) {
+            $mensagem = ClickSignCodes::FALHA_VINCULO_SIGNATARIOS . " - Documento criado, mas houve falha em um ou mais vínculos de signatários.";
             return [
                 'success' => false,
-                'mensagem' => 'Documento criado, mas houve falha em um ou mais vínculos de signatários.',
+                'mensagem' => $mensagem,
                 'document_key' => $documentKey,
                 'qtd_signatarios' => $qtdSignatarios,
                 'qtd_vinculos' => $resultadoVinculo['qtdVinculos']
@@ -151,22 +161,23 @@ class ClickSignService
 
         if ($gravado) {
             self::atualizarCamposSignatariosBitrix($params, $entityId, $id, $todosSignatariosParaJson);
-            self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, 'Documento enviado para assinatura');
-            LogHelper::logClickSign("Documento enviado para assinatura e dados atualizados no Bitrix com sucesso", 'service');
+            $mensagem = ClickSignCodes::DOCUMENTO_ENVIADO . " - Documento enviado para assinatura";
+            self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, $mensagem);
+            LogHelper::logClickSign($mensagem . " e dados atualizados no Bitrix com sucesso", 'service');
             return [
                 'success' => true,
-                'mensagem' => 'Documento enviado para assinatura',
+                'mensagem' => $mensagem,
                 'document_key' => $documentKey,
                 'qtd_signatarios' => $qtdSignatarios,
                 'qtd_vinculos' => $resultadoVinculo['qtdVinculos']
             ];
         } else {
-            $mensagemErro = "Erro ao registrar assinatura no banco de dados. AVISO: Os retornos automáticos (quem assinou, documento finalizado) não funcionarão. O acompanhamento deverá ser manual. Entre em contato com o suporte de TI.";
+            $mensagemErro = ClickSignCodes::FALHA_GRAVAR_ASSINATURA_BD . " - Erro ao registrar assinatura no banco de dados. AVISO: Os retornos automáticos (quem assinou, documento finalizado) não funcionarão. O acompanhamento deverá ser manual. Entre em contato com o suporte de TI.";
             self::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagemErro);
             LogHelper::logClickSign("Documento finalizado, mas erro ao gravar controle de assinatura", 'service');
             return [
                 'success' => false,
-                'mensagem' => 'Assinatura criada, mas falha ao gravar controle de assinatura.',
+                'mensagem' => ClickSignCodes::FALHA_GRAVAR_ASSINATURA_BD . ' - Assinatura criada, mas falha ao gravar controle de assinatura.',
                 'document_key' => $documentKey
             ];
         }
@@ -256,7 +267,8 @@ class ClickSignService
                 }
 
                 if (!$idContato || !$nome || !$sobrenome || !$email) {
-                    return ['success' => false, 'mensagem' => "Dados faltantes nos signatários ($papel)"];
+                    $mensagem = ClickSignCodes::DADOS_SIGNATARIO_FALTANTES . " - Dados faltantes nos signatários ($papel)";
+                    return ['success' => false, 'mensagem' => $mensagem];
                 }
 
                 $signatarioInfo = ['nome' => $nome, 'sobrenome' => $sobrenome, 'email' => $email];
@@ -289,19 +301,19 @@ class ClickSignService
         }
 
         if (!$urlMachine) {
-            return ['success' => false, 'mensagem' => 'URL do arquivo não encontrada.'];
+            return ['success' => false, 'mensagem' => ClickSignCodes::ERRO_CONVERTER_ARQUIVO . ' - URL do arquivo não encontrada.'];
         }
 
         $arquivoConvertido = UtilHelpers::baixarArquivoBase64(['urlMachine' => $urlMachine]);
 
         if (!$arquivoConvertido) {
-            return ['success' => false, 'mensagem' => 'Erro ao converter o arquivo.'];
+            return ['success' => false, 'mensagem' => ClickSignCodes::ERRO_CONVERTER_ARQUIVO . ' - Erro ao converter o arquivo.'];
         }
 
         $extensoesPermitidas = ['pdf', 'docx', 'doc', 'png', 'jpg', 'jpeg'];
         $extensaoArquivo = strtolower($arquivoConvertido['extensao']);
         if (!in_array($extensaoArquivo, $extensoesPermitidas)) {
-            $mensagemErro = 'Tipo de arquivo inválido. Apenas (' . implode(', ', $extensoesPermitidas) . ') são permitidos.';
+            $mensagemErro = ClickSignCodes::ERRO_CONVERTER_ARQUIVO . ' - Tipo de arquivo inválido. Apenas (' . implode(', ', $extensoesPermitidas) . ') são permitidos.';
             return ['success' => false, 'mensagem' => $mensagemErro];
         }
 
@@ -439,14 +451,16 @@ class ClickSignService
     {
         $documentKey = $requestData['document']['key'] ?? null;
         if (empty($documentKey)) {
-            LogHelper::logClickSign("Parâmetros obrigatórios ausentes | DocumentKey: $documentKey", 'service');
-            return ['success' => false, 'mensagem' => 'Parâmetros obrigatórios ausentes.'];
+            $mensagem = ClickSignCodes::WEBHOOK_PARAMS_AUSENTES . " - Parâmetros obrigatórios ausentes | DocumentKey: $documentKey";
+            LogHelper::logClickSign($mensagem, 'service');
+            return ['success' => false, 'mensagem' => $mensagem];
         }
 
         $dadosAssinatura = AplicacaoAcessoDAO::obterAssinaturaClickSign($documentKey);
         if (!$dadosAssinatura) {
-            LogHelper::logClickSign("Documento não encontrado | DocumentKey: $documentKey", 'service');
-            return ['success' => false, 'mensagem' => 'Documento não encontrado.'];
+            $mensagem = ClickSignCodes::DOCUMENTO_NAO_ENCONTRADO_BD . " - Documento não encontrado | DocumentKey: $documentKey";
+            LogHelper::logClickSign($mensagem, 'service');
+            return ['success' => false, 'mensagem' => $mensagem];
         }
 
         $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
@@ -457,13 +471,15 @@ class ClickSignService
         $token = $configJson[$spaKey]['clicksign_token'] ?? null;
 
         if (empty($secret) || empty($token)) {
-            LogHelper::logClickSign("ERRO: Token ou Secret não configurados para a SPA: $spaKey", 'service');
-            return ['success' => false, 'mensagem' => 'Credenciais de API não configuradas.'];
+            $mensagem = ClickSignCodes::CREDENCIAIS_API_NAO_CONFIGURADAS . " - ERRO: Token ou Secret não configurados para a SPA: $spaKey";
+            LogHelper::logClickSign($mensagem, 'service');
+            return ['success' => false, 'mensagem' => $mensagem];
         }
 
         if (!ClickSignHelper::validarHmac($rawBody, $secret, $headerSignature)) {
-            LogHelper::logClickSign("Assinatura HMAC inválida", 'service');
-            return ['success' => false, 'mensagem' => 'Assinatura HMAC inválida.'];
+            $mensagem = ClickSignCodes::HMAC_INVALIDO . " - Assinatura HMAC inválida";
+            LogHelper::logClickSign($mensagem, 'service');
+            return ['success' => false, 'mensagem' => $mensagem];
         }
 
         $evento = $requestData['event']['name'] ?? null;
@@ -473,7 +489,7 @@ class ClickSignService
             case 'sign':
                 $assinante = $requestData['event']['data']['signer']['email'] ?? null;
                 if (!empty($dadosAssinatura['assinatura_processada']) && strpos($dadosAssinatura['assinatura_processada'], $assinante) !== false) {
-                    return ['success' => true, 'mensagem' => 'Assinatura já processada.'];
+                    return ['success' => true, 'mensagem' => ClickSignCodes::ASSINATURA_JA_PROCESSADA . ' - Assinatura já processada.'];
                 }
                 AplicacaoAcessoDAO::salvarStatus($documentKey, null, ($dadosAssinatura['assinatura_processada'] ?? '') . ";" . $assinante);
                 return self::assinaturaRealizada($requestData, $dadosAssinatura);
@@ -482,20 +498,20 @@ class ClickSignService
             case 'cancel':
             case 'auto_close':
                 if (!empty($dadosAssinatura['documento_fechado_processado'])) {
-                    return ['success' => true, 'mensagem' => 'Evento de documento fechado já processado.'];
+                    return ['success' => true, 'mensagem' => ClickSignCodes::EVENTO_FECHADO_JA_PROCESSADO . ' - Evento de documento fechado já processado.'];
                 }
                 AplicacaoAcessoDAO::salvarStatus($documentKey, $evento, null, true);
                 return self::documentoFechado($requestData, $dadosAssinatura);
 
             case 'document_closed':
                 if (!empty($dadosAssinatura['documento_disponivel_processado'])) {
-                    return ['success' => true, 'mensagem' => 'Documento já disponível e processado anteriormente.'];
+                    return ['success' => true, 'mensagem' => ClickSignCodes::DOCUMENTO_JA_DISPONIVEL . ' - Documento já disponível e processado anteriormente.'];
                 }
                 AplicacaoAcessoDAO::salvarStatus($documentKey, null, null, null, true);
                 return self::documentoDisponivel($requestData, $dadosAssinatura, $token);
 
             default:
-                return ['success' => true, 'mensagem' => 'Evento recebido sem ação específica.'];
+                return ['success' => true, 'mensagem' => ClickSignCodes::EVENTO_SEM_ACAO . ' - Evento recebido sem ação específica.'];
         }
     }
 
@@ -508,16 +524,18 @@ class ClickSignService
         $signer = $requestData['event']['data']['signer'] ?? null;
 
         if (!$signer) {
-            LogHelper::logClickSign("ERRO: Dados do signatário não encontrados no evento", 'assinaturaRealizada');
-            return ['success' => false, 'mensagem' => 'Dados do signatário não encontrados.'];
+            $mensagem = ClickSignCodes::DADOS_SIGNATARIO_NAO_ENCONTRADOS_EVENTO . " - ERRO: Dados do signatário não encontrados no evento";
+            LogHelper::logClickSign($mensagem, 'assinaturaRealizada');
+            return ['success' => false, 'mensagem' => $mensagem];
         }
 
         $nome  = $signer['name']  ?? '';
         $email = $signer['email'] ?? '';
 
         if (empty($nome) || empty($email)) {
-            LogHelper::logClickSign("ERRO: Dados do signatário incompletos | nome: $nome | email: $email", 'assinaturaRealizada');
-            return ['success' => false, 'mensagem' => 'Dados do signatário incompletos.'];
+            $mensagem = ClickSignCodes::DADOS_SIGNATARIO_INCOMPLETOS . " - ERRO: Dados do signatário incompletos | nome: $nome | email: $email";
+            LogHelper::logClickSign($mensagem, 'assinaturaRealizada');
+            return ['success' => false, 'mensagem' => $mensagem];
         }
 
         $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
@@ -548,9 +566,9 @@ class ClickSignService
             BitrixDealHelper::editarDeal($spa, $dealId, $fieldsUpdate);
         }
 
-        $mensagem = "Assinatura feita por $nome - $email";
+        $mensagem = ClickSignCodes::ASSINATURA_REALIZADA . " - Assinatura feita por $nome - $email";
         self::atualizarRetornoBitrix($dadosAssinatura, $spa, $dealId, true, $documentKey, $mensagem);
-        return ['success' => true, 'mensagem' => 'Assinatura processada e campos atualizados.'];
+        return ['success' => true, 'mensagem' => $mensagem];
     }
 
     // Trata eventos de fechamento de documento (deadline, cancel, auto_close).
@@ -558,13 +576,15 @@ class ClickSignService
     {
         $evento = $requestData['event']['name'];
         if (in_array($evento, ['deadline', 'cancel'])) {
-            $mensagem = $evento === 'deadline' ? 'Assinatura cancelada por prazo finalizado.' : 'Assinatura cancelada manualmente.';
+            $codigo = $evento === 'deadline' ? ClickSignCodes::ASSINATURA_CANCELADA_PRAZO : ClickSignCodes::ASSINATURA_CANCELADA_MANUAL;
+            $texto = $evento === 'deadline' ? 'Assinatura cancelada por prazo finalizado.' : 'Assinatura cancelada manualmente.';
+            $mensagem = "$codigo - $texto";
             self::atualizarRetornoBitrix($dadosAssinatura, $dadosAssinatura['spa'], $dadosAssinatura['deal_id'], true, $dadosAssinatura['document_key'], $mensagem);
-            return ['success' => true, 'mensagem' => "Evento $evento processado com atualização imediata no Bitrix."];
+            return ['success' => true, 'mensagem' => $mensagem];
         }
 
         if ($evento === 'auto_close') {
-            return ['success' => true, 'mensagem' => 'Evento auto_close salvo. Aguardando document_closed para baixar o arquivo.'];
+            return ['success' => true, 'mensagem' => ClickSignCodes::EVENTO_AUTO_CLOSE_SALVO . ' - Evento auto_close salvo. Aguardando document_closed para baixar o arquivo.'];
         }
 
         LogHelper::logClickSign("Evento de fechamento não tratado: $evento", 'service');
@@ -590,21 +610,24 @@ class ClickSignService
 
         $url = $requestData['document']['downloads']['signed_file_url'] ?? null;
         if (!$url) {
-            LogHelper::logClickSign("ERRO: URL do arquivo assinado não encontrada no webhook.", 'documentoDisponivel');
-            return ['success' => false, 'mensagem' => 'URL de download não encontrada no webhook.'];
+            $mensagem = ClickSignCodes::ERRO_BAIXAR_ARQUIVO_ANEXO . " - ERRO: URL do arquivo assinado não encontrada no webhook.";
+            LogHelper::logClickSign($mensagem, 'documentoDisponivel');
+            return ['success' => false, 'mensagem' => $mensagem];
         }
 
         if (empty($campoArquivoAssinado)) {
             LogHelper::logClickSign("AVISO: Campo arquivo assinado não configurado.", 'documentoDisponivel');
-            self::atualizarRetornoBitrix($dadosAssinatura, $spa, $dealId, true, $documentKey, 'Documento assinado com sucesso.');
-            return ['success' => true, 'mensagem' => 'Mensagem final enviada (sem anexo de arquivo).'];
+            $mensagem = ClickSignCodes::PROCESSO_FINALIZADO_SEM_ANEXO . " - Documento assinado com sucesso.";
+            self::atualizarRetornoBitrix($dadosAssinatura, $spa, $dealId, true, $documentKey, $mensagem);
+            return ['success' => true, 'mensagem' => $mensagem];
         }
 
         $nomeArquivo = $requestData['document']['filename'] ?? "documento_assinado.pdf";
         $arquivoBase64 = UtilHelpers::baixarArquivoBase64(['urlMachine' => $url, 'name' => $nomeArquivo]);
         if (!$arquivoBase64) {
-            LogHelper::logClickSign("ERRO: Erro ao baixar/converter arquivo.", 'documentoDisponivel');
-            return ['success' => false, 'mensagem' => 'Falha ao converter o arquivo.'];
+            $mensagem = ClickSignCodes::FALHA_CONVERTER_ARQUIVO . " - ERRO: Erro ao baixar/converter arquivo.";
+            LogHelper::logClickSign($mensagem, 'documentoDisponivel');
+            return ['success' => false, 'mensagem' => $mensagem];
         }
 
         $arquivoParaBitrix = [['filename' => $arquivoBase64['nome'], 'data' => str_replace('data:' . $arquivoBase64['mime'] . ';base64,', '', $arquivoBase64['base64'])]];
@@ -622,14 +645,16 @@ class ClickSignService
 
         if ($sucessoAnexo) {
             sleep(30); // Aguarda processamento do arquivo no Bitrix
-            self::atualizarRetornoBitrix($dadosAssinatura, $spa, $dealId, true, $documentKey, 'Documento assinado e arquivo anexado com sucesso.');
+            $mensagem = ClickSignCodes::PROCESSO_FINALIZADO_COM_ANEXO . " - Documento assinado e arquivo anexado com sucesso.";
+            self::atualizarRetornoBitrix($dadosAssinatura, $spa, $dealId, true, $documentKey, $mensagem);
             self::limparCamposBitrix($spa, $dealId, $dadosAssinatura);
             self::moverEtapaBitrix($spa, $dealId, $statusClosed['etapa_concluida'] ?? null);
             LogHelper::logClickSign("Processo de assinatura finalizado com sucesso | Documento: $documentKey", 'service');
-            return ['success' => true, 'mensagem' => 'Arquivo baixado, anexado e mensagem atualizada no Bitrix.'];
+            return ['success' => true, 'mensagem' => $mensagem];
         } else {
-            LogHelper::logClickSign("ERRO: Falha ao anexar arquivo após 3 tentativas.", 'documentoDisponivel');
-            return ['success' => false, 'mensagem' => "Erro ao anexar arquivo no Bitrix."];
+            $mensagem = ClickSignCodes::ERRO_BAIXAR_ARQUIVO_ANEXO . " - ERRO: Falha ao anexar arquivo após 3 tentativas.";
+            LogHelper::logClickSign($mensagem, 'documentoDisponivel');
+            return ['success' => false, 'mensagem' => $mensagem];
         }
     }
 
@@ -787,5 +812,113 @@ class ClickSignService
             'documentKey' => $documentKey,
             'fieldsConfig' => $fieldsConfig
         ];
+    }
+
+    /**
+     * Processa o adiamento de prazos para documentos ClickSign que vencem no dia.
+     * Este método é chamado pelo ClickSignDeadlineJob.
+     */
+    public static function processarAdiamentoDePrazos(): array
+    {
+        LogHelper::logClickSign("Início do job de adiamento de prazos.", 'service');
+        $summary = ['clientes_processados' => 0, 'documentos_verificados' => 0, 'documentos_adiados' => 0, 'erros' => 0];
+        $hoje = date('Y-m-d');
+
+        $configuracoes = AplicacaoAcessoDAO::obterConfiguracoesClickSignAtivas();
+        if (empty($configuracoes)) {
+            LogHelper::logClickSign("Nenhuma configuração de cliente ClickSign ativa encontrada.", 'service');
+            return ['success' => true, 'mensagem' => 'Nenhum cliente para processar.', 'summary' => $summary];
+        }
+
+        foreach ($configuracoes as $config) {
+            $summary['clientes_processados']++;
+            $configJson = json_decode($config['config_extra'], true);
+            // Assumindo que a configuração relevante está sempre em SPA_1 para o job
+            $token = $configJson['SPA_1']['clicksign_token'] ?? null;
+            $camposConfig = $configJson['SPA_1']['campos'] ?? [];
+
+            if (empty($token)) {
+                LogHelper::logClickSign("Token não encontrado para o cliente: " . $config['cliente_nome'], 'service');
+                $summary['erros']++;
+                continue;
+            }
+
+            $todosDocumentos = [];
+            $pagina = 1;
+            do {
+                $resposta = ClickSignHelper::listarDocumentos($pagina, $token);
+                $documentosPagina = $resposta['documents'] ?? [];
+                if (!empty($documentosPagina)) {
+                    $todosDocumentos = array_merge($todosDocumentos, $documentosPagina);
+                }
+                $pagina++;
+            } while (!empty($documentosPagina));
+
+            foreach ($todosDocumentos as $documento) {
+                $summary['documentos_verificados']++;
+                $deadline = substr($documento['deadline_at'], 0, 10);
+
+                if ($documento['status'] === 'running' && $deadline === $hoje) {
+                    try {
+                        $novaData = UtilHelpers::calcularDataUtil(2);
+                        $novaDataFormatada = $novaData->format('Y-m-d');
+                        $documentKey = $documento['key'];
+
+                        $payload = ['document' => ['deadline_at' => $novaDataFormatada]];
+                        $resultadoUpdate = ClickSignHelper::atualizarDocumento($documentKey, $payload, $token);
+
+                        if (isset($resultadoUpdate['document'])) {
+                            $dadosAssinatura = AplicacaoAcessoDAO::obterAssinaturaClickSign($documentKey);
+                            if ($dadosAssinatura && isset($dadosAssinatura['cliente_id'])) {
+                                // Carrega a configuração específica do cliente na variável global
+                                // para que os helpers do Bitrix funcionem corretamente.
+                                $configCliente = AplicacaoAcessoDAO::obterConfiguracaoPorClienteId((int)$dadosAssinatura['cliente_id'], 'clicksign');
+                                if ($configCliente) {
+                                    $GLOBALS['ACESSO_AUTENTICADO'] = $configCliente;
+
+                                    $spa = $dadosAssinatura['spa'];
+                                    $dealId = $dadosAssinatura['deal_id'];
+                                    $campoData = $dadosAssinatura['campo_data'] ?? null;
+                                    $campoRetorno = $dadosAssinatura['campo_retorno'] ?? null;
+
+                                    $fieldsUpdate = [];
+                                    if ($campoData) {
+                                        $fieldsUpdate[$campoData] = $novaDataFormatada;
+                                    }
+                                    if ($campoRetorno) {
+                                        $fieldsUpdate[$campoRetorno] = ClickSignCodes::PRAZO_ESTENDIDO_AUTO;
+                                    }
+
+                                    if (!empty($fieldsUpdate)) {
+                                        BitrixDealHelper::editarDeal($spa, $dealId, $fieldsUpdate);
+                                    }
+                                    
+                                    $mensagem = "CLICK SIGN: O prazo de assinatura do documento foi estendido automaticamente para $novaDataFormatada.\nDocumento ID: $documentKey";
+                                    BitrixDealHelper::adicionarComentarioDeal($spa, $dealId, $mensagem);
+                                    
+                                    LogHelper::logClickSign("Documento $documentKey adiado para $novaDataFormatada e retorno " . ClickSignCodes::PRAZO_ESTENDIDO_AUTO . " enviado.", 'service');
+                                    $summary['documentos_adiados']++;
+                                } else {
+                                    LogHelper::logClickSign("Configuração não encontrada para o cliente ID: " . $dadosAssinatura['cliente_id'], 'service');
+                                    $summary['erros']++;
+                                }
+                            } else {
+                                LogHelper::logClickSign("Documento $documentKey adiado na ClickSign, mas dados de assinatura não encontrados no BD local.", 'service');
+                                $summary['erros']++;
+                            }
+                        } else {
+                            LogHelper::logClickSign("Falha ao adiar documento $documentKey na ClickSign.", 'service', $resultadoUpdate);
+                            $summary['erros']++;
+                        }
+                    } catch (\Exception $e) {
+                        LogHelper::logClickSign("Exceção ao processar documento: " . $e->getMessage(), 'service');
+                        $summary['erros']++;
+                    }
+                }
+            }
+        }
+
+        LogHelper::logClickSign("Job de adiamento de prazos finalizado.", 'service', $summary);
+        return ['success' => true, 'mensagem' => 'Rotina de adiamento de prazos executada.', 'summary' => $summary];
     }
 }
