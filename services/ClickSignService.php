@@ -872,7 +872,14 @@ class ClickSignService
                     if ($documento['status'] === 'running' && $deadline === $amanha) {
                         try {
                             // Adia o prazo em 2 dias úteis a partir da data de amanhã
-                            $novaData = UtilHelpers::calcularDataUtil(2, date_create($amanha));
+                            $novaData = date_create($amanha);
+                            $diasAdicionados = 0;
+                            while ($diasAdicionados < 2) {
+                                $novaData->modify('+1 day');
+                                if ($novaData->format('N') < 6) { // Conta apenas dias de semana (1=Seg, 5=Sex)
+                                    $diasAdicionados++;
+                                }
+                            }
                             $novaDataFormatada = $novaData->format('Y-m-d');
                             $documentKey = $documento['key'];
 
