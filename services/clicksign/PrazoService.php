@@ -58,7 +58,7 @@ class PrazoService
                         if (!empty($assinatura['campo_retorno'])) $fieldsUpdate[$assinatura['campo_retorno']] = ClickSignCodes::PRAZO_ESTENDIDO_AUTO;
                         if (!empty($fieldsUpdate)) BitrixDealHelper::editarDeal($assinatura['spa'], $assinatura['deal_id'], $fieldsUpdate);
                         
-                        $mensagem = "CLICK SIGN: O prazo foi estendido para " . $novaData->format('d/m/Y') . ". ID: $documentKey";
+                        $mensagem = "CLICK SIGN: O prazo foi estendido para " . $novaData->format('d/m/Y') . ".\nDocumento ID: $documentKey";
                         BitrixDealHelper::adicionarComentarioDeal($assinatura['spa'], $assinatura['deal_id'], $mensagem);
                         LogHelper::logClickSign("Documento $documentKey adiado para $novaDataFormatada.", 'service');
                     } else {
