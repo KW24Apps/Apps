@@ -24,4 +24,5 @@ return [
     '/geraroptnd' => ['GeraroptndController', 'executar', 'POST'],
     '/mediahora' => ['MediaHoraController', 'executar', 'POST'],
     '/scheduler' => ['SchedulerController', 'executar', 'GET'],
+    '/importar' => ['']
 ];
