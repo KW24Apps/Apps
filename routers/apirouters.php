@@ -26,3 +26,4 @@ return [
     '/scheduler' => ['SchedulerController', 'executar', 'POST'],
     '/importar' => ['']
 ];
+ 
