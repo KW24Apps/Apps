@@ -145,6 +145,10 @@ class GerarAssinaturaService
             'ids_signatarios' => json_encode($resultadoVinculo['mapaIds'], JSON_UNESCAPED_UNICODE)
         ]);
 
+        // DIAGNÓSTICO: Verificar se a classe ClickSignDAO foi carregada
+        $daoLoaded = class_exists('Repositories\ClickSignDAO');
+        LogHelper::logClickSign("DIAGNÓSTICO: Classe ClickSignDAO existe? " . ($daoLoaded ? 'Sim' : 'Não'), 'service');
+
         $gravado = self::registrarAssinaturaComRetry($dadosRegistro);
 
         if ($gravado) {
