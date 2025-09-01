@@ -36,7 +36,7 @@ class DealController
     }
 
     public function consultar()
-    {
+    { 
         $params = $_GET;
         $entityId = $params['spa'] ?? $params['entityId'] ?? null;
         $dealId = $params['deal'] ?? $params['id'] ?? null;
