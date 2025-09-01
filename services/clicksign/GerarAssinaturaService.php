@@ -145,10 +145,6 @@ class GerarAssinaturaService
             'ids_signatarios' => json_encode($resultadoVinculo['mapaIds'], JSON_UNESCAPED_UNICODE)
         ]);
 
-        // DIAGNÓSTICO: Verificar se a classe ClickSignDAO foi carregada
-        $daoLoaded = class_exists('Repositories\ClickSignDAO');
-        LogHelper::logClickSign("DIAGNÓSTICO: Classe ClickSignDAO existe? " . ($daoLoaded ? 'Sim' : 'Não'), 'service');
-
         $gravado = self::registrarAssinaturaComRetry($dadosRegistro);
 
         if ($gravado) {
@@ -205,13 +201,38 @@ class GerarAssinaturaService
 
     private static function registrarAssinaturaComRetry(array $dados): bool
     {
-        for ($i = 0; $i < 3; $i++) {
+        $tentativas = 0;
+        $maxTentativas = 3;
+        while ($tentativas < $maxTentativas) {
             try {
-                ClickSignDAO::registrarAssinaturaClicksign($dados);
-                return true;
+                // Filtra e passa apenas os parâmetros esperados pelo DAO
+                $dadosParaSalvar = [
+                    'document_key'               => $dados['document_key'],
+                    'cliente_id'                 => $dados['cliente_id'],
+                    'deal_id'                    => $dados['deal_id'],
+                    'spa'                        => $dados['spa'],
+                    'Signatarios'                => $dados['Signatarios'],
+                    'campo_contratante'          => $dados['contratante'] ?? null,
+                    'campo_contratada'           => $dados['contratada'] ?? null,
+                    'campo_testemunhas'          => $dados['testemunhas'] ?? null,
+                    'campo_data'                 => $dados['data'] ?? null,
+                    'campo_arquivoaserassinado'  => $dados['arquivoaserassinado'] ?? null,
+                    'campo_arquivoassinado'      => $dados['arquivoassinado'] ?? null,
+                    'campo_idclicksign'          => $dados['idclicksign'] ?? null,
+                    'campo_retorno'              => $dados['retorno'] ?? null,
+                    'etapa_concluida'            => $dados['etapa_concluida'] ?? null,
+                    'dados_conexao'              => $dados['dados_conexao'] ?? null,
+                    'ids_signatarios'            => $dados['ids_signatarios'] ?? null
+                ];
+
+                if (ClickSignDAO::registrarAssinaturaClicksign($dadosParaSalvar)) {
+                    return true;
+                }
             } catch (PDOException $e) {
-                if ($i < 2) sleep(1);
+                // O erro já é logado no DAO
             }
+            $tentativas++;
+            if ($tentativas < $maxTentativas) sleep(1);
         }
         return false;
     }

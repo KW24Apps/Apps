@@ -29,12 +29,15 @@ class ClickSignDAO
             
             $stmt = $pdo->prepare($sql);
             $stmt->execute($dados);
+            return true; // Retorna sucesso
         } catch (PDOException $e) {
             // Log de erro PDO
             LogHelper::logClickSign("ERRO PDO ao inserir em assinaturas_clicksign: " . $e->getMessage(), 'dao');
+            return false; // Retorna falha
         } catch (\Exception $e) {
             // Log de erro genérico
             LogHelper::logClickSign("ERRO geral ao salvar assinatura: " . $e->getMessage(), 'dao');
+            return false; // Retorna falha
         }
     }
 
