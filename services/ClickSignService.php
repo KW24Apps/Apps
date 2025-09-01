@@ -786,7 +786,8 @@ class ClickSignService
         $resultado = ClickSignHelper::atualizarDocumento($documentKey, $payload);
 
         if (isset($resultado['document'])) {
-            $mensagem = "Data do documento atualizada para $novaDataFormatada.";
+            $dataParaMensagem = date('d/m/Y', strtotime($novaDataFormatada));
+            $mensagem = "Data do documento atualizada para $dataParaMensagem.";
             self::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, $mensagem);
             return ['success' => true, 'mensagem' => $mensagem];
         } else {
