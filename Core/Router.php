@@ -43,7 +43,12 @@ class Router
                     if (class_exists($controllerFullName)) {
                         $controller = new $controllerFullName();
                         if (method_exists($controller, $methodName)) {
-                            // Chama o método do controller
+                            // Verifica se é uma requisição POST e passa os dados do corpo
+                            if (strtoupper($method) === 'POST') {
+                                $requestData = json_decode(file_get_contents('php://input'), true);
+                                return $controller->$methodName($requestData);
+                            }
+                            // Para GET e outros métodos, chama sem parâmetros
                             return $controller->$methodName();
                         }
                     }
