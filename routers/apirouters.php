@@ -23,6 +23,6 @@ return [
     '/extenso' => ['ExtensoController', 'executar', 'GET'],
     '/geraroptnd' => ['GeraroptndController', 'executar', 'POST'],
     '/mediahora' => ['MediaHoraController', 'executar', 'POST'],
-    '/scheduler' => ['SchedulerController', 'executar', 'GET'],
+    '/scheduler' => ['SchedulerController', 'executar', 'POST'],
     '/importar' => ['']
 ];
