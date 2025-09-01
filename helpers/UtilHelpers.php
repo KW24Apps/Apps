@@ -174,45 +174,6 @@ class UtilHelpers
         return $data;
     }
 
-    // Detecta a aplicação com base na URI
-    public static function detectarAplicacaoPorUri($uri)
-    {
-        $uri = ltrim($uri, '/');
-        // Remove o prefixo 'Apps/' se estiver presente
-        $uri = preg_replace('/^Apps\//', '', $uri);
-        
-        $slug = null;
-        if (strpos($uri, 'geraroportunidades') === 0) {
-            $slug = 'geraroptnd';
-        } elseif (strpos($uri, 'dashboard') === 0) {
-            $slug = 'dashboard';
-        } elseif (strpos($uri, 'scheduler') === 0) {
-            $slug = 'scheduler';
-        } elseif (strpos($uri, 'deal') === 0) {
-            $slug = 'deal';
-        } elseif (strpos($uri, 'extenso') === 0) {
-            $slug = 'extenso';
-        } elseif (strpos($uri, 'clicksign') === 0) {
-            $slug = 'clicksign';
-        } elseif (strpos($uri, 'company') === 0) {
-            $slug = 'company';
-        } elseif (strpos($uri, 'mediahora') === 0) {
-            $slug = 'mediahora';
-        } elseif (strpos($uri, 'omie') === 0) {
-            $slug = 'omie';
-        } elseif (strpos($uri, 'bitrix-sync') === 0) {
-            $slug = 'bitrix-sync';
-        } elseif (strpos($uri, 'importar') === 0) {
-            $slug = 'importar';
-        } elseif (strpos($uri, 'disk') === 0) {
-            $slug = 'disk';
-        }
-        if (!defined('NOME_APLICACAO')) {
-            define('NOME_APLICACAO', $slug ?: 'desconhecida');
-        }
-        return $slug ?: 'desconhecida';
-    }
-
     public static function obterMimeDoArquivo(string $url): ?string
     {
         $headers = get_headers($url, 1);

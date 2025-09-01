@@ -6,6 +6,7 @@ require_once __DIR__ . '/../helpers/BitrixContactHelper.php';
 require_once __DIR__ . '/../helpers/ClickSignHelper.php';
 require_once __DIR__ . '/../helpers/LogHelper.php';
 require_once __DIR__ . '/../Repositories/AplicacaoAcessoDAO.php';
+require_once __DIR__ . '/../Repositories/ClickSignDAO.php';
 require_once __DIR__ . '/../helpers/UtilHelpers.php';
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../enums/ClickSignCodes.php';
@@ -15,6 +16,7 @@ use Helpers\BitrixContactHelper;
 use Helpers\ClickSignHelper;
 use Helpers\LogHelper;
 use Repositories\AplicacaoAcessoDAO;
+use Repositories\ClickSignDAO;
 use Helpers\BitrixHelper;
 use Helpers\UtilHelpers;
 use Enums\ClickSignCodes;
@@ -405,7 +407,7 @@ class ClickSignService
                     'ids_signatarios'            => $dados['ids_signatarios'] ?? null
                 ];
 
-                AplicacaoAcessoDAO::registrarAssinaturaClicksign($dadosParaSalvar);
+                ClickSignDAO::registrarAssinaturaClicksign($dadosParaSalvar);
                 return true;
             } catch (PDOException $e) {
                 $tentativas++;
@@ -476,7 +478,7 @@ class ClickSignService
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
-        $dadosAssinatura = AplicacaoAcessoDAO::obterAssinaturaClickSign($documentKey);
+        $dadosAssinatura = ClickSignDAO::obterAssinaturaClickSign($documentKey);
         if (!$dadosAssinatura) {
             $mensagem = ClickSignCodes::DOCUMENTO_NAO_ENCONTRADO_BD . " - Documento não encontrado | DocumentKey: $documentKey";
             LogHelper::logClickSign($mensagem, 'service');
@@ -484,6 +486,12 @@ class ClickSignService
         }
 
         $dadosConexao = isset($dadosAssinatura['dados_conexao']) ? json_decode($dadosAssinatura['dados_conexao'], true) : [];
+
+        // Define o webhook do bitrix na variável global para ser usado pelos helpers
+        $GLOBALS['ACESSO_AUTENTICADO'] = [
+            'webhook_bitrix' => $dadosConexao['webhook_bitrix'] ?? null
+        ];
+        
         $secret = $dadosConexao['clicksign_secret'] ?? null;
         $token = $dadosConexao['clicksign_token'] ?? null;
 
@@ -508,7 +516,7 @@ class ClickSignService
                 if (!empty($dadosAssinatura['assinatura_processada']) && strpos($dadosAssinatura['assinatura_processada'], $assinante) !== false) {
                     return ['success' => true, 'mensagem' => ClickSignCodes::ASSINATURA_JA_PROCESSADA . ' - Assinatura já processada.'];
                 }
-                AplicacaoAcessoDAO::salvarStatus($documentKey, null, ($dadosAssinatura['assinatura_processada'] ?? '') . ";" . $assinante);
+                ClickSignDAO::salvarStatus($documentKey, null, ($dadosAssinatura['assinatura_processada'] ?? '') . ";" . $assinante);
                 return self::assinaturaRealizada($requestData, $dadosAssinatura);
 
             case 'deadline':
@@ -517,14 +525,14 @@ class ClickSignService
                 if (!empty($dadosAssinatura['documento_fechado_processado'])) {
                     return ['success' => true, 'mensagem' => ClickSignCodes::EVENTO_FECHADO_JA_PROCESSADO . ' - Evento de documento fechado já processado.'];
                 }
-                AplicacaoAcessoDAO::salvarStatus($documentKey, $evento, null, true);
+                ClickSignDAO::salvarStatus($documentKey, $evento, null, true);
                 return self::documentoFechado($requestData, $dadosAssinatura);
 
             case 'document_closed':
                 if (!empty($dadosAssinatura['documento_disponivel_processado'])) {
                     return ['success' => true, 'mensagem' => ClickSignCodes::DOCUMENTO_JA_DISPONIVEL . ' - Documento já disponível e processado anteriormente.'];
                 }
-                AplicacaoAcessoDAO::salvarStatus($documentKey, null, null, null, true);
+                ClickSignDAO::salvarStatus($documentKey, null, null, null, true);
                 return self::documentoDisponivel($requestData, $dadosAssinatura, $token);
 
             default:
@@ -616,7 +624,7 @@ class ClickSignService
         $documentKey = $dadosAssinatura['document_key'];
         $campoArquivoAssinado = $dadosAssinatura['campo_arquivoassinado'];
 
-        $statusClosed = AplicacaoAcessoDAO::obterAssinaturaClickSign($documentKey); // Re-consulta para garantir o status mais recente
+        $statusClosed = ClickSignDAO::obterAssinaturaClickSign($documentKey); // Re-consulta para garantir o status mais recente
         if (in_array($statusClosed['status_closed'] ?? '', ['deadline', 'cancel'])) {
             return ['success' => true, 'mensagem' => "Evento {$statusClosed['status_closed']} ignorado."];
         }
@@ -842,7 +850,7 @@ class ClickSignService
         $amanha = date('Y-m-d', strtotime('+1 day'));
         $clientesJaProcessados = [];
 
-        $assinaturasAtivas = AplicacaoAcessoDAO::obterAssinaturasAtivasParaVerificacao();
+        $assinaturasAtivas = ClickSignDAO::obterAssinaturasAtivasParaVerificacao();
         if (empty($assinaturasAtivas)) {
             LogHelper::logClickSign("Nenhuma assinatura ativa encontrada para verificação.", 'service');
             return ['success' => true, 'mensagem' => 'Nenhuma assinatura ativa para processar.', 'summary' => $summary];
@@ -859,10 +867,11 @@ class ClickSignService
                 continue;
             }
 
-            $configCliente = AplicacaoAcessoDAO::obterConfiguracaoPorClienteId((int)$assinatura['cliente_id'], 'clicksign');
-            if ($configCliente) {
-                $GLOBALS['ACESSO_AUTENTICADO'] = $configCliente;
-            }
+            // Monta o array de autenticação a partir dos dados da própria assinatura,
+            // evitando uma consulta desnecessária e mantendo o job focado em seu contexto.
+            $GLOBALS['ACESSO_AUTENTICADO'] = [
+                'webhook_bitrix' => $dadosConexao['webhook_bitrix'] ?? null
+            ];
 
             $documento = ClickSignHelper::buscarDocumento($documentKey, $token);
             $summary['documentos_verificados']++;
@@ -894,7 +903,7 @@ class ClickSignService
                             $summary['documentos_adiados']++;
                             
                             // Marca que o prazo foi adiado para não rodar novamente
-                            AplicacaoAcessoDAO::salvarStatus($documentKey, null, null, null, null, true);
+                            ClickSignDAO::salvarStatus($documentKey, null, null, null, null, true);
 
                             $fieldsUpdate = [];
                             if (!empty($assinatura['campo_data'])) {
