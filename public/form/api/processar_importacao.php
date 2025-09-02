@@ -11,6 +11,10 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 require_once __DIR__ . '/../../../Repositories/BatchJobDAO.php';
 use Repositories\BatchJobDAO;
 
+// Inclui o BitrixHelper para consultar metadados dos campos
+require_once __DIR__ . '/../../../helpers/BitrixHelper.php';
+use Helpers\BitrixHelper;
+
 $cliente = $_GET['cliente'] ?? $_POST['cliente'] ?? null;
 if (!$cliente) {
     http_response_code(400);
@@ -85,18 +89,34 @@ try {
             }
 
             if (!empty($deal) && !empty(array_filter($deal))) {
-                // Adiciona os dados dos campos fixos, se mapeados
-                $camposFixosMapeados = [
+                // Adiciona os dados dos campos fixos do formulário, se mapeados
+                $camposFixosFormulario = [
                     'Responsavel pelo Lead Gerado' => $formData['responsavel_id'] ?? null,
-                    'Identificador da Importacao' => $formData['identificador'] ?? null,
-                    'Solicitante do Import' => $formData['solicitante_id'] ?? null
+                    'Solicitante do Import' => $formData['solicitante_id'] ?? null,
+                    'Identificador da Importacao' => $formData['identificador'] ?? null
                 ];
 
-                foreach ($camposFixosMapeados as $nomeCampo => $valor) {
-                    if (isset($mapeamento[$nomeCampo]) && !is_null($valor)) {
-                        $codigoBitrix = $mapeamento[$nomeCampo];
-                        // Adiciona o valor ao deal, sobrescrevendo se necessário
-                        $deal[$codigoBitrix] = $valor;
+                foreach ($camposFixosFormulario as $nomeCampoAmigavel => $valorDoFormulario) {
+                    // Verifica se este campo amigável foi mapeado para um código Bitrix
+                    if (isset($mapeamento[$nomeCampoAmigavel]) && !is_null($valorDoFormulario)) {
+                        $codigoBitrix = $mapeamento[$nomeCampoAmigavel];
+                        
+                        // Lógica de formatação específica para campos de usuário (Responsável e Solicitante)
+                        // Agora, envia apenas o ID numérico, sem o array ['user', ID]
+                        if (($nomeCampoAmigavel === 'Responsavel pelo Lead Gerado' || $nomeCampoAmigavel === 'Solicitante do Import') && is_numeric($valorDoFormulario) && $valorDoFormulario > 0) {
+                            $deal[$codigoBitrix] = (int)$valorDoFormulario;
+                        } 
+                        // Lógica original para outros campos CRM_ENTITY ou campos não-usuário
+                        else if (isset($camposBitrixMetadata[$codigoBitrix]) && $camposBitrixMetadata[$codigoBitrix]['type'] === 'crm_entity') {
+                            // Para outros campos CRM_ENTITY, mantém a lógica de array ['user', ID] para compatibilidade geral
+                            if (is_numeric($valorDoFormulario) && $valorDoFormulario > 0) {
+                                $deal[$codigoBitrix] = ['user', (int)$valorDoFormulario];
+                            } else {
+                                $deal[$codigoBitrix] = $valorDoFormulario; // Mantém o valor original se não for um ID válido
+                            }
+                        } else {
+                            $deal[$codigoBitrix] = $valorDoFormulario;
+                        }
                     }
                 }
                 
@@ -130,19 +150,47 @@ try {
         throw new Exception("ID do funil inválido na sessão: '$funilSelecionado'");
     }
 
+    // Define globalmente o webhook para o BitrixHelper
+    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
+
+    // Consulta os metadados dos campos do Bitrix para a entidade atual
+    $camposBitrixMetadata = BitrixHelper::consultarCamposCrm($entityTypeId);
+    
     // Processa cada chunk, criando um job para cada um
     foreach ($chunks as $chunk) {
+        // Formata os deals dentro do chunk para garantir que campos CRM_ENTITY de usuário estejam corretos
+        $formattedChunk = [];
+        foreach ($chunk as $deal) {
+            $formattedDeal = [];
+            foreach ($deal as $codigoBitrix => $valor) {
+                // Verifica se o campo é um campo de usuário (CRM_ENTITY) e se o valor é um ID
+                if (isset($camposBitrixMetadata[$codigoBitrix]) && $camposBitrixMetadata[$codigoBitrix]['type'] === 'crm_entity') {
+                    // A API do Bitrix para campos CRM_ENTITY de usuário espera um array ['user', ID]
+                    // ou apenas o ID se o campo for configurado para aceitar apenas usuários.
+                    // Vamos usar o formato de array para maior compatibilidade.
+                    if (is_numeric($valor) && $valor > 0) {
+                        $formattedDeal[$codigoBitrix] = ['user', (int)$valor];
+                    } else {
+                        $formattedDeal[$codigoBitrix] = $valor; // Mantém o valor original se não for um ID válido
+                    }
+                } else {
+                    $formattedDeal[$codigoBitrix] = $valor;
+                }
+            }
+            $formattedChunk[] = $formattedDeal;
+        }
+
         $jobId = uniqid('job_', true);
         $tipoJob = 'criar_deals';
         
         $dadosJob = [
             'spa' => $entityTypeId,
             'category_id' => $categoryId,
-            'deals' => $chunk,
+            'deals' => $formattedChunk, // Usa o chunk formatado
             'webhook' => $webhook
         ];
         
-        $totalItensChunk = count($chunk);
+        $totalItensChunk = count($formattedChunk);
         $ok = $dao->criarJob($jobId, $tipoJob, $dadosJob, $totalItensChunk);
         
         if ($ok) {
