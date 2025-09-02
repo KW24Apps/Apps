@@ -102,11 +102,13 @@ try {
                         $codigoBitrix = $mapeamento[$nomeCampoAmigavel];
                         
                         // Lógica de formatação específica para campos de usuário (Responsável e Solicitante)
+                        // Agora, envia apenas o ID numérico, sem o array ['user', ID]
                         if (($nomeCampoAmigavel === 'Responsavel pelo Lead Gerado' || $nomeCampoAmigavel === 'Solicitante do Import') && is_numeric($valorDoFormulario) && $valorDoFormulario > 0) {
-                            $deal[$codigoBitrix] = ['user', (int)$valorDoFormulario];
+                            $deal[$codigoBitrix] = (int)$valorDoFormulario;
                         } 
                         // Lógica original para outros campos CRM_ENTITY ou campos não-usuário
                         else if (isset($camposBitrixMetadata[$codigoBitrix]) && $camposBitrixMetadata[$codigoBitrix]['type'] === 'crm_entity') {
+                            // Para outros campos CRM_ENTITY, mantém a lógica de array ['user', ID] para compatibilidade geral
                             if (is_numeric($valorDoFormulario) && $valorDoFormulario > 0) {
                                 $deal[$codigoBitrix] = ['user', (int)$valorDoFormulario];
                             } else {
