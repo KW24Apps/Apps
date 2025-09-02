@@ -7,6 +7,10 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
+// Log temporário para depuração do mapeamento
+error_log("DEBUG: SESSION MAPEAMENTO: " . print_r($_SESSION['mapeamento'] ?? 'N/A', true));
+error_log("DEBUG: SESSION IMPORTACAO_FORM: " . print_r($_SESSION['importacao_form'] ?? 'N/A', true));
+
 // Inclui o DAO para salvar os jobs diretamente, contornando o helper
 require_once __DIR__ . '/../../../Repositories/BatchJobDAO.php';
 use Repositories\BatchJobDAO;

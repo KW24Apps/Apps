@@ -55,4 +55,22 @@ class BitrixDiskHelper
 
         return null; // Retorna null se não encontrar
     }
+
+    /**
+     * Obtém o URL detalhado de uma pasta no Bitrix24 Disk.
+     *
+     * @param int $folderId O ID da pasta.
+     * @return string|null O URL detalhado da pasta ou null se não for encontrado.
+     */
+    public static function getFolderDetailUrl(int $folderId): ?string
+    {
+        $response = BitrixHelper::chamarApi(
+            'disk.folder.get',
+            [
+                'id' => $folderId
+            ]
+        );
+
+        return $response['result']['DETAIL_URL'] ?? null;
+    }
 }
