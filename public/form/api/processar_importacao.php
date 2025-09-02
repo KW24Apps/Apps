@@ -7,10 +7,6 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-// Log temporário para depuração do mapeamento
-error_log("DEBUG: SESSION MAPEAMENTO: " . print_r($_SESSION['mapeamento'] ?? 'N/A', true));
-error_log("DEBUG: SESSION IMPORTACAO_FORM: " . print_r($_SESSION['importacao_form'] ?? 'N/A', true));
-
 // Inclui o DAO para salvar os jobs diretamente, contornando o helper
 require_once __DIR__ . '/../../../Repositories/BatchJobDAO.php';
 use Repositories\BatchJobDAO;
@@ -100,11 +96,28 @@ try {
                     'Solicitante do Import' => $formData['solicitante_id'] ?? null
                 ];
 
-                foreach ($camposFixosMapeados as $nomeCampo => $valor) {
-                    if (isset($mapeamento[$nomeCampo]) && !is_null($valor)) {
-                        $codigoBitrix = $mapeamento[$nomeCampo];
-                        // Adiciona o valor ao deal, sobrescrevendo se necessário
-                        $deal[$codigoBitrix] = $valor;
+                // Adiciona os dados dos campos fixos do formulário, se mapeados
+                $camposFixosFormulario = [
+                    'Responsavel pelo Lead Gerado' => $formData['responsavel_id'] ?? null,
+                    'Solicitante do Import' => $formData['solicitante_id'] ?? null,
+                    'Identificador da Importacao' => $formData['identificador'] ?? null
+                ];
+
+                foreach ($mapeamento as $nomeColunaMapeada => $codigoBitrix) {
+                    // Verifica se o nome da coluna mapeada corresponde a um dos campos fixos do formulário
+                    if (isset($camposFixosFormulario[$nomeColunaMapeada]) && !is_null($camposFixosFormulario[$nomeColunaMapeada])) {
+                        $valor = $camposFixosFormulario[$nomeColunaMapeada];
+
+                        // Aplica a lógica de formatação para campos CRM_ENTITY de usuário
+                        if (isset($camposBitrixMetadata[$codigoBitrix]) && $camposBitrixMetadata[$codigoBitrix]['type'] === 'crm_entity') {
+                            if (is_numeric($valor) && $valor > 0) {
+                                $deal[$codigoBitrix] = ['user', (int)$valor];
+                            } else {
+                                $deal[$codigoBitrix] = $valor; // Mantém o valor original se não for um ID válido
+                            }
+                        } else {
+                            $deal[$codigoBitrix] = $valor;
+                        }
                     }
                 }
                 
