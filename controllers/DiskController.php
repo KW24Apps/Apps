@@ -19,9 +19,9 @@ class DiskController
         header('Content-Type: application/json');
 
         // IDs dos campos customizados
-        $fieldIdDominioAntigo = 'UF_CRM_1756209754';
-        $fieldIdDominioAtual = 'UF_CRM_1656592471';
-        $fieldNomeEmpresaAntigo = 'UF_CRM_1756209679';
+        $fieldIdDominioAntigo = 'ufCrm_1756209754';
+        $fieldIdDominioAtual = 'ufCrm_1656592471';
+        $fieldNomeEmpresaAntigo = 'ufCrm_1756209679';
         // O campo de retorno foi removido, agora usamos a timeline
 
         $companyid = null; // Inicializa para o bloco catch
@@ -45,7 +45,7 @@ class DiskController
             // 3. Extrair informações da empresa
             $busca = $companyData[$fieldIdDominioAntigo] ?? null;
             $idDominioAtual = $companyData[$fieldIdDominioAtual] ?? null;
-            $nomePadraoEmpresa = $companyData['TITLE'] ?? null;
+            $nomePadraoEmpresa = $companyData['title'] ?? null;
 
             if (empty($busca) || empty($idDominioAtual) || empty($nomePadraoEmpresa)) {
                 throw new \Exception("Campos essenciais (ID Domínio Antigo, ID Domínio Atual, Nome) não encontrados na empresa ID {$companyid}.");
