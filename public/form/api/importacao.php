@@ -72,14 +72,14 @@ try {
 
     $arquivo = $_FILES['arquivo'];
     $funil = $_POST['funil'] ?? '';
-    $responsavel = $_POST['responsavel'] ?? '';
-    $solicitante = $_POST['solicitante'] ?? '';
+    $responsavelId = $_POST['responsavel_id'] ?? ''; // Captura o ID do responsável
+    $solicitanteId = $_POST['solicitante_id'] ?? ''; // Captura o ID do solicitante
     $identificador = $_POST['identificador'] ?? '';
 
     if (empty($funil)) throw new Exception('Funil é obrigatório');
     if (empty($identificador)) throw new Exception('Identificador é obrigatório');
-    if (empty($responsavel)) throw new Exception('Responsável é obrigatório');
-    if (empty($solicitante)) throw new Exception('Solicitante é obrigatório');
+    if (empty($responsavelId)) throw new Exception('Responsável é obrigatório'); // Valida o ID
+    if (empty($solicitanteId)) throw new Exception('Solicitante é obrigatório'); // Valida o ID
 
     $extensao = strtolower(pathinfo($arquivo['name'], PATHINFO_EXTENSION));
     if (!in_array($extensao, ['csv'])) {
@@ -118,8 +118,8 @@ try {
 
     $_SESSION['importacao_form'] = [
         'funil' => $funil,
-        'responsavel' => $responsavel,
-        'solicitante' => $solicitante,
+        'responsavel_id' => $responsavelId, // Salva o ID do responsável
+        'solicitante_id' => $solicitanteId, // Salva o ID do solicitante
         'identificador' => $identificador,
         'arquivo_salvo' => $nomeArquivo, // Nome do arquivo no servidor
         'arquivo_original' => $arquivo['name'], // Nome original do arquivo

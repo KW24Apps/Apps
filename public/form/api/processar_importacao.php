@@ -89,13 +89,6 @@ try {
             }
 
             if (!empty($deal) && !empty(array_filter($deal))) {
-                // Adiciona os dados dos campos fixos, se mapeados
-                $camposFixosMapeados = [
-                    'Responsavel pelo Lead Gerado' => $formData['responsavel_id'] ?? null,
-                    'Identificador da Importacao' => $formData['identificador'] ?? null,
-                    'Solicitante do Import' => $formData['solicitante_id'] ?? null
-                ];
-
                 // Adiciona os dados dos campos fixos do formulário, se mapeados
                 $camposFixosFormulario = [
                     'Responsavel pelo Lead Gerado' => $formData['responsavel_id'] ?? null,
@@ -103,20 +96,24 @@ try {
                     'Identificador da Importacao' => $formData['identificador'] ?? null
                 ];
 
-                foreach ($mapeamento as $nomeColunaMapeada => $codigoBitrix) {
-                    // Verifica se o nome da coluna mapeada corresponde a um dos campos fixos do formulário
-                    if (isset($camposFixosFormulario[$nomeColunaMapeada]) && !is_null($camposFixosFormulario[$nomeColunaMapeada])) {
-                        $valor = $camposFixosFormulario[$nomeColunaMapeada];
-
-                        // Aplica a lógica de formatação para campos CRM_ENTITY de usuário
-                        if (isset($camposBitrixMetadata[$codigoBitrix]) && $camposBitrixMetadata[$codigoBitrix]['type'] === 'crm_entity') {
-                            if (is_numeric($valor) && $valor > 0) {
-                                $deal[$codigoBitrix] = ['user', (int)$valor];
+                foreach ($camposFixosFormulario as $nomeCampoAmigavel => $valorDoFormulario) {
+                    // Verifica se este campo amigável foi mapeado para um código Bitrix
+                    if (isset($mapeamento[$nomeCampoAmigavel]) && !is_null($valorDoFormulario)) {
+                        $codigoBitrix = $mapeamento[$nomeCampoAmigavel];
+                        
+                        // Lógica de formatação específica para campos de usuário (Responsável e Solicitante)
+                        if (($nomeCampoAmigavel === 'Responsavel pelo Lead Gerado' || $nomeCampoAmigavel === 'Solicitante do Import') && is_numeric($valorDoFormulario) && $valorDoFormulario > 0) {
+                            $deal[$codigoBitrix] = ['user', (int)$valorDoFormulario];
+                        } 
+                        // Lógica original para outros campos CRM_ENTITY ou campos não-usuário
+                        else if (isset($camposBitrixMetadata[$codigoBitrix]) && $camposBitrixMetadata[$codigoBitrix]['type'] === 'crm_entity') {
+                            if (is_numeric($valorDoFormulario) && $valorDoFormulario > 0) {
+                                $deal[$codigoBitrix] = ['user', (int)$valorDoFormulario];
                             } else {
-                                $deal[$codigoBitrix] = $valor; // Mantém o valor original se não for um ID válido
+                                $deal[$codigoBitrix] = $valorDoFormulario; // Mantém o valor original se não for um ID válido
                             }
                         } else {
-                            $deal[$codigoBitrix] = $valor;
+                            $deal[$codigoBitrix] = $valorDoFormulario;
                         }
                     }
                 }
