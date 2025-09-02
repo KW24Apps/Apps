@@ -88,8 +88,8 @@ class DiskController
             // 9. Adicionar comentário de sucesso na timeline
             $mensagemSucesso = "Pasta da Contabilidade foi renomeada para: '{$novoNomePasta}'.";
             if ($folderLink) {
-                // Formata o link para ser clicável na timeline do Bitrix24
-                $mensagemSucesso .= "\nLink da Pasta: [url=" . $folderLink . "]Clique Aqui[/url])";
+                // Formata o link usando BBCode para ser clicável na timeline do Bitrix24
+                $mensagemSucesso .= "\nLink da Pasta: [url=" . $folderLink . "]Clique Aqui[/url]";
             }
             BitrixHelper::adicionarComentarioTimeline('company', (int)$companyid, $mensagemSucesso);
 
