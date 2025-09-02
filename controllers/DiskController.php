@@ -72,20 +72,32 @@ class DiskController
                 $fieldNomeEmpresaAntigo => $nomePadraoEmpresa,
                 $fieldIdDominioAntigo => $idDominioAtual
             ];
+            // 8. Obter o link da pasta renomeada usando o helper
+            $folderLink = BitrixDiskHelper::getFolderDetailUrl($idPastaAlvo);
+
+            // Adiciona o link da pasta ao campo UF_CRM_1660100679 se o link existir
+            if ($folderLink) {
+                $companyUpdateData['ufCrm_1660100679'] = $folderLink;
+            }
+
             $updateResult = BitrixCompanyHelper::editarCamposEmpresa($companyUpdateData);
             if (isset($updateResult['error'])) {
                 throw new \Exception('Erro ao atualizar a company: ' . ($updateResult['error_description'] ?? 'Erro desconhecido.'));
             }
 
-            // 8. Adicionar comentário de sucesso na timeline
+            // 9. Adicionar comentário de sucesso na timeline
             $mensagemSucesso = "Pasta da Contabilidade foi renomeada para: '{$novoNomePasta}'.";
+            if ($folderLink) {
+                $mensagemSucesso .= "\nLink da pasta: " . $folderLink;
+            }
             BitrixHelper::adicionarComentarioTimeline('company', (int)$companyid, $mensagemSucesso);
 
-            // 9. Retornar sucesso
+            // 10. Retornar sucesso
             http_response_code(200);
             echo json_encode([
                 'status' => 'sucesso',
                 'mensagem' => "Pasta ID {$idPastaAlvo} renomeada e comentário adicionado na Company ID {$companyid}.",
+                'link_pasta' => $folderLink, // Inclui o link da pasta na resposta da API
                 'resultado_rename' => $renameResult,
                 'resultado_update' => $updateResult
             ]);
