@@ -77,7 +77,7 @@ class DiskController
 
             // Adiciona o link da pasta ao campo UF_CRM_1660100679 se o link existir
             if ($folderLink) {
-                $companyUpdateData['ufCrm_1660100679'] = $folderLink;
+                $companyUpdateData['UF_CRM_1660100679'] = $folderLink;
             }
 
             $updateResult = BitrixCompanyHelper::editarCamposEmpresa($companyUpdateData);
