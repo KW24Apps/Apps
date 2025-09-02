@@ -17,6 +17,7 @@ class DiskController
     public function RenomearPasta()
     {
         header('Content-Type: application/json');
+        sleep(20); // Adiciona um atraso de 20 segundos conforme solicitado pelo usuário
 
         // IDs dos campos customizados
         $fieldIdDominioAntigo = 'UF_CRM_1756209754';
