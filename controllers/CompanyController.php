@@ -7,7 +7,7 @@ require_once __DIR__ . '/../helpers/BitrixCompanyHelper.php';
 use Helpers\BitrixHelper;
 use Helpers\BitrixCompanyHelper;
 
-class CompanyController
+class CompanyController 
 {
     public function criar()
     {
@@ -27,7 +27,7 @@ class CompanyController
         echo json_encode($resultado);
     }
 
-    public function consultar()
+    public function consultar() 
     {
         $filtros = $_GET;
         $webhook = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? null;

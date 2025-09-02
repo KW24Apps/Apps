@@ -19,6 +19,10 @@ class BitrixHelper
 
         $url = $webhookBase . '/' . $endpoint . '.json';
         $postData = http_build_query($params);
+        
+        // Log temporário para capturar o payload exato
+        file_put_contents(__DIR__ . '/../../logs/payload_exact.log', date('[Y-m-d H:i:s] ') . "Endpoint: $endpoint" . PHP_EOL . $postData . PHP_EOL . "---" . PHP_EOL, FILE_APPEND);
+
         $startTime = microtime(true);
 
         $ch = curl_init($url);
