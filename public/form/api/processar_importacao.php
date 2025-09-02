@@ -11,6 +11,10 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 require_once __DIR__ . '/../../../Repositories/BatchJobDAO.php';
 use Repositories\BatchJobDAO;
 
+// Inclui o BitrixHelper para consultar metadados dos campos
+require_once __DIR__ . '/../../../helpers/BitrixHelper.php';
+use Helpers\BitrixHelper;
+
 $cliente = $_GET['cliente'] ?? $_POST['cliente'] ?? null;
 if (!$cliente) {
     http_response_code(400);
@@ -130,19 +134,47 @@ try {
         throw new Exception("ID do funil inválido na sessão: '$funilSelecionado'");
     }
 
+    // Define globalmente o webhook para o BitrixHelper
+    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhook;
+
+    // Consulta os metadados dos campos do Bitrix para a entidade atual
+    $camposBitrixMetadata = BitrixHelper::consultarCamposCrm($entityTypeId);
+    
     // Processa cada chunk, criando um job para cada um
     foreach ($chunks as $chunk) {
+        // Formata os deals dentro do chunk para garantir que campos CRM_ENTITY de usuário estejam corretos
+        $formattedChunk = [];
+        foreach ($chunk as $deal) {
+            $formattedDeal = [];
+            foreach ($deal as $codigoBitrix => $valor) {
+                // Verifica se o campo é um campo de usuário (CRM_ENTITY) e se o valor é um ID
+                if (isset($camposBitrixMetadata[$codigoBitrix]) && $camposBitrixMetadata[$codigoBitrix]['type'] === 'crm_entity') {
+                    // A API do Bitrix para campos CRM_ENTITY de usuário espera um array ['user', ID]
+                    // ou apenas o ID se o campo for configurado para aceitar apenas usuários.
+                    // Vamos usar o formato de array para maior compatibilidade.
+                    if (is_numeric($valor) && $valor > 0) {
+                        $formattedDeal[$codigoBitrix] = ['user', (int)$valor];
+                    } else {
+                        $formattedDeal[$codigoBitrix] = $valor; // Mantém o valor original se não for um ID válido
+                    }
+                } else {
+                    $formattedDeal[$codigoBitrix] = $valor;
+                }
+            }
+            $formattedChunk[] = $formattedDeal;
+        }
+
         $jobId = uniqid('job_', true);
         $tipoJob = 'criar_deals';
         
         $dadosJob = [
             'spa' => $entityTypeId,
             'category_id' => $categoryId,
-            'deals' => $chunk,
+            'deals' => $formattedChunk, // Usa o chunk formatado
             'webhook' => $webhook
         ];
         
-        $totalItensChunk = count($chunk);
+        $totalItensChunk = count($formattedChunk);
         $ok = $dao->criarJob($jobId, $tipoJob, $dadosJob, $totalItensChunk);
         
         if ($ok) {
