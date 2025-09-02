@@ -34,12 +34,15 @@ class DealService
             $nomeCampoTecnico = null;
             $definicaoCampo = null;
 
-            // 1. Verifica se o nome do campo da URL já é um nome técnico
-            if (isset($this->camposMetadata[$entityTypeId][$nomeCampoUrl])) {
-                $nomeCampoTecnico = $nomeCampoUrl;
-                $definicaoCampo = $this->camposMetadata[$entityTypeId][$nomeCampoUrl];
+            // Normaliza o nome do campo da URL para o formato esperado pelo Bitrix (ufCrm_ID)
+            $nomeCampoUrlNormalizado = $this->normalizarNomeCampo($nomeCampoUrl);
+
+            // 1. Verifica se o nome do campo da URL (normalizado) já é um nome técnico
+            if (isset($this->camposMetadata[$entityTypeId][$nomeCampoUrlNormalizado])) {
+                $nomeCampoTecnico = $nomeCampoUrlNormalizado;
+                $definicaoCampo = $this->camposMetadata[$entityTypeId][$nomeCampoUrlNormalizado];
             } 
-            // 2. Se não for, busca pelo nome amigável (title)
+            // 2. Se não for, busca pelo nome amigável (title) usando o nome original da URL
             elseif (isset($this->mapeamentoTitulos[$entityTypeId][strtolower($nomeCampoUrl)])) {
                 $nomeCampoTecnico = $this->mapeamentoTitulos[$entityTypeId][strtolower($nomeCampoUrl)];
                 $definicaoCampo = $this->camposMetadata[$entityTypeId][$nomeCampoTecnico];
@@ -50,11 +53,30 @@ class DealService
                 $valorFinal = $this->converterValorSeNecessario($valorCampo, $definicaoCampo);
                 $payloadFinal[$nomeCampoTecnico] = $valorFinal;
             } else {
-                LogHelper::logBitrixHelpers("Campo da URL '$nomeCampoUrl' nao foi encontrado no Bitrix e sera ignorado.", __CLASS__ . '::' . __FUNCTION__);
+                LogHelper::logBitrixHelpers("Campo da URL '$nomeCampoUrl' (normalizado: '$nomeCampoUrlNormalizado') nao foi encontrado no Bitrix e sera ignorado.", __CLASS__ . '::' . __FUNCTION__);
             }
         }
 
         return $payloadFinal;
+    }
+
+    /**
+     * Normaliza o nome de um campo, convertendo padrões como UF_CRM_ID para ufCrm_ID.
+     * Isso é crucial para que o DealService possa encontrar campos personalizados
+     * que o Bitrix retorna em camelCase, mas que podem vir em uppercase na URL.
+     *
+     * @param string $campo O nome do campo a ser normalizado.
+     * @return string O nome do campo normalizado.
+     */
+    private function normalizarNomeCampo(string $campo): string
+    {
+        $campoNormalizado = $campo;
+        // Verifica se o campo começa com UF_CRM_ ou ufcrm_ (case-insensitive)
+        if (preg_match('/^(UF_CRM_|ufcrm_)([0-9]+(?:_[0-9]+)?)$/i', $campo, $matches)) {
+            // Converte para o padrão ufCrm_ID ou ufCrmID_ID
+            $campoNormalizado = 'ufCrm_' . $matches[2];
+        }
+        return $campoNormalizado;
     }
 
     /**
