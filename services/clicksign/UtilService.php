@@ -219,7 +219,7 @@ class UtilService
             case ClickSignCodes::FALHA_VINCULAR_SIGNATARIO: return "Falha ao vincular signatário.";
             case ClickSignCodes::FALHA_VINCULO_SIGNATARIOS: return "Falha em um ou mais vínculos de signatários.";
             case ClickSignCodes::DOCUMENTO_ENVIADO: return "Documento enviado para assinatura.";
-            case ClickSignCodes::ASSINATURA_REALIZADA: return "Assinatura realizada.";
+            case ClickSignCodes::ASSINATURA_REALIZADA: return "Assinatura realizada por - ";
             case ClickSignCodes::PROCESSO_FINALIZADO_COM_ANEXO: return "Documento assinado e anexado.";
             case ClickSignCodes::PRAZO_ESTENDIDO_AUTO: return "Prazo estendido automaticamente.";
             case ClickSignCodes::ASSINATURA_CANCELADA_PRAZO: return "Assinatura cancelada: Prazo finalizado.";

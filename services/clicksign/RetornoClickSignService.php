@@ -129,7 +129,7 @@ class RetornoClickSignService
         }
 
         $codigoRetorno = ClickSignCodes::ASSINATURA_REALIZADA;
-        $mensagemCustomizadaComentario = " - Assinatura feita por $signerName - $signerEmail";
+        $mensagemCustomizadaComentario = "$signerName - $signerEmail";
         $mensagemParaRetornoFuncao = UtilService::getMessageDescription($codigoRetorno) . $mensagemCustomizadaComentario;
         UtilService::atualizarRetornoBitrix($dadosAssinatura, $spa, $dealId, true, $dadosAssinatura['document_key'], $codigoRetorno, $mensagemCustomizadaComentario);
         return ['success' => true, 'mensagem' => $mensagemParaRetornoFuncao];
