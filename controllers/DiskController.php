@@ -48,8 +48,10 @@ class DiskController
             $idDominioAtual = $companyData[$fieldIdDominioAtual] ?? null;
             $nomePadraoEmpresa = $companyData['TITLE'] ?? null;
 
-            if (empty($busca) || empty($idDominioAtual) || empty($nomePadraoEmpresa)) {
-                throw new \Exception("Campos essenciais (ID Domínio Antigo, ID Domínio Atual, Nome) não encontrados na empresa ID {$companyid}.");
+            // A validação foi ajustada para permitir '0' como um valor válido para $busca e $idDominioAtual.
+            // '0' não deve ser tratado como vazio, apenas null ou string vazia.
+            if (($busca === null || $busca === '') || ($idDominioAtual === null || $idDominioAtual === '') || empty($nomePadraoEmpresa)) {
+                throw new \Exception("Campos essenciais (ID Domínio Antigo, ID Domínio Atual, Nome) não encontrados ou são inválidos na empresa ID {$companyid}.");
             }
 
             // 4. Construir o novo nome da pasta
