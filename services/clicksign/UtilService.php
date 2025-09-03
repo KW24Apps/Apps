@@ -127,8 +127,10 @@ class UtilService
             $mensagemParaComentario .= $mensagemCustomizadaComentario;
         }
 
-        // Valor final para o campo de retorno do Bitrix (código + descrição)
-        $valorCampoRetornoBitrix = $codigoParaCampoBitrix . " - " . self::getMessageDescription($codigoParaCampoBitrix);
+        // Valor final para o campo de retorno do Bitrix (código + nome da constante)
+        // A descrição amigável é usada apenas para a timeline.
+        $constantName = array_search($codigoParaCampoBitrix, (new \ReflectionClass(ClickSignCodes::class))->getConstants());
+        $valorCampoRetornoBitrix = $codigoParaCampoBitrix . "-" . ($constantName ?: "MENSAGEM_DESCONHECIDA");
 
 
         $fields = [];
