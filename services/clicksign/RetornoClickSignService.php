@@ -171,8 +171,9 @@ class RetornoClickSignService
         $campoArquivoAssinado = $campos['arquivoassinado'] ?? null;
 
         if (empty($campoArquivoAssinado)) {
-            $mensagem = ClickSignCodes::PROCESSO_FINALIZADO_SEM_ANEXO . " - Documento assinado com sucesso.";
-            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], true, $dadosAssinatura['document_key'], $mensagem);
+            $codigoRetorno = ClickSignCodes::PROCESSO_FINALIZADO_SEM_ANEXO;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], true, $dadosAssinatura['document_key'], $codigoRetorno);
             return ['success' => true, 'mensagem' => $mensagem];
         }
 
@@ -184,13 +185,17 @@ class RetornoClickSignService
         $resultado = BitrixDealHelper::editarDeal($consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], [$campoArquivoAssinado => $arquivoParaBitrix]);
 
         if (isset($resultado['status']) && $resultado['status'] === 'sucesso') {
-            $mensagem = ClickSignCodes::PROCESSO_FINALIZADO_COM_ANEXO . " - Documento assinado e anexado.";
-            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], true, $dadosAssinatura['document_key'], $mensagem);
+            $codigoRetorno = ClickSignCodes::PROCESSO_FINALIZADO_COM_ANEXO;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], true, $dadosAssinatura['document_key'], $codigoRetorno);
             UtilService::limparCamposBitrix($consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], $consolidatedDadosConexao);
             UtilService::moverEtapaBitrix($consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], $consolidatedDadosConexao['etapa_concluida'] ?? null);
             return ['success' => true, 'mensagem' => $mensagem];
         } else {
-            return ['success' => false, 'mensagem' => ClickSignCodes::ERRO_BAIXAR_ARQUIVO_ANEXO . " - Falha ao anexar."];
+            $codigoRetorno = ClickSignCodes::ERRO_BAIXAR_ARQUIVO_ANEXO;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno);
+            return ['success' => false, 'mensagem' => $mensagem];
         }
     }
 }

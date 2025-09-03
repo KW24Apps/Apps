@@ -112,18 +112,27 @@ class UtilService
         return ['success' => $sucessoVinculo, 'qtdVinculos' => $qtdVinculos, 'mapaIds' => $mapaIds];
     }
 
-    public static function atualizarRetornoBitrix($params, $spa, $dealId, $sucesso, $documentKey, $mensagemCustomizada = null)
+    public static function atualizarRetornoBitrix($params, $spa, $dealId, $sucesso, $documentKey, $codigoRetorno = null)
     {
         $campoRetorno = $params['retorno'] ?? $params['campo_retorno'] ?? null;
         $campoIdClickSign = $params['idclicksign'] ?? $params['campo_idclicksign'] ?? null;
 
-        $mensagemRetorno = $sucesso ?
-            ($mensagemCustomizada ?? "Documento enviado para assinatura") :
-            ($mensagemCustomizada ?? "Erro no envio do documento para assinatura");
+        // Se um código de retorno for fornecido, use-o para o campo Bitrix e obtenha a descrição para o comentário.
+        // Caso contrário, use as mensagens padrão.
+        $mensagemParaCampoBitrix = $codigoRetorno ?? ($sucesso ? ClickSignCodes::DOCUMENTO_ENVIADO : ClickSignCodes::FALHA_GRAVAR_ASSINATURA_BD);
+        $mensagemParaComentario = self::getMessageDescription($mensagemParaCampoBitrix);
+        // Se a mensagem customizada for um código, use a descrição correspondente.
+        // Caso contrário, use a mensagem customizada diretamente ou as mensagens padrão.
+        if ($codigoRetorno) {
+            $mensagemParaComentario = self::getMessageDescription($codigoRetorno);
+        } else {
+            $mensagemParaComentario = $sucesso ? "Documento enviado para assinatura" : "Erro no envio do documento para assinatura";
+        }
+
 
         $fields = [];
         if ($campoRetorno) {
-            $fields[$campoRetorno] = $mensagemRetorno;
+            $fields[$campoRetorno] = $mensagemParaCampoBitrix;
         }
 
         if ($sucesso && $campoIdClickSign && $documentKey) {
@@ -134,7 +143,7 @@ class UtilService
             BitrixDealHelper::editarDeal($spa, $dealId, $fields);
         }
 
-        $comentario = "Retorno ClickSign: " . $mensagemRetorno;
+        $comentario = "Retorno ClickSign: " . $mensagemParaComentario;
         if ($documentKey) {
             $comentario .= "\nDocumento ID: " . $documentKey;
         }
@@ -188,6 +197,51 @@ class UtilService
             LogHelper::logClickSign("Deal $dealId movido para a etapa '$etapaConcluidaNome' ($statusIdAlvo)", 'service');
         } else {
             LogHelper::logClickSign("AVISO: Etapa '$etapaConcluidaNome' não encontrada para a SPA $spa. Etapas disponíveis: " . json_encode(array_column($etapas, 'NAME')), 'service');
+        }
+    }
+
+    public static function getMessageDescription(string $code): string
+    {
+        switch ($code) {
+            case ClickSignCodes::PARAMS_AUSENTES: return "Parâmetros obrigatórios ausentes.";
+            case ClickSignCodes::ACESSO_NAO_AUTORIZADO: return "Acesso não autorizado ou incompleto.";
+            case ClickSignCodes::DEAL_NAO_ENCONTRADO: return "Deal não encontrado.";
+            case ClickSignCodes::ARQUIVO_OBRIGATORIO: return "Arquivo a ser assinado é obrigatório.";
+            case ClickSignCodes::DATA_LIMITE_OBRIGATORIA: return "Data limite de assinatura é obrigatória.";
+            case ClickSignCodes::DATA_LIMITE_PASSADO: return "Data limite deve ser posterior à data atual.";
+            case ClickSignCodes::SIGNATARIO_OBRIGATORIO: return "Pelo menos um signatário é obrigatório.";
+            case ClickSignCodes::CAMPOS_INVALIDOS: return "Campos obrigatórios ausentes ou inválidos.";
+            case ClickSignCodes::DADOS_SIGNATARIO_FALTANTES: return "Dados faltantes nos signatários.";
+            case ClickSignCodes::DADOS_SIGNATARIO_INCOMPLETOS: return "Dados de signatário incompletos.";
+            case ClickSignCodes::DADOS_SIGNATARIO_NAO_ENCONTRADOS_EVENTO: return "Dados de signatário não encontrados no evento.";
+            case ClickSignCodes::ERRO_CONVERTER_ARQUIVO: return "Erro ao converter o arquivo.";
+            case ClickSignCodes::FALHA_CONVERTER_ARQUIVO: return "Falha ao converter o arquivo.";
+            case ClickSignCodes::ERRO_BAIXAR_ARQUIVO_ANEXO: return "Erro ao baixar/anexar o arquivo.";
+            case ClickSignCodes::FALHA_CRIAR_SIGNATARIO: return "Falha ao criar signatário.";
+            case ClickSignCodes::FALHA_VINCULAR_SIGNATARIO: return "Falha ao vincular signatário.";
+            case ClickSignCodes::FALHA_VINCULO_SIGNATARIOS: return "Falha em um ou mais vínculos de signatários.";
+            case ClickSignCodes::DOCUMENTO_ENVIADO: return "Documento enviado para assinatura.";
+            case ClickSignCodes::ASSINATURA_REALIZADA: return "Assinatura realizada.";
+            case ClickSignCodes::DOCUMENTO_ASSINADO: return "Documento assinado.";
+            case ClickSignCodes::ARQUIVO_ENVIADO_BITRIX: return "Arquivo enviado ao Bitrix.";
+            case ClickSignCodes::PROCESSO_FINALIZADO_COM_ANEXO: return "Documento assinado e anexado.";
+            case ClickSignCodes::PRAZO_ESTENDIDO_AUTO: return "Prazo estendido automaticamente.";
+            case ClickSignCodes::ASSINATURA_CANCELADA_PRAZO: return "Assinatura cancelada: Prazo finalizado.";
+            case ClickSignCodes::ASSINATURA_CANCELADA_MANUAL: return "Assinatura cancelada: Cancelada manualmente.";
+            case ClickSignCodes::EVENTO_AUTO_CLOSE_SALVO: return "Evento auto_close salvo.";
+            case ClickSignCodes::PROCESSO_FINALIZADO_SEM_ANEXO: return "Documento assinado com sucesso (sem anexo).";
+            case ClickSignCodes::ASSINATURA_JA_PROCESSADA: return "Assinatura já processada.";
+            case ClickSignCodes::EVENTO_FECHADO_JA_PROCESSADO: return "Evento de documento fechado já processado.";
+            case ClickSignCodes::DOCUMENTO_JA_DISPONIVEL: return "Documento já disponível.";
+            case ClickSignCodes::ASSINATURA_JA_EM_ANDAMENTO: return "Já existe uma assinatura em andamento para este Deal.";
+            case ClickSignCodes::WEBHOOK_PARAMS_AUSENTES: return "Parâmetros obrigatórios do webhook ausentes.";
+            case ClickSignCodes::HMAC_INVALIDO: return "Assinatura HMAC inválida.";
+            case ClickSignCodes::DOCUMENTO_NAO_ENCONTRADO_BD: return "Documento não encontrado no BD.";
+            case ClickSignCodes::CREDENCIAIS_API_NAO_CONFIGURADAS: return "Credenciais da API não configuradas.";
+            case ClickSignCodes::EVENTO_SEM_ACAO: return "Evento recebido sem ação específica.";
+            case ClickSignCodes::FALHA_GRAVAR_ASSINATURA_BD: return "Erro ao registrar assinatura no banco de dados.";
+            case ClickSignCodes::TOKEN_AUSENTE: return "Token ausente.";
+            default: return "Mensagem de retorno desconhecida.";
         }
     }
 }
