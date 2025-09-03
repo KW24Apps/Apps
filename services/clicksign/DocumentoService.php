@@ -73,7 +73,7 @@ class DocumentoService
         if (isset($resultado['document'])) {
             $codigoRetorno = ClickSignCodes::DATA_ATUALIZADA_MANUALMENTE;
             $dataParaMensagem = date('d/m/Y', strtotime($novaDataFormatada));
-            $mensagemCustomizadaComentario = " - Data do documento atualizada para $dataParaMensagem.";
+            $mensagemCustomizadaComentario = "$dataParaMensagem.";
             $mensagemParaRetornoFuncao = UtilService::getMessageDescription($codigoRetorno) . $mensagemCustomizadaComentario;
             UtilService::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, $codigoRetorno, $mensagemCustomizadaComentario);
             LogHelper::logClickSign($mensagemParaRetornoFuncao, 'service');

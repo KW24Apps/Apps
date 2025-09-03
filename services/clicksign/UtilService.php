@@ -225,7 +225,7 @@ class UtilService
             case ClickSignCodes::ASSINATURA_CANCELADA_PRAZO: return "Assinatura cancelada: Prazo finalizado.";
             case ClickSignCodes::ASSINATURA_CANCELADA_MANUAL: return "Assinatura cancelada: Cancelada manualmente.";
             case ClickSignCodes::PROCESSO_FINALIZADO_SEM_ANEXO: return "Documento assinado com sucesso (sem anexo).";
-            case ClickSignCodes::DATA_ATUALIZADA_MANUALMENTE: return "Data do documento atualizada manualmente.";
+            case ClickSignCodes::DATA_ATUALIZADA_MANUALMENTE: return "Data do documento atualizada manualmente para - ";
             case ClickSignCodes::FALHA_ADIAR_PRAZO: return "Falha ao adiar prazo.";
             case ClickSignCodes::EXCECAO_PROCESSAMENTO_PRAZO: return "Exceção no processamento de prazo.";
             case ClickSignCodes::ASSINATURA_JA_EM_ANDAMENTO: return "Já existe uma assinatura em andamento para este Deal.";
