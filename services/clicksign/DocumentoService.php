@@ -23,16 +23,16 @@ class DocumentoService
 
         if (isset($resultado['document'])) {
             $codigoRetorno = ClickSignCodes::ASSINATURA_CANCELADA_MANUAL;
-            $mensagemCustomizadaComentario = " - Documento $documentKey cancelado com sucesso.";
-            $mensagemParaRetornoFuncao = UtilService::getMessageDescription($codigoRetorno) . $mensagemCustomizadaComentario;
-            UtilService::atualizarRetornoBitrix($params, $authData['spa'], $authData['dealId'], true, $documentKey, $codigoRetorno, $mensagemCustomizadaComentario);
+            $mensagemParaRetornoFuncao = UtilService::getMessageDescription($codigoRetorno);
+            UtilService::atualizarRetornoBitrix($params, $authData['spa'], $authData['dealId'], true, $documentKey, $codigoRetorno, null);
+            LogHelper::logClickSign($mensagemParaRetornoFuncao . " - Documento $documentKey cancelado com sucesso.", 'service');
             return ['success' => true, 'mensagem' => $mensagemParaRetornoFuncao];
         } else {
             $codigoRetorno = ClickSignCodes::FALHA_CANCELAR_DOCUMENTO;
             $erro = $resultado['errors'][0] ?? 'Erro desconhecido ao cancelar.';
-            $mensagemCustomizadaComentario = " - Falha ao cancelar documento ($documentKey): $erro";
-            $mensagemParaRetornoFuncao = UtilService::getMessageDescription($codigoRetorno) . $mensagemCustomizadaComentario;
-            UtilService::atualizarRetornoBitrix($params, $authData['spa'], $authData['dealId'], false, $documentKey, $codigoRetorno, $mensagemCustomizadaComentario);
+            $mensagemParaRetornoFuncao = UtilService::getMessageDescription($codigoRetorno);
+            UtilService::atualizarRetornoBitrix($params, $authData['spa'], $authData['dealId'], false, $documentKey, $codigoRetorno, null);
+            LogHelper::logClickSign($mensagemParaRetornoFuncao . " - Falha ao cancelar documento ($documentKey): $erro", 'service');
             return ['success' => false, 'mensagem' => $mensagemParaRetornoFuncao, 'details' => $resultado];
         }
     }
@@ -76,13 +76,15 @@ class DocumentoService
             $mensagemCustomizadaComentario = " - Data do documento atualizada para $dataParaMensagem.";
             $mensagemParaRetornoFuncao = UtilService::getMessageDescription($codigoRetorno) . $mensagemCustomizadaComentario;
             UtilService::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, $codigoRetorno, $mensagemCustomizadaComentario);
+            LogHelper::logClickSign($mensagemParaRetornoFuncao, 'service');
             return ['success' => true, 'mensagem' => $mensagemParaRetornoFuncao];
         } else {
             $codigoRetorno = ClickSignCodes::FALHA_ATUALIZAR_DOCUMENTO;
             $erro = $resultado['errors'][0] ?? 'Erro desconhecido ao atualizar data.';
+            $mensagemParaRetornoFuncao = UtilService::getMessageDescription($codigoRetorno);
             $mensagemCustomizadaComentario = " - Falha ao atualizar data do documento: $erro";
-            $mensagemParaRetornoFuncao = UtilService::getMessageDescription($codigoRetorno) . $mensagemCustomizadaComentario;
-            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, $documentKey, $codigoRetorno, $mensagemCustomizadaComentario);
+            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, $documentKey, $codigoRetorno, null);
+            LogHelper::logClickSign($mensagemParaRetornoFuncao . $mensagemCustomizadaComentario, 'service');
             return ['success' => false, 'mensagem' => $mensagemParaRetornoFuncao, 'details' => $resultado];
         }
     }
@@ -94,8 +96,9 @@ class DocumentoService
 
         if (empty($id) || empty($entityId)) {
             $codigoRetorno = ClickSignCodes::PARAMS_AUSENTES;
-            $mensagem = UtilService::getMessageDescription($codigoRetorno) . ' (deal, spa) ausentes.';
-            return ['success' => false, 'mensagem' => $mensagem];
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            LogHelper::logClickSign($mensagem . ' (deal, spa) ausentes.', 'service');
+            return ['success' => false, 'mensagem' => $mensagem . ' (deal, spa) ausentes.'];
         }
 
         $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
@@ -106,16 +109,18 @@ class DocumentoService
 
         if (!$tokenClicksign) {
             $codigoRetorno = ClickSignCodes::ACESSO_NAO_AUTORIZADO;
-            $mensagem = UtilService::getMessageDescription($codigoRetorno) . ' - Acesso não autorizado ou incompleto.';
-            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $codigoRetorno, ' - Acesso não autorizado ou incompleto.');
-            return ['success' => false, 'mensagem' => $mensagem];
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $codigoRetorno, null);
+            LogHelper::logClickSign($mensagem . ' - Acesso não autorizado ou incompleto.', 'service');
+            return ['success' => false, 'mensagem' => $mensagem . ' - Acesso não autorizado ou incompleto.'];
         }
 
         $campoIdClickSignOriginal = $fieldsConfig['idclicksign'] ?? null;
         if (empty($campoIdClickSignOriginal)) {
             $codigoRetorno = ClickSignCodes::TOKEN_AUSENTE; // Usando TOKEN_AUSENTE como um código genérico para campo ausente
-            $mensagem = UtilService::getMessageDescription($codigoRetorno) . ' - Campo "idclicksign" não configurado para esta SPA.';
-            return ['success' => false, 'mensagem' => $mensagem];
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            LogHelper::logClickSign($mensagem . ' - Campo "idclicksign" não configurado para esta SPA.', 'service');
+            return ['success' => false, 'mensagem' => $mensagem . ' - Campo "idclicksign" não configurado para esta SPA.'];
         }
         
         $dealData = BitrixDealHelper::consultarDeal($entityId, $id, [$campoIdClickSignOriginal]);
@@ -124,6 +129,7 @@ class DocumentoService
 
         if (empty($documentKey)) {
             $mensagem = 'Ação ignorada, nenhum documento para atualizar.';
+            LogHelper::logClickSign($mensagem, 'service');
             return ['success' => true, 'documentKey' => null, 'mensagem' => $mensagem];
         }
 

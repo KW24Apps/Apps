@@ -17,16 +17,16 @@ class RetornoClickSignService
         $documentKey = $requestData['document']['key'] ?? null;
         if (empty($documentKey)) {
             $codigoRetorno = ClickSignCodes::WEBHOOK_PARAMS_AUSENTES;
-            $mensagem = UtilService::getMessageDescription($codigoRetorno) . " - Parâmetros obrigatórios ausentes.";
-            LogHelper::logClickSign($mensagem, 'service');
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            LogHelper::logClickSign($mensagem . " - Parâmetros obrigatórios ausentes.", 'service');
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
         $dadosAssinatura = ClickSignDAO::obterAssinaturaClickSign($documentKey);
         if (!$dadosAssinatura) {
             $codigoRetorno = ClickSignCodes::DOCUMENTO_NAO_ENCONTRADO_BD;
-            $mensagem = UtilService::getMessageDescription($codigoRetorno) . " - Documento não encontrado no BD.";
-            LogHelper::logClickSign($mensagem, 'service');
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            LogHelper::logClickSign($mensagem . " - Documento não encontrado no BD.", 'service');
             // Não podemos chamar atualizarRetornoBitrix aqui pois não temos dealId/spa
             return ['success' => false, 'mensagem' => $mensagem];
         }
@@ -37,8 +37,8 @@ class RetornoClickSignService
         $secret = $dadosConexao['clicksign_secret'] ?? null;
         if (!ClickSignHelper::validarHmac($rawBody, $secret, $headerSignature)) {
             $codigoRetorno = ClickSignCodes::HMAC_INVALIDO;
-            $mensagem = UtilService::getMessageDescription($codigoRetorno) . " - Assinatura HMAC inválida";
-            LogHelper::logClickSign($mensagem, 'service');
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            LogHelper::logClickSign($mensagem . " - Assinatura HMAC inválida", 'service');
             // Não podemos chamar atualizarRetornoBitrix aqui pois não temos dealId/spa
             return ['success' => false, 'mensagem' => $mensagem];
         }
@@ -54,7 +54,7 @@ class RetornoClickSignService
                 $dadosAssinaturaAtualizados = ClickSignDAO::obterAssinaturaClickSign($documentKey);
                 if (!$dadosAssinaturaAtualizados) {
                     $codigoRetorno = ClickSignCodes::DOCUMENTO_NAO_ENCONTRADO_BD;
-                    $mensagem = UtilService::getMessageDescription($codigoRetorno) . " - Falha interna ao processar assinatura.";
+                    $mensagem = UtilService::getMessageDescription($codigoRetorno);
                     LogHelper::logClickSign("ERRO: Falha ao re-obter dados da assinatura após salvar status para " . $documentKey, 'service');
                     // Não podemos chamar atualizarRetornoBitrix aqui pois não temos dealId/spa
                     return ['success' => false, 'mensagem' => $mensagem];
@@ -178,15 +178,15 @@ class RetornoClickSignService
         $url = $requestData['document']['downloads']['signed_file_url'] ?? null;
         if (!$url) {
             $codigoRetorno = ClickSignCodes::ERRO_BAIXAR_ARQUIVO_ANEXO;
-            $mensagem = UtilService::getMessageDescription($codigoRetorno) . " - URL não encontrada.";
-            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno, " - URL não encontrada.");
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno, null);
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
         if (empty($campoArquivoAssinado)) {
             $codigoRetorno = ClickSignCodes::PROCESSO_FINALIZADO_SEM_ANEXO;
             $mensagem = UtilService::getMessageDescription($codigoRetorno);
-            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], true, $dadosAssinatura['document_key'], $codigoRetorno, " - Documento assinado com sucesso.");
+            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], true, $dadosAssinatura['document_key'], $codigoRetorno, null);
             return ['success' => true, 'mensagem' => $mensagem];
         }
 
@@ -194,8 +194,8 @@ class RetornoClickSignService
         $arquivoBase64 = UtilHelpers::baixarArquivoBase64(['urlMachine' => $url, 'name' => $nomeArquivo]);
         if (!$arquivoBase64) {
             $codigoRetorno = ClickSignCodes::FALHA_CONVERTER_ARQUIVO;
-            $mensagem = UtilService::getMessageDescription($codigoRetorno) . " - Erro ao baixar/converter.";
-            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno, " - Erro ao baixar/converter.");
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno, null);
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
@@ -205,14 +205,14 @@ class RetornoClickSignService
         if (isset($resultado['status']) && $resultado['status'] === 'sucesso') {
             $codigoRetorno = ClickSignCodes::PROCESSO_FINALIZADO_COM_ANEXO;
             $mensagem = UtilService::getMessageDescription($codigoRetorno);
-            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], true, $dadosAssinatura['document_key'], $codigoRetorno, " - Documento assinado e anexado.");
+            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], true, $dadosAssinatura['document_key'], $codigoRetorno, null);
             UtilService::limparCamposBitrix($consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], $consolidatedDadosConexao);
             UtilService::moverEtapaBitrix($consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], $consolidatedDadosConexao['etapa_concluida'] ?? null);
             return ['success' => true, 'mensagem' => $mensagem];
         } else {
             $codigoRetorno = ClickSignCodes::ERRO_BAIXAR_ARQUIVO_ANEXO;
             $mensagem = UtilService::getMessageDescription($codigoRetorno);
-            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno, " - Falha ao anexar.");
+            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno, null);
             return ['success' => false, 'mensagem' => $mensagem];
         }
     }
