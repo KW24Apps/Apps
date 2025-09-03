@@ -14,6 +14,21 @@ use Helpers\LogHelper;
 
 class DiskController
 {
+    /**
+     * Remove caracteres especiais de uma string, mantendo apenas letras, números, espaços e hífens.
+     *
+     * @param string $string A string a ser sanitizada.
+     * @return string A string sanitizada.
+     */
+    private function sanitizeFolderName(string $string): string
+    {
+        // Remove caracteres especiais, mantendo letras, números, espaços e hífens
+        $sanitized = preg_replace('/[^a-zA-Z0-9\s-]/', '', $string);
+        // Substitui múltiplos espaços por um único espaço e remove espaços no início/fim
+        $sanitized = trim(preg_replace('/\s+/', ' ', $sanitized));
+        return $sanitized;
+    }
+
     public function RenomearPasta()
     {
         header('Content-Type: application/json');
@@ -55,7 +70,9 @@ class DiskController
             }
 
             // 4. Construir o novo nome da pasta
-            $novoNomePasta = $idDominioAtual . ' - ' . $nomePadraoEmpresa;
+            // Sanitiza o nome da empresa para remover caracteres especiais antes de construir o nome da pasta
+            $nomePadraoEmpresaSanitizado = $this->sanitizeFolderName($nomePadraoEmpresa);
+            $novoNomePasta = $idDominioAtual . ' - ' . $nomePadraoEmpresaSanitizado;
 
             // 5. Encontrar o ID da pasta alvo
             $idPastaAlvo = BitrixDiskHelper::findSubfolderIdByName($idPastaMae, $busca);
