@@ -83,10 +83,14 @@ class RetornoClickSignService
             }
             $idsAAssinar = array_diff(array_column($todosSignatarios, 'id'), $idsAssinaram);
 
-            LogHelper::logClickSign("DEBUG - todosSignatarios: " . json_encode($todosSignatarios), 'service');
-            LogHelper::logClickSign("DEBUG - assinaturasProcessadas: " . json_encode($assinaturasProcessadas), 'service');
-            LogHelper::logClickSign("DEBUG - idsAssinaram: " . json_encode($idsAssinaram), 'service');
-            LogHelper::logClickSign("DEBUG - idsAAssinar: " . json_encode($idsAAssinar), 'service');
+            // --- INÍCIO DOS LOGS DE DEBUG TEMPORÁRIOS ---
+            LogHelper::logClickSign("DEBUG - assinatura_processada (DB): " . ($dadosAssinatura['assinatura_processada'] ?? 'N/A'), 'service');
+            LogHelper::logClickSign("DEBUG - signerEmail (Webhook): " . $signerEmail, 'service');
+            LogHelper::logClickSign("DEBUG - todosSignatarios (Decodificado): " . json_encode($todosSignatarios, JSON_UNESCAPED_UNICODE), 'service');
+            LogHelper::logClickSign("DEBUG - assinaturasProcessadas (Array): " . json_encode($assinaturasProcessadas, JSON_UNESCAPED_UNICODE), 'service');
+            LogHelper::logClickSign("DEBUG - idsAssinaram (Para Bitrix): " . json_encode($idsAssinaram, JSON_UNESCAPED_UNICODE), 'service');
+            LogHelper::logClickSign("DEBUG - idsAAssinar (Para Bitrix): " . json_encode($idsAAssinar, JSON_UNESCAPED_UNICODE), 'service');
+            // --- FIM DOS LOGS DE DEBUG TEMPORÁRIOS ---
 
             BitrixDealHelper::editarDeal($spa, $dealId, [
                 $campoSignatariosAssinaram => array_values($idsAssinaram),
