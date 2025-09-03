@@ -118,19 +118,22 @@ class UtilService
         $campoRetorno = $params['retorno'] ?? $params['campo_retorno'] ?? null;
         $campoIdClickSign = $params['idclicksign'] ?? $params['campo_idclicksign'] ?? null;
 
-        // Mensagem para o campo Bitrix (sempre o código)
-        $mensagemParaCampoBitrix = $codigoRetorno ?? ($sucesso ? ClickSignCodes::DOCUMENTO_ENVIADO : ClickSignCodes::FALHA_GRAVAR_ASSINATURA_BD);
+        // O código que será gravado no campo Bitrix
+        $codigoParaCampoBitrix = $codigoRetorno ?? ($sucesso ? ClickSignCodes::DOCUMENTO_ENVIADO : ClickSignCodes::FALHA_GRAVAR_ASSINATURA_BD);
         
-        // Mensagem para o comentário na timeline (descrição do código + customização)
-        $mensagemParaComentario = self::getMessageDescription($mensagemParaCampoBitrix);
+        // A mensagem descritiva para a timeline
+        $mensagemParaComentario = self::getMessageDescription($codigoParaCampoBitrix);
         if ($mensagemCustomizadaComentario) {
             $mensagemParaComentario .= $mensagemCustomizadaComentario;
         }
 
+        // Valor final para o campo de retorno do Bitrix (código + descrição)
+        $valorCampoRetornoBitrix = $codigoParaCampoBitrix . " - " . self::getMessageDescription($codigoParaCampoBitrix);
+
 
         $fields = [];
         if ($campoRetorno) {
-            $fields[$campoRetorno] = $mensagemParaCampoBitrix;
+            $fields[$campoRetorno] = $valorCampoRetornoBitrix; // Usar o valor formatado
         }
 
         if ($sucesso && $campoIdClickSign && $documentKey) {
