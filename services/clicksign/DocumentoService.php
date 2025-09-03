@@ -128,9 +128,11 @@ class DocumentoService
         $documentKey = $dealData['result'][$campoIdClickSignFormatado]['valor'] ?? null;
 
         if (empty($documentKey)) {
-            $mensagem = 'Ação ignorada, nenhum documento para atualizar.';
-            LogHelper::logClickSign($mensagem, 'service');
-            return ['success' => true, 'documentKey' => null, 'mensagem' => $mensagem];
+            $codigoRetorno = ClickSignCodes::DOCUMENTO_NAO_ENCONTRADO_BD;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $codigoRetorno, null);
+            LogHelper::logClickSign($mensagem . ' - Ação ignorada, nenhum documento para atualizar.', 'service');
+            return ['success' => false, 'mensagem' => $mensagem . ' - Ação ignorada, nenhum documento para atualizar.'];
         }
 
         return [
