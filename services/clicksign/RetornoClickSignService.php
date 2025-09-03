@@ -112,6 +112,7 @@ class RetornoClickSignService
         $campoSignatariosAssinaram = $campos['signatarios_assinaram'] ?? null;
         $campoArquivoAssinado = $campos['arquivoassinado'] ?? null; // Adicionado para documentoDisponivel
         $campoRetornoBitrix = $campos['retorno'] ?? null; // Extract campo_retorno here
+        LogHelper::logClickSign("RetornoClickSignService::assinaturaRealizada - campoRetornoBitrix: " . ($campoRetornoBitrix ?? 'N/A'), 'debug');
 
         if ($campoSignatariosAssinar && $campoSignatariosAssinaram) {
             $assinaturasProcessadas = array_filter(explode(';', $dadosAssinatura['assinatura_processada'] ?? ''));
@@ -150,6 +151,7 @@ class RetornoClickSignService
         $consolidatedDadosConexao = json_decode($dadosAssinatura['dados_conexao'], true);
         $campos = $consolidatedDadosConexao['campos'] ?? [];
         $campoRetornoBitrix = $campos['retorno'] ?? null;
+        LogHelper::logClickSign("RetornoClickSignService::documentoFechado - campoRetornoBitrix: " . ($campoRetornoBitrix ?? 'N/A'), 'debug');
 
         if (in_array($evento, ['deadline', 'cancel'])) {
             $codigoRetorno = $evento === 'deadline' ? ClickSignCodes::ASSINATURA_CANCELADA_PRAZO : ClickSignCodes::ASSINATURA_CANCELADA_MANUAL;
@@ -184,6 +186,7 @@ class RetornoClickSignService
         $campos = $consolidatedDadosConexao['campos'] ?? [];
         $campoArquivoAssinado = $campos['arquivoassinado'] ?? null;
         $campoRetornoBitrix = $campos['retorno'] ?? null;
+        LogHelper::logClickSign("RetornoClickSignService::documentoDisponivel - campoRetornoBitrix: " . ($campoRetornoBitrix ?? 'N/A'), 'debug');
 
         $url = $requestData['document']['downloads']['signed_file_url'] ?? null;
         if (!$url) {

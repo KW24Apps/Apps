@@ -27,10 +27,10 @@ class GerarAssinaturaService
         $fields = $configJson[$spaKey]['campos'] ?? [];
         $tokenClicksign = $configJson[$spaKey]['clicksign_token'] ?? null;
 
-        // Merge params with fields to ensure 'retorno' field name is available
-        $params = array_merge($params, $fields);
-        $campoRetornoBitrix = $fields['retorno'] ?? null;
+        // Extrai campo_retorno de fields (config_extra), se disponível, ou dos params originais como fallback
+        $campoRetornoBitrix = $fields['retorno'] ?? $params['retorno'] ?? $params['campo_retorno'] ?? null;
         $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
+        LogHelper::logClickSign("GerarAssinaturaService::gerarAssinatura - campoRetornoBitrix para atualização: " . ($campoRetornoBitrix ?? 'N/A'), 'debug');
 
         if (empty($id) || empty($entityId)) {
             $codigoRetorno = ClickSignCodes::PARAMS_AUSENTES;
