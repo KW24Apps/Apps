@@ -22,20 +22,21 @@ class DocumentoService
         $resultado = ClickSignHelper::cancelarDocumento($documentKey);
 
         // Extract campo_retorno from the original params for updating Bitrix
-        $campoRetornoBitrix = $params['retorno'] ?? $params['campo_retorno'] ?? null;
-        $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
+        $paramsForUpdate = $authData['paramsForUpdate']; // Usar o paramsForUpdate já com campo_retorno
+        $entityId = $authData['spa'];
+        $id = $authData['dealId'];
 
         if (isset($resultado['document'])) {
             $codigoRetorno = ClickSignCodes::ASSINATURA_CANCELADA_MANUAL;
             $mensagemParaRetornoFuncao = UtilService::getMessageDescription($codigoRetorno);
-            UtilService::atualizarRetornoBitrix($paramsForUpdate, $authData['spa'], $authData['dealId'], true, $documentKey, $codigoRetorno, null);
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, true, $documentKey, $codigoRetorno, null);
             LogHelper::logClickSign($mensagemParaRetornoFuncao . " - Documento $documentKey cancelado com sucesso.", 'service');
             return ['success' => true, 'mensagem' => $mensagemParaRetornoFuncao];
         } else {
             $codigoRetorno = ClickSignCodes::FALHA_CANCELAR_DOCUMENTO;
             $erro = $resultado['errors'][0] ?? 'Erro desconhecido ao cancelar.';
             $mensagemParaRetornoFuncao = UtilService::getMessageDescription($codigoRetorno);
-            UtilService::atualizarRetornoBitrix($paramsForUpdate, $authData['spa'], $authData['dealId'], false, $documentKey, $codigoRetorno, null);
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, $documentKey, $codigoRetorno, null);
             LogHelper::logClickSign($mensagemParaRetornoFuncao . " - Falha ao cancelar documento ($documentKey): $erro", 'service');
             return ['success' => false, 'mensagem' => $mensagemParaRetornoFuncao, 'details' => $resultado];
         }
@@ -50,8 +51,8 @@ class DocumentoService
 
         $documentKey = $authData['documentKey'];
         $fieldsConfig = $authData['fieldsConfig'];
-        $entityId = $params['spa'];
-        $id = $params['deal'];
+        $entityId = $authData['spa']; // Usar entityId do authData
+        $id = $authData['dealId']; // Usar id do authData
 
         LogHelper::logClickSign("DocumentoService::atualizarDataDocumento - Parâmetros recebidos: " . json_encode($params), 'debug');
         $campoDataOriginal = $fieldsConfig['data'] ?? null;
@@ -75,10 +76,9 @@ class DocumentoService
         $payload = ['document' => ['deadline_at' => $novaDataFormatada]];
         $resultado = ClickSignHelper::atualizarDocumento($documentKey, $payload);
 
-        // Extract campo_retorno from the original params for updating Bitrix
-        $campoRetornoBitrix = $params['retorno'] ?? $params['campo_retorno'] ?? null;
-        $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
-        LogHelper::logClickSign("DocumentoService::atualizarDataDocumento - campoRetornoBitrix para atualização: " . $campoRetornoBitrix, 'debug');
+        // Usar o paramsForUpdate já com campo_retorno do authData
+        $paramsForUpdate = $authData['paramsForUpdate'];
+        LogHelper::logClickSign("DocumentoService::atualizarDataDocumento - campoRetornoBitrix para atualização: " . ($paramsForUpdate['campo_retorno'] ?? 'N/A'), 'debug');
 
         if (isset($resultado['document'])) {
             $codigoRetorno = ClickSignCodes::DATA_ATUALIZADA_MANUALMENTE;
@@ -105,9 +105,10 @@ class DocumentoService
         $entityId = $params['spa'] ?? null;
         $id = $params['deal'] ?? null;
 
-        // Extract campo_retorno from the original params for updating Bitrix
+        // Extrai campo_retorno dos params de entrada para uso imediato em caso de erro
         $campoRetornoBitrix = $params['retorno'] ?? $params['campo_retorno'] ?? null;
         $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
+        LogHelper::logClickSign("DocumentoService::getAuthAndDocumentKey - campoRetornoBitrix inicial: " . $campoRetornoBitrix, 'debug');
 
         if (empty($id) || empty($entityId)) {
             $codigoRetorno = ClickSignCodes::PARAMS_AUSENTES;
@@ -122,6 +123,11 @@ class DocumentoService
         $spaKey = 'SPA_' . $entityId;
         $fieldsConfig = $configJson[$spaKey]['campos'] ?? [];
         $tokenClicksign = $configJson[$spaKey]['clicksign_token'] ?? null;
+
+        // Atualiza campoRetornoBitrix com base em fieldsConfig se disponível
+        $campoRetornoBitrix = $fieldsConfig['retorno'] ?? $campoRetornoBitrix;
+        $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
+        LogHelper::logClickSign("DocumentoService::getAuthAndDocumentKey - campoRetornoBitrix após fieldsConfig: " . $campoRetornoBitrix, 'debug');
 
         if (!$tokenClicksign) {
             $codigoRetorno = ClickSignCodes::ACESSO_NAO_AUTORIZADO;
@@ -152,10 +158,15 @@ class DocumentoService
             return ['success' => false, 'mensagem' => $mensagem . ' - Ação ignorada, nenhum documento para atualizar.'];
         }
 
+        LogHelper::logClickSign("DocumentoService::getAuthAndDocumentKey - campoRetornoBitrix final: " . $campoRetornoBitrix, 'debug');
+
         return [
             'success' => true,
             'documentKey' => $documentKey,
-            'fieldsConfig' => $fieldsConfig
+            'fieldsConfig' => $fieldsConfig,
+            'spa' => $entityId,
+            'dealId' => $id,
+            'paramsForUpdate' => $paramsForUpdate
         ];
     }
 }
