@@ -43,6 +43,17 @@ class RetornoClickSignService
 
         switch ($evento) {
             case 'sign':
+                $signerEmail = $requestData['event']['data']['signer']['email'] ?? null;
+                if (strpos($dadosAssinatura['assinatura_processada'] ?? '', $signerEmail) !== false) {
+                    return ['success' => true, 'mensagem' => ClickSignCodes::ASSINATURA_JA_PROCESSADA . ' - Assinatura já processada.'];
+                }
+                ClickSignDAO::salvarStatus($documentKey, null, ($dadosAssinatura['assinatura_processada'] ?? '') . ";" . $signerEmail);
+                // Re-obter os dados da assinatura para garantir que 'assinatura_processada' esteja atualizado
+                $dadosAssinatura = ClickSignDAO::obterAssinaturaClickSign($documentKey);
+                if (!$dadosAssinatura) {
+                    LogHelper::logClickSign("ERRO: Falha ao re-obter dados da assinatura após salvar status para " . $documentKey, 'service');
+                    return ['success' => false, 'mensagem' => ClickSignCodes::DOCUMENTO_NAO_ENCONTRADO_BD . " - Falha interna ao processar assinatura."];
+                }
                 return self::assinaturaRealizada($requestData, $dadosAssinatura);
             case 'deadline':
             case 'cancel':
@@ -58,11 +69,6 @@ class RetornoClickSignService
     private static function assinaturaRealizada(array $requestData, array $dadosAssinatura): array
     {
         $signerEmail = $requestData['event']['data']['signer']['email'] ?? null;
-        if (strpos($dadosAssinatura['assinatura_processada'] ?? '', $signerEmail) !== false) {
-            return ['success' => true, 'mensagem' => ClickSignCodes::ASSINATURA_JA_PROCESSADA . ' - Assinatura já processada.'];
-        }
-        ClickSignDAO::salvarStatus($dadosAssinatura['document_key'], null, ($dadosAssinatura['assinatura_processada'] ?? '') . ";" . $signerEmail);
-
         $spa = $dadosAssinatura['spa'];
         $dealId = $dadosAssinatura['deal_id'];
         $signerName = $requestData['event']['data']['signer']['name'] ?? 'N/A';
@@ -76,7 +82,8 @@ class RetornoClickSignService
 
         if ($campoSignatariosAssinar && $campoSignatariosAssinaram) {
             $todosSignatarios = json_decode($dadosAssinatura['Signatarios'], true);
-            $assinaturasProcessadas = array_filter(explode(';', $dadosAssinatura['assinatura_processada'] . ';' . $signerEmail));
+            // Agora, $dadosAssinatura['assinatura_processada'] já contém o e-mail do signatário atual
+            $assinaturasProcessadas = array_filter(explode(';', $dadosAssinatura['assinatura_processada'] ?? ''));
             $idsAssinaram = [];
             foreach ($todosSignatarios as $s) {
                 if (in_array($s['email'], $assinaturasProcessadas)) $idsAssinaram[] = $s['id'];
