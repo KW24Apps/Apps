@@ -28,10 +28,10 @@ class RetornoClickSignService
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
-        $dadosConexao = json_decode($dadosAssinatura['dados_conexao'], true);
-        $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $dadosConexao['webhook_bitrix'] ?? null;
+        $consolidatedDadosConexao = json_decode($dadosAssinatura['dados_conexao'], true);
+        $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $consolidatedDadosConexao['webhook_bitrix'] ?? null;
         
-        $secret = $dadosConexao['clicksign_secret'] ?? null;
+        $secret = $consolidatedDadosConexao['clicksign_secret'] ?? null;
         if (!ClickSignHelper::validarHmac($rawBody, $secret, $headerSignature)) {
             $mensagem = ClickSignCodes::HMAC_INVALIDO . " - Assinatura HMAC inválida";
             LogHelper::logClickSign($mensagem, 'service');
