@@ -171,50 +171,46 @@ try {
         throw new Exception('Erro ao salvar arquivo: ' . ($uploadError['message'] ?? 'Motivo desconhecido'));
     }
 
-    // Detecta o delimitador do CSV para contar as linhas
-    $delimiter = ','; // Padrão
+    $delimiter = ','; // Separador padrão
+    $totalLinhas = 0;
+    $headers = [];
+
     if (($handle = fopen($caminhoArquivo, 'r')) !== false) {
+        // Detecta o delimitador na primeira linha
         $firstLine = fgets($handle);
-        rewind($handle);
+        rewind($handle); // Volta para o início do arquivo
+
         $commaCount = substr_count($firstLine, ',');
         $semicolonCount = substr_count($firstLine, ';');
+
         if ($semicolonCount > $commaCount) {
             $delimiter = ';';
         }
-        fclose($handle);
-    }
-    // Salva o delimitador na sessão para uso posterior
-    $_SESSION['importacao_form']['csv_delimiter'] = $delimiter;
-
-    // Conta as linhas do arquivo para exibir na confirmação
-    $totalLinhas = 0;
-    if (($handle = fopen($caminhoArquivo, 'r')) !== false) {
-        // Pula o cabeçalho
-        fgetcsv($handle, 0, $delimiter); 
+        
+        // Lê o cabeçalho com o delimitador detectado
+        $headers = fgetcsv($handle, 0, $delimiter, '"', "\\");
+        
+        // Conta as linhas restantes
         while (fgetcsv($handle, 0, $delimiter) !== false) {
             $totalLinhas++;
         }
         fclose($handle);
+    } else {
+        throw new Exception('Erro ao abrir o arquivo CSV para leitura.');
     }
 
+    // Salva os dados na sessão
     $_SESSION['importacao_form'] = [
         'funil' => $funil,
-        'responsavel_id' => $responsavelId, // Salva o ID do responsável
-        'solicitante_id' => $solicitanteId, // Salva o ID do solicitante
+        'responsavel_id' => $responsavelId,
+        'solicitante_id' => $solicitanteId,
         'identificador' => $identificador,
-        'arquivo_salvo' => $nomeArquivo, // Nome do arquivo no servidor
-        'arquivo_original' => $arquivo['name'], // Nome original do arquivo
-        'total_linhas' => $totalLinhas, // Total de registros
+        'arquivo_salvo' => $nomeArquivo,
+        'arquivo_original' => $arquivo['name'],
+        'total_linhas' => $totalLinhas,
         'upload_time' => date('Y-m-d H:i:s'),
-        'csv_delimiter' => $delimiter // Garante que o delimitador esteja na sessão
+        'csv_delimiter' => $delimiter
     ];
-
-    // Reabre o arquivo para pegar os cabeçalhos para o mapeamento
-    $headers = [];
-    if (($handle = fopen($caminhoArquivo, 'r')) !== false) {
-        $headers = fgetcsv($handle, 0, $delimiter, '"', "\\"); // Usa o delimitador detectado
-        fclose($handle);
-    }
 
     $cliente = $_POST['cliente'] ?? $_GET['cliente'] ?? '';
     $redirectUrl = '/Apps/public/form/mapeamento.php' . ($cliente ? '?cliente=' . urlencode($cliente) : '');
