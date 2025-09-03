@@ -28,10 +28,10 @@ class RetornoClickSignService
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
-        $consolidatedDadosConexao = json_decode($dadosAssinatura['dados_conexao'], true);
-        $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $consolidatedDadosConexao['webhook_bitrix'] ?? null;
+        $dadosConexao = json_decode($dadosAssinatura['dados_conexao'], true);
+        $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $dadosConexao['webhook_bitrix'] ?? null;
         
-        $secret = $consolidatedDadosConexao['clicksign_secret'] ?? null;
+        $secret = $dadosConexao['clicksign_secret'] ?? null;
         if (!ClickSignHelper::validarHmac($rawBody, $secret, $headerSignature)) {
             $mensagem = ClickSignCodes::HMAC_INVALIDO . " - Assinatura HMAC inválida";
             LogHelper::logClickSign($mensagem, 'service');
@@ -66,12 +66,9 @@ class RetornoClickSignService
                 $assinaturasProcessadas[] = $signerEmail;
                 ClickSignDAO::salvarStatus($documentKey, null, implode(';', $assinaturasProcessadas));
                 
-                // Re-obter os dados da assinatura novamente para garantir que 'assinatura_processada' esteja atualizado
-                $dadosAssinaturaAtualizados = ClickSignDAO::obterAssinaturaClickSign($documentKey);
-                if (!$dadosAssinaturaAtualizados) {
-                    LogHelper::logClickSign("ERRO: Falha ao re-obter dados da assinatura após salvar status para " . $documentKey, 'service');
-                    return ['success' => false, 'mensagem' => ClickSignCodes::DOCUMENTO_NAO_ENCONTRADO_BD . " - Falha interna ao processar assinatura."];
-                }
+                // Atualizar localmente o array $dadosAssinaturaAtualizados com o novo status
+                // para evitar uma nova consulta ao banco de dados.
+                $dadosAssinaturaAtualizados['assinatura_processada'] = implode(';', $assinaturasProcessadas);
 
                 return self::assinaturaRealizada($requestData, $dadosAssinaturaAtualizados);
             case 'deadline':
@@ -124,7 +121,7 @@ class RetornoClickSignService
 
             BitrixDealHelper::editarDeal($spa, $dealId, [
                 $campoSignatariosAssinaram => array_values($idsAssinaram),
-                $campoSignatariosAssinar => empty($idsAAssinar) ? [] : array_values($idsAAssinar)
+                $campoSignatariosAssinar => empty($idsAAssinar) ? '' : array_values($idsAAssinar)
             ]);
         } else {
             LogHelper::logClickSign("Não entrou na condição if (\$campoSignatariosAssinar && \$campoSignatariosAssinaram).", 'service');
