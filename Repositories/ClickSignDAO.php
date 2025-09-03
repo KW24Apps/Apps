@@ -23,9 +23,9 @@ class ClickSignDAO
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             $sql = "INSERT INTO assinaturas_clicksign 
-                    (document_key, cliente_id, deal_id, spa, Signatarios, campo_contratante, campo_contratada, campo_testemunhas, campo_data, campo_arquivoaserassinado, campo_arquivoassinado, campo_idclicksign, campo_retorno, etapa_concluida, dados_conexao, ids_signatarios)
+                    (document_key, cliente_id, dados_conexao)
                     VALUES 
-                    (:document_key, :cliente_id, :deal_id, :spa, :Signatarios, :campo_contratante, :campo_contratada, :campo_testemunhas, :campo_data, :campo_arquivoaserassinado, :campo_arquivoassinado, :campo_idclicksign, :campo_retorno, :etapa_concluida, :dados_conexao, :ids_signatarios)";
+                    (:document_key, :cliente_id, :dados_conexao)";
             
             $stmt = $pdo->prepare($sql);
             $stmt->execute($dados);

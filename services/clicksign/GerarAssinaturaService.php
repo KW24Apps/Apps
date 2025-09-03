@@ -132,23 +132,32 @@ class GerarAssinaturaService
         $webhookBitrix = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? null;
         $secretClicksign = $configJson[$spaKey]['clicksign_secret'] ?? null;
 
-        $dadosConexao = ['webhook_bitrix' => $webhookBitrix, 'clicksign_token' => $tokenClicksign, 'clicksign_secret' => $secretClicksign];
-
-        $dadosRegistro = array_merge($params, [
-            'document_key' => $documentKey,
-            'cliente_id' => $clienteId,
+        // Construir o JSON consolidado para dados_conexao
+        $consolidatedDadosConexao = [
+            'webhook_bitrix' => $webhookBitrix,
+            'clicksign_token' => $tokenClicksign,
+            'clicksign_secret' => $secretClicksign,
+            'campos' => $fields, // Inclui todos os mapeamentos de campos
             'deal_id' => $id,
             'spa' => $entityId,
-            'Signatarios' => json_encode($todosSignatariosParaJson, JSON_UNESCAPED_UNICODE),
             'etapa_concluida' => $params['EtapaConcluido'] ?? null,
-            'dados_conexao' => json_encode($dadosConexao, JSON_UNESCAPED_UNICODE),
-            'ids_signatarios' => json_encode($resultadoVinculo['mapaIds'], JSON_UNESCAPED_UNICODE)
-        ]);
+            'signatarios_detalhes' => [
+                'todos_signatarios' => $todosSignatariosParaJson,
+                'ids_vinculados' => $resultadoVinculo['mapaIds']
+            ]
+        ];
+
+        $dadosRegistro = [
+            'document_key' => $documentKey,
+            'cliente_id' => $clienteId,
+            'dados_conexao' => json_encode($consolidatedDadosConexao, JSON_UNESCAPED_UNICODE)
+        ];
 
         $gravado = self::registrarAssinaturaComRetry($dadosRegistro);
 
         if ($gravado) {
-            self::atualizarCamposSignatariosBitrix($params, $entityId, $id, $todosSignatariosParaJson);
+            // A função atualizarCamposSignatariosBitrix precisará ser ajustada para ler do JSON
+            self::atualizarCamposSignatariosBitrix($consolidatedDadosConexao, $entityId, $id, $todosSignatariosParaJson);
             $mensagem = ClickSignCodes::DOCUMENTO_ENVIADO . " - Documento enviado para assinatura";
             UtilService::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, $mensagem);
             LogHelper::logClickSign($mensagem . " e dados atualizados no Bitrix com sucesso", 'service');
@@ -209,20 +218,7 @@ class GerarAssinaturaService
                 $dadosParaSalvar = [
                     'document_key'               => $dados['document_key'],
                     'cliente_id'                 => $dados['cliente_id'],
-                    'deal_id'                    => $dados['deal_id'],
-                    'spa'                        => $dados['spa'],
-                    'Signatarios'                => $dados['Signatarios'],
-                    'campo_contratante'          => $dados['contratante'] ?? null,
-                    'campo_contratada'           => $dados['contratada'] ?? null,
-                    'campo_testemunhas'          => $dados['testemunhas'] ?? null,
-                    'campo_data'                 => $dados['data'] ?? null,
-                    'campo_arquivoaserassinado'  => $dados['arquivoaserassinado'] ?? null,
-                    'campo_arquivoassinado'      => $dados['arquivoassinado'] ?? null,
-                    'campo_idclicksign'          => $dados['idclicksign'] ?? null,
-                    'campo_retorno'              => $dados['retorno'] ?? null,
-                    'etapa_concluida'            => $dados['etapa_concluida'] ?? null,
-                    'dados_conexao'              => $dados['dados_conexao'] ?? null,
-                    'ids_signatarios'            => $dados['ids_signatarios'] ?? null
+                    'dados_conexao'              => $dados['dados_conexao'] ?? null
                 ];
 
                 if (ClickSignDAO::registrarAssinaturaClicksign($dadosParaSalvar)) {
@@ -237,10 +233,12 @@ class GerarAssinaturaService
         return false;
     }
 
-    private static function atualizarCamposSignatariosBitrix(array $params, string $entityId, string $id, array $todosSignatariosParaJson)
+    private static function atualizarCamposSignatariosBitrix(array $consolidatedDadosConexao, string $entityId, string $id, array $todosSignatariosParaJson)
     {
-        $campoSignatariosAssinar = $params['signatarios_assinar'] ?? null;
-        $campoSignatariosAssinaram = $params['signatarios_assinaram'] ?? null;
+        $campos = $consolidatedDadosConexao['campos'] ?? [];
+        $campoSignatariosAssinar = $campos['signatarios_assinar'] ?? null;
+        $campoSignatariosAssinaram = $campos['signatarios_assinaram'] ?? null;
+        
         if ($campoSignatariosAssinar && $campoSignatariosAssinaram) {
             $idsSignatarios = array_column($todosSignatariosParaJson, 'id');
             $fieldsUpdate = [
