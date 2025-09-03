@@ -28,9 +28,6 @@ class RetornoClickSignService
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
-        LogHelper::logClickSign("Dados da assinatura - Signatários: " . ($dadosAssinatura['Signatarios'] ?? 'N/A'), 'service');
-        LogHelper::logClickSign("Dados da assinatura - Assinaturas Processadas: " . ($dadosAssinatura['assinatura_processada'] ?? 'N/A'), 'service');
-
         $dadosConexao = json_decode($dadosAssinatura['dados_conexao'], true);
         $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $dadosConexao['webhook_bitrix'] ?? null;
         
@@ -47,17 +44,36 @@ class RetornoClickSignService
         switch ($evento) {
             case 'sign':
                 $signerEmail = $requestData['event']['data']['signer']['email'] ?? null;
-                if (strpos($dadosAssinatura['assinatura_processada'] ?? '', $signerEmail) !== false) {
-                    return ['success' => true, 'mensagem' => ClickSignCodes::ASSINATURA_JA_PROCESSADA . ' - Assinatura já processada.'];
-                }
-                ClickSignDAO::salvarStatus($documentKey, null, ($dadosAssinatura['assinatura_processada'] ?? '') . ";" . $signerEmail);
                 // Re-obter os dados da assinatura para garantir que 'assinatura_processada' esteja atualizado
-                $dadosAssinatura = ClickSignDAO::obterAssinaturaClickSign($documentKey);
-                if (!$dadosAssinatura) {
+                // e que dados_conexao esteja completo
+                $dadosAssinaturaAtualizados = ClickSignDAO::obterAssinaturaClickSign($documentKey);
+                if (!$dadosAssinaturaAtualizados) {
                     LogHelper::logClickSign("ERRO: Falha ao re-obter dados da assinatura após salvar status para " . $documentKey, 'service');
                     return ['success' => false, 'mensagem' => ClickSignCodes::DOCUMENTO_NAO_ENCONTRADO_BD . " - Falha interna ao processar assinatura."];
                 }
-                return self::assinaturaRealizada($requestData, $dadosAssinatura);
+
+                // Decodificar dados_conexao para obter os campos e signatários
+                $consolidatedDadosConexao = json_decode($dadosAssinaturaAtualizados['dados_conexao'], true);
+                $todosSignatarios = $consolidatedDadosConexao['signatarios_detalhes']['todos_signatarios'] ?? [];
+                $assinaturasProcessadas = array_filter(explode(';', $dadosAssinaturaAtualizados['assinatura_processada'] ?? ''));
+
+                // Verificar se o signatário já foi processado
+                if (in_array($signerEmail, $assinaturasProcessadas)) {
+                    return ['success' => true, 'mensagem' => ClickSignCodes::ASSINATURA_JA_PROCESSADA . ' - Assinatura já processada.'];
+                }
+                
+                // Adicionar o email do signatário atual à lista de assinaturas processadas
+                $assinaturasProcessadas[] = $signerEmail;
+                ClickSignDAO::salvarStatus($documentKey, null, implode(';', $assinaturasProcessadas));
+                
+                // Re-obter os dados da assinatura novamente para garantir que 'assinatura_processada' esteja atualizado
+                $dadosAssinaturaAtualizados = ClickSignDAO::obterAssinaturaClickSign($documentKey);
+                if (!$dadosAssinaturaAtualizados) {
+                    LogHelper::logClickSign("ERRO: Falha ao re-obter dados da assinatura após salvar status para " . $documentKey, 'service');
+                    return ['success' => false, 'mensagem' => ClickSignCodes::DOCUMENTO_NAO_ENCONTRADO_BD . " - Falha interna ao processar assinatura."];
+                }
+
+                return self::assinaturaRealizada($requestData, $dadosAssinaturaAtualizados);
             case 'deadline':
             case 'cancel':
             case 'auto_close':
@@ -74,19 +90,28 @@ class RetornoClickSignService
         LogHelper::logClickSign("Início da função assinaturaRealizada.", 'service');
 
         $signerEmail = $requestData['event']['data']['signer']['email'] ?? null;
-        $spa = $dadosAssinatura['spa'];
-        $dealId = $dadosAssinatura['deal_id'];
         $signerName = $requestData['event']['data']['signer']['name'] ?? 'N/A';
 
-        $campoSignatariosAssinar = $dadosAssinatura['campo_signatarios_assinar'] ?? null;
-        $campoSignatariosAssinaram = $dadosAssinatura['campo_signatarios_assinaram'] ?? null;
+        // Decodificar dados_conexao para obter todas as informações
+        $consolidatedDadosConexao = json_decode($dadosAssinatura['dados_conexao'], true);
+        
+        $spa = $consolidatedDadosConexao['spa'] ?? null;
+        $dealId = $consolidatedDadosConexao['deal_id'] ?? null;
+        $etapaConcluida = $consolidatedDadosConexao['etapa_concluida'] ?? null;
+        $campos = $consolidatedDadosConexao['campos'] ?? [];
+        $todosSignatarios = $consolidatedDadosConexao['signatarios_detalhes']['todos_signatarios'] ?? [];
 
-        LogHelper::logClickSign("Valores dos campos (direto de dadosAssinatura) - campoSignatariosAssinar: " . ($campoSignatariosAssinar ?? 'N/A') . " | campoSignatariosAssinaram: " . ($campoSignatariosAssinaram ?? 'N/A'), 'service');
+        $campoSignatariosAssinar = $campos['signatarios_assinar'] ?? null;
+        $campoSignatariosAssinaram = $campos['signatarios_assinaram'] ?? null;
+        $campoArquivoAssinado = $campos['arquivoassinado'] ?? null; // Adicionado para documentoDisponivel
+
+        LogHelper::logClickSign("Valores dos campos (de dados_conexao) - campoSignatariosAssinar: " . ($campoSignatariosAssinar ?? 'N/A') . " | campoSignatariosAssinaram: " . ($campoSignatariosAssinaram ?? 'N/A'), 'service');
+        LogHelper::logClickSign("Signatários Detalhes (de dados_conexao): " . json_encode($todosSignatarios), 'service');
+
 
         if ($campoSignatariosAssinar && $campoSignatariosAssinaram) {
             LogHelper::logClickSign("Entrou na condição if (\$campoSignatariosAssinar && \$campoSignatariosAssinaram).", 'service');
-            $todosSignatarios = json_decode($dadosAssinatura['Signatarios'], true);
-            // Agora, $dadosAssinatura['assinatura_processada'] já contém o e-mail do signatário atual
+            
             $assinaturasProcessadas = array_filter(explode(';', $dadosAssinatura['assinatura_processada'] ?? ''));
             $idsAssinaram = [];
             foreach ($todosSignatarios as $s) {
@@ -99,7 +124,7 @@ class RetornoClickSignService
 
             BitrixDealHelper::editarDeal($spa, $dealId, [
                 $campoSignatariosAssinaram => array_values($idsAssinaram),
-                $campoSignatariosAssinar => empty($idsAAssinar) ? [] : array_values($idsAAssinar) // Alterado para enviar array vazio
+                $campoSignatariosAssinar => empty($idsAAssinar) ? [] : array_values($idsAAssinar)
             ]);
         } else {
             LogHelper::logClickSign("Não entrou na condição if (\$campoSignatariosAssinar && \$campoSignatariosAssinaram).", 'service');
