@@ -53,6 +53,7 @@ class DocumentoService
         $entityId = $params['spa'];
         $id = $params['deal'];
 
+        LogHelper::logClickSign("DocumentoService::atualizarDataDocumento - Parâmetros recebidos: " . json_encode($params), 'debug');
         $campoDataOriginal = $fieldsConfig['data'] ?? null;
         if (empty($campoDataOriginal)) {
             $codigoRetorno = ClickSignCodes::DATA_LIMITE_OBRIGATORIA;
@@ -77,6 +78,7 @@ class DocumentoService
         // Extract campo_retorno from the original params for updating Bitrix
         $campoRetornoBitrix = $params['retorno'] ?? $params['campo_retorno'] ?? null;
         $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
+        LogHelper::logClickSign("DocumentoService::atualizarDataDocumento - campoRetornoBitrix para atualização: " . $campoRetornoBitrix, 'debug');
 
         if (isset($resultado['document'])) {
             $codigoRetorno = ClickSignCodes::DATA_ATUALIZADA_MANUALMENTE;
@@ -99,6 +101,7 @@ class DocumentoService
 
     private static function getAuthAndDocumentKey(array $params): array
     {
+        LogHelper::logClickSign("DocumentoService::getAuthAndDocumentKey - Parâmetros recebidos: " . json_encode($params), 'debug');
         $entityId = $params['spa'] ?? null;
         $id = $params['deal'] ?? null;
 
