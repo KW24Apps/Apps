@@ -47,8 +47,9 @@ class UtilService
                 }
 
                 if (!$idContato || !$nome || !$sobrenome || !$email) {
-                    $mensagem = ClickSignCodes::DADOS_SIGNATARIO_FALTANTES . " - Dados faltantes nos signatários ($papel)";
-                    return ['success' => false, 'mensagem' => $mensagem];
+                    $codigoRetorno = ClickSignCodes::DADOS_SIGNATARIO_FALTANTES;
+                    $mensagem = self::getMessageDescription($codigoRetorno) . " - Dados faltantes nos signatários ($papel)";
+                    return ['success' => false, 'mensagem' => $mensagem, 'codigo' => $codigoRetorno];
                 }
 
                 $signatarioInfo = ['id' => $idContato, 'nome' => $nome, 'sobrenome' => $sobrenome, 'email' => $email];
@@ -219,25 +220,23 @@ class UtilService
             case ClickSignCodes::FALHA_VINCULO_SIGNATARIOS: return "Falha em um ou mais vínculos de signatários.";
             case ClickSignCodes::DOCUMENTO_ENVIADO: return "Documento enviado para assinatura.";
             case ClickSignCodes::ASSINATURA_REALIZADA: return "Assinatura realizada.";
-            case ClickSignCodes::DOCUMENTO_ASSINADO: return "Documento assinado.";
-            case ClickSignCodes::ARQUIVO_ENVIADO_BITRIX: return "Arquivo enviado ao Bitrix.";
             case ClickSignCodes::PROCESSO_FINALIZADO_COM_ANEXO: return "Documento assinado e anexado.";
             case ClickSignCodes::PRAZO_ESTENDIDO_AUTO: return "Prazo estendido automaticamente.";
             case ClickSignCodes::ASSINATURA_CANCELADA_PRAZO: return "Assinatura cancelada: Prazo finalizado.";
             case ClickSignCodes::ASSINATURA_CANCELADA_MANUAL: return "Assinatura cancelada: Cancelada manualmente.";
-            case ClickSignCodes::EVENTO_AUTO_CLOSE_SALVO: return "Evento auto_close salvo.";
             case ClickSignCodes::PROCESSO_FINALIZADO_SEM_ANEXO: return "Documento assinado com sucesso (sem anexo).";
-            case ClickSignCodes::ASSINATURA_JA_PROCESSADA: return "Assinatura já processada.";
-            case ClickSignCodes::EVENTO_FECHADO_JA_PROCESSADO: return "Evento de documento fechado já processado.";
-            case ClickSignCodes::DOCUMENTO_JA_DISPONIVEL: return "Documento já disponível.";
+            case ClickSignCodes::DATA_ATUALIZADA_MANUALMENTE: return "Data do documento atualizada manualmente.";
+            case ClickSignCodes::FALHA_ADIAR_PRAZO: return "Falha ao adiar prazo.";
+            case ClickSignCodes::EXCECAO_PROCESSAMENTO_PRAZO: return "Exceção no processamento de prazo.";
             case ClickSignCodes::ASSINATURA_JA_EM_ANDAMENTO: return "Já existe uma assinatura em andamento para este Deal.";
             case ClickSignCodes::WEBHOOK_PARAMS_AUSENTES: return "Parâmetros obrigatórios do webhook ausentes.";
             case ClickSignCodes::HMAC_INVALIDO: return "Assinatura HMAC inválida.";
             case ClickSignCodes::DOCUMENTO_NAO_ENCONTRADO_BD: return "Documento não encontrado no BD.";
             case ClickSignCodes::CREDENCIAIS_API_NAO_CONFIGURADAS: return "Credenciais da API não configuradas.";
-            case ClickSignCodes::EVENTO_SEM_ACAO: return "Evento recebido sem ação específica.";
             case ClickSignCodes::FALHA_GRAVAR_ASSINATURA_BD: return "Erro ao registrar assinatura no banco de dados.";
             case ClickSignCodes::TOKEN_AUSENTE: return "Token ausente.";
+            case ClickSignCodes::FALHA_CANCELAR_DOCUMENTO: return "Falha ao cancelar documento.";
+            case ClickSignCodes::FALHA_ATUALIZAR_DOCUMENTO: return "Falha ao atualizar documento.";
             default: return "Mensagem de retorno desconhecida.";
         }
     }

@@ -67,10 +67,8 @@ class RetornoClickSignService
 
                 // Verificar se o signatário já foi processado
         if (in_array($signerEmail, $assinaturasProcessadas)) {
-            $codigoRetorno = ClickSignCodes::ASSINATURA_JA_PROCESSADA;
-            $mensagem = UtilService::getMessageDescription($codigoRetorno) . ' - Assinatura já processada.';
-            // Não podemos chamar atualizarRetornoBitrix aqui pois não temos dealId/spa
-            return ['success' => true, 'mensagem' => $mensagem];
+            // Ação ignorada, assinatura já processada.
+            return ['success' => true, 'mensagem' => 'Ação ignorada, assinatura já processada.'];
         }
                 
                 // Adicionar o email do signatário atual à lista de assinaturas processadas
@@ -89,7 +87,8 @@ class RetornoClickSignService
             case 'document_closed':
                 return self::documentoDisponivel($requestData, $dadosAssinatura, $dadosConexao['clicksign_token']);
             default:
-                return ['success' => true, 'mensagem' => ClickSignCodes::EVENTO_SEM_ACAO . ' - Evento recebido sem ação específica.'];
+                // Ação ignorada, evento recebido sem ação específica.
+                return ['success' => true, 'mensagem' => 'Ação ignorada, evento recebido sem ação específica.'];
         }
     }
 
@@ -113,22 +112,13 @@ class RetornoClickSignService
         $campoSignatariosAssinaram = $campos['signatarios_assinaram'] ?? null;
         $campoArquivoAssinado = $campos['arquivoassinado'] ?? null; // Adicionado para documentoDisponivel
 
-        LogHelper::logClickSign("Valores dos campos (de dados_conexao) - campoSignatariosAssinar: " . ($campoSignatariosAssinar ?? 'N/A') . " | campoSignatariosAssinaram: " . ($campoSignatariosAssinaram ?? 'N/A'), 'service');
-        LogHelper::logClickSign("Signatários Detalhes (de dados_conexao): " . json_encode($todosSignatarios), 'service');
-
-
         if ($campoSignatariosAssinar && $campoSignatariosAssinaram) {
-            LogHelper::logClickSign("Entrou na condição if (\$campoSignatariosAssinar && \$campoSignatariosAssinaram).", 'service');
-            
             $assinaturasProcessadas = array_filter(explode(';', $dadosAssinatura['assinatura_processada'] ?? ''));
             $idsAssinaram = [];
             foreach ($todosSignatarios as $s) {
                 if (in_array($s['email'], $assinaturasProcessadas)) $idsAssinaram[] = $s['id'];
             }
             $idsAAssinar = array_diff(array_column($todosSignatarios, 'id'), $idsAssinaram);
-
-            LogHelper::logClickSign("Signatários que já assinaram (idsAssinaram): " . json_encode(array_values($idsAssinaram)), 'service');
-            LogHelper::logClickSign("Signatários que não assinaram (idsAAssinar): " . json_encode(array_values($idsAAssinar)), 'service');
 
             BitrixDealHelper::editarDeal($spa, $dealId, [
                 $campoSignatariosAssinaram => array_values($idsAssinaram),
@@ -149,7 +139,8 @@ class RetornoClickSignService
     {
         $evento = $requestData['event']['name'];
         if ($dadosAssinatura['documento_fechado_processado']) {
-            return ['success' => true, 'mensagem' => ClickSignCodes::EVENTO_FECHADO_JA_PROCESSADO . ' - Evento de documento fechado já processado.'];
+            // Ação ignorada, evento de documento fechado já processado.
+            return ['success' => true, 'mensagem' => 'Ação ignorada, evento de documento fechado já processado.'];
         }
         ClickSignDAO::salvarStatus($dadosAssinatura['document_key'], $evento, null, true);
 
@@ -160,16 +151,15 @@ class RetornoClickSignService
             UtilService::atualizarRetornoBitrix($dadosAssinatura, $dadosAssinatura['spa'], $dadosAssinatura['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno, $mensagemCustomizadaComentario);
             return ['success' => false, 'mensagem' => $mensagemParaRetornoFuncao];
         }
-        $codigoRetorno = ClickSignCodes::EVENTO_AUTO_CLOSE_SALVO;
-        $mensagem = UtilService::getMessageDescription($codigoRetorno) . ' - Evento auto_close salvo.';
-        // Não podemos chamar atualizarRetornoBitrix aqui pois não temos dealId/spa
-        return ['success' => true, 'mensagem' => $mensagem];
+        // Ação ignorada, evento auto_close salvo.
+        return ['success' => true, 'mensagem' => 'Ação ignorada, evento auto_close salvo.'];
     }
 
     private static function documentoDisponivel(array $requestData, array $dadosAssinatura, string $token): array
     {
         if ($dadosAssinatura['documento_disponivel_processado']) {
-            return ['success' => true, 'mensagem' => ClickSignCodes::DOCUMENTO_JA_DISPONIVEL . ' - Documento já disponível.'];
+            // Ação ignorada, documento já disponível.
+            return ['success' => true, 'mensagem' => 'Ação ignorada, documento já disponível.'];
         }
         ClickSignDAO::salvarStatus($dadosAssinatura['document_key'], null, null, null, true);
 
