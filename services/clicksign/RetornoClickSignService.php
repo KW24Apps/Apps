@@ -111,6 +111,7 @@ class RetornoClickSignService
         $campoSignatariosAssinar = $campos['signatarios_assinar'] ?? null;
         $campoSignatariosAssinaram = $campos['signatarios_assinaram'] ?? null;
         $campoArquivoAssinado = $campos['arquivoassinado'] ?? null; // Adicionado para documentoDisponivel
+        $campoRetornoBitrix = $campos['retorno'] ?? null; // Extract campo_retorno here
 
         if ($campoSignatariosAssinar && $campoSignatariosAssinaram) {
             $assinaturasProcessadas = array_filter(explode(';', $dadosAssinatura['assinatura_processada'] ?? ''));
@@ -131,7 +132,9 @@ class RetornoClickSignService
         $codigoRetorno = ClickSignCodes::ASSINATURA_REALIZADA;
         $mensagemCustomizadaComentario = "$signerName - $signerEmail";
         $mensagemParaRetornoFuncao = UtilService::getMessageDescription($codigoRetorno) . $mensagemCustomizadaComentario;
-        UtilService::atualizarRetornoBitrix($dadosAssinatura, $spa, $dealId, true, $dadosAssinatura['document_key'], $codigoRetorno, $mensagemCustomizadaComentario);
+        
+        $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
+        UtilService::atualizarRetornoBitrix($paramsForUpdate, $spa, $dealId, true, $dadosAssinatura['document_key'], $codigoRetorno, $mensagemCustomizadaComentario);
         return ['success' => true, 'mensagem' => $mensagemParaRetornoFuncao];
     }
 
@@ -144,11 +147,17 @@ class RetornoClickSignService
         }
         ClickSignDAO::salvarStatus($dadosAssinatura['document_key'], $evento, null, true);
 
+        $consolidatedDadosConexao = json_decode($dadosAssinatura['dados_conexao'], true);
+        $campos = $consolidatedDadosConexao['campos'] ?? [];
+        $campoRetornoBitrix = $campos['retorno'] ?? null;
+
         if (in_array($evento, ['deadline', 'cancel'])) {
             $codigoRetorno = $evento === 'deadline' ? ClickSignCodes::ASSINATURA_CANCELADA_PRAZO : ClickSignCodes::ASSINATURA_CANCELADA_MANUAL;
             $mensagemCustomizadaComentario = $evento === 'deadline' ? ' - Prazo finalizado.' : ' - Cancelada manualmente.';
             $mensagemParaRetornoFuncao = UtilService::getMessageDescription($codigoRetorno) . $mensagemCustomizadaComentario;
-            UtilService::atualizarRetornoBitrix($dadosAssinatura, $dadosAssinatura['spa'], $dadosAssinatura['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno, $mensagemCustomizadaComentario);
+            
+            $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno, $mensagemCustomizadaComentario);
             return ['success' => false, 'mensagem' => $mensagemParaRetornoFuncao];
         }
         // Ação ignorada, evento auto_close salvo.
@@ -174,19 +183,22 @@ class RetornoClickSignService
         $consolidatedDadosConexao = json_decode($dadosAssinatura['dados_conexao'], true);
         $campos = $consolidatedDadosConexao['campos'] ?? [];
         $campoArquivoAssinado = $campos['arquivoassinado'] ?? null;
+        $campoRetornoBitrix = $campos['retorno'] ?? null;
 
         $url = $requestData['document']['downloads']['signed_file_url'] ?? null;
         if (!$url) {
             $codigoRetorno = ClickSignCodes::ERRO_BAIXAR_ARQUIVO_ANEXO;
             $mensagem = UtilService::getMessageDescription($codigoRetorno);
-            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno, null);
+            $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno, null);
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
         if (empty($campoArquivoAssinado)) {
             $codigoRetorno = ClickSignCodes::PROCESSO_FINALIZADO_SEM_ANEXO;
             $mensagem = UtilService::getMessageDescription($codigoRetorno);
-            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], true, $dadosAssinatura['document_key'], $codigoRetorno, null);
+            $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], true, $dadosAssinatura['document_key'], $codigoRetorno, null);
             return ['success' => true, 'mensagem' => $mensagem];
         }
 
@@ -195,7 +207,8 @@ class RetornoClickSignService
         if (!$arquivoBase64) {
             $codigoRetorno = ClickSignCodes::FALHA_CONVERTER_ARQUIVO;
             $mensagem = UtilService::getMessageDescription($codigoRetorno);
-            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno, null);
+            $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno, null);
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
@@ -205,14 +218,16 @@ class RetornoClickSignService
         if (isset($resultado['status']) && $resultado['status'] === 'sucesso') {
             $codigoRetorno = ClickSignCodes::PROCESSO_FINALIZADO_COM_ANEXO;
             $mensagem = UtilService::getMessageDescription($codigoRetorno);
-            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], true, $dadosAssinatura['document_key'], $codigoRetorno, null);
+            $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], true, $dadosAssinatura['document_key'], $codigoRetorno, null);
             UtilService::limparCamposBitrix($consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], $consolidatedDadosConexao);
             UtilService::moverEtapaBitrix($consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], $consolidatedDadosConexao['etapa_concluida'] ?? null);
             return ['success' => true, 'mensagem' => $mensagem];
         } else {
             $codigoRetorno = ClickSignCodes::ERRO_BAIXAR_ARQUIVO_ANEXO;
             $mensagem = UtilService::getMessageDescription($codigoRetorno);
-            UtilService::atualizarRetornoBitrix($dadosAssinatura, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno, null);
+            $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], false, $dadosAssinatura['document_key'], $codigoRetorno, null);
             return ['success' => false, 'mensagem' => $mensagem];
         }
     }

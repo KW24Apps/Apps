@@ -28,6 +28,10 @@ class PrazoService
             $token = $dadosConexao['clicksign_token'] ?? null;
             $documentKey = $assinatura['document_key'];
 
+            // Extract campo_retorno from $assinatura for updating Bitrix
+            $campoRetornoBitrix = $assinatura['campo_retorno'] ?? null;
+            $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
+
             if (empty($token)) {
                 LogHelper::logClickSign("Token não encontrado para o document_key: " . $documentKey, 'service');
                 $summary['erros']++;
@@ -60,19 +64,19 @@ class PrazoService
                         
                         $codigoRetorno = ClickSignCodes::PRAZO_ESTENDIDO_AUTO;
                         $mensagemCustomizadaComentario = " - O prazo foi estendido para " . $novaData->format('d/m/Y') . "."; // Keep this custom message
-                        UtilService::atualizarRetornoBitrix($assinatura, $assinatura['spa'], $assinatura['deal_id'], true, $documentKey, $codigoRetorno, $mensagemCustomizadaComentario);
+                        UtilService::atualizarRetornoBitrix($paramsForUpdate, $assinatura['spa'], $assinatura['deal_id'], true, $documentKey, $codigoRetorno, $mensagemCustomizadaComentario);
                         LogHelper::logClickSign("Documento $documentKey adiado para $novaDataFormatada.", 'service');
                     } else {
                         $codigoRetorno = ClickSignCodes::FALHA_ADIAR_PRAZO;
                         $mensagemCustomizadaComentario = " - Falha ao adiar documento $documentKey.";
-                        UtilService::atualizarRetornoBitrix($assinatura, $assinatura['spa'], $assinatura['deal_id'], false, $documentKey, $codigoRetorno, null); // Set to null
+                        UtilService::atualizarRetornoBitrix($paramsForUpdate, $assinatura['spa'], $assinatura['deal_id'], false, $documentKey, $codigoRetorno, null); // Set to null
                         LogHelper::logClickSign($mensagemCustomizadaComentario, 'service');
                         $summary['erros']++;
                     }
                 } catch (\Exception $e) {
                     $codigoRetorno = ClickSignCodes::EXCECAO_PROCESSAMENTO_PRAZO;
                     $mensagemCustomizadaComentario = " - Exceção ao processar $documentKey: " . $e->getMessage();
-                    UtilService::atualizarRetornoBitrix($assinatura, $assinatura['spa'], $assinatura['deal_id'], false, $documentKey, $codigoRetorno, null); // Set to null
+                    UtilService::atualizarRetornoBitrix($paramsForUpdate, $assinatura['spa'], $assinatura['deal_id'], false, $documentKey, $codigoRetorno, null); // Set to null
                     LogHelper::logClickSign($mensagemCustomizadaComentario, 'service');
                     $summary['erros']++;
                 }
