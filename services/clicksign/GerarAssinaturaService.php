@@ -21,11 +21,17 @@ class GerarAssinaturaService
         $entityId = $params['spa'] ?? $params['entityId'] ?? null;
         $id = $params['deal'] ?? $params['id'] ?? null;
 
+        LogHelper::logClickSign("GerarAssinaturaService::gerarAssinatura - GLOBAIS ACESSO_AUTENTICADO: " . json_encode($GLOBALS['ACESSO_AUTENTICADO'] ?? [], JSON_UNESCAPED_UNICODE), 'debug');
         $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
+        LogHelper::logClickSign("GerarAssinaturaService::gerarAssinatura - configExtra: " . ($configExtra ?? 'null'), 'debug');
         $configJson = $configExtra ? json_decode($configExtra, true) : [];
+        LogHelper::logClickSign("GerarAssinaturaService::gerarAssinatura - configJson (após decode): " . json_encode($configJson, JSON_UNESCAPED_UNICODE), 'debug');
         $spaKey = 'SPA_' . $entityId;
+        LogHelper::logClickSign("GerarAssinaturaService::gerarAssinatura - spaKey: " . $spaKey, 'debug');
         $fields = $configJson[$spaKey]['campos'] ?? [];
+        LogHelper::logClickSign("GerarAssinaturaService::gerarAssinatura - fields (campos mapeados): " . json_encode($fields, JSON_UNESCAPED_UNICODE), 'debug');
         $tokenClicksign = $configJson[$spaKey]['clicksign_token'] ?? null;
+        LogHelper::logClickSign("GerarAssinaturaService::gerarAssinatura - tokenClicksign: " . ($tokenClicksign ? 'SIM' : 'NÃO'), 'debug');
 
         // Extrai campo_retorno de fields (config_extra), se disponível, ou dos params originais como fallback
         $campoRetornoBitrix = $fields['retorno'] ?? $params['retorno'] ?? $params['campo_retorno'] ?? null;
@@ -72,17 +78,9 @@ class GerarAssinaturaService
             return ['success' => false, 'error' => $mensagem];
         }
 
-        $camposNecessarios = ['contratante', 'contratada', 'testemunhas', 'data', 'arquivoaserassinado', 'arquivoassinado', 'idclicksign', 'retorno'];
-        $mapCampos = [];
-        foreach ($camposNecessarios as $campo) {
-            if (!empty($params[$campo])) {
-                $normalizado = BitrixHelper::formatarCampos([$params[$campo] => null]);
-                $mapCampos[$campo] = array_key_first($normalizado);
-            }
-        }
-
-        LogHelper::logClickSign("GerarAssinaturaService::gerarAssinatura - Dados do Deal antes da validação: " . json_encode($dados, JSON_UNESCAPED_UNICODE), 'debug');
-        LogHelper::logClickSign("GerarAssinaturaService::gerarAssinatura - Mapeamento de Campos antes da validação: " . json_encode($mapCampos, JSON_UNESCAPED_UNICODE), 'debug');
+        // O $fields já contém o mapeamento correto dos campos lógicos para os IDs Bitrix.
+        // Portanto, $mapCampos deve ser uma cópia direta de $fields.
+        $mapCampos = $fields;
 
         $errosValidacao = self::validarCamposEssenciais($dados, $mapCampos);
         if (!empty($errosValidacao)) {
