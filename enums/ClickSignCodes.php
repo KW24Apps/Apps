@@ -27,32 +27,31 @@ class ClickSignCodes
     const FALHA_CRIAR_SIGNATARIO = 'CS301';
     const FALHA_VINCULAR_SIGNATARIO = 'CS302';
     const FALHA_VINCULO_SIGNATARIOS = 'CS303';
+    const FALHA_CANCELAR_DOCUMENTO = 'CS304';
+    const FALHA_ATUALIZAR_DOCUMENTO = 'CS305';
 
     // CS4XX - Sucessos Principais
     const DOCUMENTO_ENVIADO = 'CS401';
     const ASSINATURA_REALIZADA = 'CS402';
-    const DOCUMENTO_ASSINADO = 'CS403';
-    const ARQUIVO_ENVIADO_BITRIX = 'CS404';
     const PROCESSO_FINALIZADO_COM_ANEXO = 'CS405';
 
     // CS5XX - Estados de Documento e Jobs
     const PRAZO_ESTENDIDO_AUTO = 'CS501'; // Nosso código customizado
     const ASSINATURA_CANCELADA_PRAZO = 'CS502';
     const ASSINATURA_CANCELADA_MANUAL = 'CS503';
-    const EVENTO_AUTO_CLOSE_SALVO = 'CS504';
     const PROCESSO_FINALIZADO_SEM_ANEXO = 'CS505';
+    const DATA_ATUALIZADA_MANUALMENTE = 'CS506';
+    const FALHA_ADIAR_PRAZO = 'CS507';
+    const EXCECAO_PROCESSAMENTO_PRAZO = 'CS508';
 
     // CS6XX - Controle de Duplicatas
-    const ASSINATURA_JA_PROCESSADA = 'CS601';
-    const EVENTO_FECHADO_JA_PROCESSADO = 'CS602';
-    const DOCUMENTO_JA_DISPONIVEL = 'CS603';
+    const ASSINATURA_JA_EM_ANDAMENTO = 'CS604';
 
     // CS7XX - Webhooks e Retornos
     const WEBHOOK_PARAMS_AUSENTES = 'CS701';
     const HMAC_INVALIDO = 'CS702';
     const DOCUMENTO_NAO_ENCONTRADO_BD = 'CS703';
     const CREDENCIAIS_API_NAO_CONFIGURADAS = 'CS704';
-    const EVENTO_SEM_ACAO = 'CS705';
 
     // CS9XX - Erros de Controle Interno
     const FALHA_GRAVAR_ASSINATURA_BD = 'CS901';

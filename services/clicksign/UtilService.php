@@ -47,8 +47,9 @@ class UtilService
                 }
 
                 if (!$idContato || !$nome || !$sobrenome || !$email) {
-                    $mensagem = ClickSignCodes::DADOS_SIGNATARIO_FALTANTES . " - Dados faltantes nos signatários ($papel)";
-                    return ['success' => false, 'mensagem' => $mensagem];
+                    $codigoRetorno = ClickSignCodes::DADOS_SIGNATARIO_FALTANTES;
+                    $mensagem = self::getMessageDescription($codigoRetorno) . " - Dados faltantes nos signatários ($papel)";
+                    return ['success' => false, 'mensagem' => $mensagem, 'codigo' => $codigoRetorno];
                 }
 
                 $signatarioInfo = ['id' => $idContato, 'nome' => $nome, 'sobrenome' => $sobrenome, 'email' => $email];
@@ -112,18 +113,29 @@ class UtilService
         return ['success' => $sucessoVinculo, 'qtdVinculos' => $qtdVinculos, 'mapaIds' => $mapaIds];
     }
 
-    public static function atualizarRetornoBitrix($params, $spa, $dealId, $sucesso, $documentKey, $mensagemCustomizada = null)
+    public static function atualizarRetornoBitrix($params, $spa, $dealId, $sucesso, $documentKey, $codigoRetorno = null, $mensagemCustomizadaComentario = null)
     {
         $campoRetorno = $params['retorno'] ?? $params['campo_retorno'] ?? null;
         $campoIdClickSign = $params['idclicksign'] ?? $params['campo_idclicksign'] ?? null;
 
-        $mensagemRetorno = $sucesso ?
-            ($mensagemCustomizada ?? "Documento enviado para assinatura") :
-            ($mensagemCustomizada ?? "Erro no envio do documento para assinatura");
+        // O código que será gravado no campo Bitrix
+        $codigoParaCampoBitrix = $codigoRetorno ?? ($sucesso ? ClickSignCodes::DOCUMENTO_ENVIADO : ClickSignCodes::FALHA_GRAVAR_ASSINATURA_BD);
+        
+        // A mensagem descritiva para a timeline
+        $mensagemParaComentario = self::getMessageDescription($codigoParaCampoBitrix);
+        if ($mensagemCustomizadaComentario) {
+            $mensagemParaComentario .= $mensagemCustomizadaComentario;
+        }
+
+        // Valor final para o campo de retorno do Bitrix (código + nome da constante)
+        // A descrição amigável é usada apenas para a timeline.
+        $constantName = self::getConstantName($codigoParaCampoBitrix);
+        $valorCampoRetornoBitrix = $codigoParaCampoBitrix . "-" . ($constantName ?: "MENSAGEM_DESCONHECIDA");
+
 
         $fields = [];
         if ($campoRetorno) {
-            $fields[$campoRetorno] = $mensagemRetorno;
+            $fields[$campoRetorno] = $valorCampoRetornoBitrix; // Usar o valor formatado
         }
 
         if ($sucesso && $campoIdClickSign && $documentKey) {
@@ -134,33 +146,32 @@ class UtilService
             BitrixDealHelper::editarDeal($spa, $dealId, $fields);
         }
 
-        $comentario = "Retorno ClickSign: " . $mensagemRetorno;
+        $comentario = "Retorno ClickSign: " . $mensagemParaComentario;
         if ($documentKey) {
             $comentario .= "\nDocumento ID: " . $documentKey;
         }
         BitrixDealHelper::adicionarComentarioDeal($spa, $dealId, $comentario);
     }
 
-    public static function limparCamposBitrix(string $spa, string $dealId, array $dadosAssinatura)
+    public static function limparCamposBitrix(string $spa, string $dealId, array $consolidatedDadosConexao)
     {
         $fieldsLimpeza = [];
-        $camposParaLimpar = [
-            'campo_contratante', 'campo_contratada', 'campo_testemunhas',
-            'campo_arquivoaserassinado', 'campo_data', 'campo_idclicksign'
+        $camposMapeados = $consolidatedDadosConexao['campos'] ?? [];
+
+        // Campos que devem ser limpos, usando os nomes genéricos que são chaves em $camposMapeados
+        $genericFieldsToClear = [
+            'contratante', 'contratada', 'testemunhas',
+            'arquivoaserassinado', 'data', 'idclicksign',
+            'signatarios_assinar', 'signatarios_assinaram'
         ];
-        foreach ($camposParaLimpar as $campo) {
-            if (!empty($dadosAssinatura[$campo])) {
-                $fieldsLimpeza[$dadosAssinatura[$campo]] = '';
+
+        foreach ($genericFieldsToClear as $genericCampo) {
+            if (isset($camposMapeados[$genericCampo]) && !empty($camposMapeados[$genericCampo])) {
+                $bitrixFieldName = $camposMapeados[$genericCampo];
+                $fieldsLimpeza[$bitrixFieldName] = '';
             }
         }
         
-        $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
-        $configJson = $configExtra ? json_decode($configExtra, true) : [];
-        $spaKey = 'SPA_' . $spa;
-        $camposConfig = $configJson[$spaKey]['campos'] ?? [];
-        if (!empty($camposConfig['signatarios_assinar'])) $fieldsLimpeza[$camposConfig['signatarios_assinar']] = '';
-        if (!empty($camposConfig['signatarios_assinaram'])) $fieldsLimpeza[$camposConfig['signatarios_assinaram']] = '';
-
         if (!empty($fieldsLimpeza)) {
             BitrixDealHelper::editarDeal($spa, $dealId, $fieldsLimpeza);
         }
@@ -168,9 +179,14 @@ class UtilService
 
     public static function moverEtapaBitrix(string $spa, string $dealId, ?string $etapaConcluidaNome)
     {
-        if (!$etapaConcluidaNome) return;
+        if (!$etapaConcluidaNome) {
+            LogHelper::logClickSign("AVISO: Nome da etapa concluída não fornecido para o Deal $dealId na SPA $spa.", 'service');
+            return;
+        }
 
         $etapas = BitrixHelper::consultarEtapasPorTipo($spa);
+        LogHelper::logClickSign("Etapas consultadas para SPA $spa: " . json_encode($etapas), 'service');
+
         $statusIdAlvo = null;
         foreach ($etapas as $etapa) {
             if (isset($etapa['NAME']) && strtolower($etapa['NAME']) === strtolower($etapaConcluidaNome)) {
@@ -183,7 +199,57 @@ class UtilService
             BitrixDealHelper::editarDeal($spa, $dealId, ['stageId' => $statusIdAlvo]);
             LogHelper::logClickSign("Deal $dealId movido para a etapa '$etapaConcluidaNome' ($statusIdAlvo)", 'service');
         } else {
-            LogHelper::logClickSign("AVISO: Etapa '$etapaConcluidaNome' não encontrada para a SPA $spa.", 'service');
+            LogHelper::logClickSign("AVISO: Etapa '$etapaConcluidaNome' não encontrada para a SPA $spa. Etapas disponíveis: " . json_encode(array_column($etapas, 'NAME')), 'service');
         }
+    }
+
+    public static function getMessageDescription(string $code): string
+    {
+        switch ($code) {
+            case ClickSignCodes::PARAMS_AUSENTES: return "Parâmetros obrigatórios ausentes.";
+            case ClickSignCodes::ACESSO_NAO_AUTORIZADO: return "Acesso não autorizado ou incompleto.";
+            case ClickSignCodes::DEAL_NAO_ENCONTRADO: return "Deal não encontrado.";
+            case ClickSignCodes::ARQUIVO_OBRIGATORIO: return "Arquivo a ser assinado é obrigatório.";
+            case ClickSignCodes::DATA_LIMITE_OBRIGATORIA: return "Data limite de assinatura é obrigatória.";
+            case ClickSignCodes::DATA_LIMITE_PASSADO: return "Data limite deve ser posterior à data atual.";
+            case ClickSignCodes::SIGNATARIO_OBRIGATORIO: return "Pelo menos um signatário é obrigatório.";
+            case ClickSignCodes::CAMPOS_INVALIDOS: return "Campos obrigatórios ausentes ou inválidos.";
+            case ClickSignCodes::DADOS_SIGNATARIO_FALTANTES: return "Dados faltantes nos signatários.";
+            case ClickSignCodes::DADOS_SIGNATARIO_INCOMPLETOS: return "Dados de signatário incompletos.";
+            case ClickSignCodes::DADOS_SIGNATARIO_NAO_ENCONTRADOS_EVENTO: return "Dados de signatário não encontrados no evento.";
+            case ClickSignCodes::ERRO_CONVERTER_ARQUIVO: return "Erro ao converter o arquivo.";
+            case ClickSignCodes::FALHA_CONVERTER_ARQUIVO: return "Falha ao converter o arquivo.";
+            case ClickSignCodes::ERRO_BAIXAR_ARQUIVO_ANEXO: return "Erro ao baixar/anexar o arquivo.";
+            case ClickSignCodes::FALHA_CRIAR_SIGNATARIO: return "Falha ao criar signatário.";
+            case ClickSignCodes::FALHA_VINCULAR_SIGNATARIO: return "Falha ao vincular signatário.";
+            case ClickSignCodes::FALHA_VINCULO_SIGNATARIOS: return "Falha em um ou mais vínculos de signatários.";
+            case ClickSignCodes::DOCUMENTO_ENVIADO: return "Documento enviado para assinatura.";
+            case ClickSignCodes::ASSINATURA_REALIZADA: return "Assinatura realizada por - ";
+            case ClickSignCodes::PROCESSO_FINALIZADO_COM_ANEXO: return "Documento assinado e anexado.";
+            case ClickSignCodes::PRAZO_ESTENDIDO_AUTO: return "Prazo estendido automaticamente.";
+            case ClickSignCodes::ASSINATURA_CANCELADA_PRAZO: return "Assinatura cancelada: Prazo finalizado.";
+            case ClickSignCodes::ASSINATURA_CANCELADA_MANUAL: return "Assinatura cancelada: Cancelada manualmente.";
+            case ClickSignCodes::PROCESSO_FINALIZADO_SEM_ANEXO: return "Documento assinado com sucesso (sem anexo).";
+            case ClickSignCodes::DATA_ATUALIZADA_MANUALMENTE: return "Data do documento atualizada manualmente para ";
+            case ClickSignCodes::FALHA_ADIAR_PRAZO: return "Falha ao adiar prazo.";
+            case ClickSignCodes::EXCECAO_PROCESSAMENTO_PRAZO: return "Exceção no processamento de prazo.";
+            case ClickSignCodes::ASSINATURA_JA_EM_ANDAMENTO: return "Já existe uma assinatura em andamento para este Deal.";
+            case ClickSignCodes::WEBHOOK_PARAMS_AUSENTES: return "Parâmetros obrigatórios do webhook ausentes.";
+            case ClickSignCodes::HMAC_INVALIDO: return "Assinatura HMAC inválida.";
+            case ClickSignCodes::DOCUMENTO_NAO_ENCONTRADO_BD: return "Documento não encontrado no BD.";
+            case ClickSignCodes::CREDENCIAIS_API_NAO_CONFIGURADAS: return "Credenciais da API não configuradas.";
+            case ClickSignCodes::FALHA_GRAVAR_ASSINATURA_BD: return "Erro ao registrar assinatura no banco de dados.";
+            case ClickSignCodes::TOKEN_AUSENTE: return "Token ausente.";
+            case ClickSignCodes::FALHA_CANCELAR_DOCUMENTO: return "Falha ao cancelar documento.";
+            case ClickSignCodes::FALHA_ATUALIZAR_DOCUMENTO: return "Falha ao atualizar documento.";
+            default: return "Mensagem de retorno desconhecida.";
+        }
+    }
+
+    public static function getConstantName(string $code): ?string
+    {
+        $reflection = new \ReflectionClass(ClickSignCodes::class);
+        $constants = $reflection->getConstants();
+        return array_search($code, $constants);
     }
 }

@@ -23,9 +23,9 @@ class ClickSignDAO
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             $sql = "INSERT INTO assinaturas_clicksign 
-                    (document_key, cliente_id, deal_id, spa, Signatarios, campo_contratante, campo_contratada, campo_testemunhas, campo_data, campo_arquivoaserassinado, campo_arquivoassinado, campo_idclicksign, campo_retorno, etapa_concluida, dados_conexao, ids_signatarios)
+                    (document_key, cliente_id, dados_conexao)
                     VALUES 
-                    (:document_key, :cliente_id, :deal_id, :spa, :Signatarios, :campo_contratante, :campo_contratada, :campo_testemunhas, :campo_data, :campo_arquivoaserassinado, :campo_arquivoassinado, :campo_idclicksign, :campo_retorno, :etapa_concluida, :dados_conexao, :ids_signatarios)";
+                    (:document_key, :cliente_id, :dados_conexao)";
             
             $stmt = $pdo->prepare($sql);
             $stmt->execute($dados);
@@ -162,4 +162,46 @@ class ClickSignDAO
             return null;
         }
     }
+
+    // Método para obter dados de uma assinatura ativa pelo deal_id e spa do JSON dados_conexao
+    // Retorna um array associativo com os dados da assinatura (incluindo document_key) ou null se não encontrada.
+    public static function obterAssinaturaAtivaPorDealId(string $dealId, string $spa): ?array
+    {
+        $config = require __DIR__ . '/../config/config.php';
+
+        try {
+            $pdo = new PDO(
+                "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+                $config['usuario'],
+                $config['senha']
+            );
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $sql = "
+                SELECT document_key, dados_conexao
+                FROM assinaturas_clicksign
+                WHERE (documento_disponivel_processado = 0 OR documento_disponivel_processado IS NULL)
+                AND (status_closed IS NULL OR status_closed NOT IN ('cancel', 'deadline'))
+                AND JSON_EXTRACT(dados_conexao, '$.deal_id') = :dealId
+                AND JSON_EXTRACT(dados_conexao, '$.spa') = :spa
+                LIMIT 1
+            ";
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindParam(':dealId', $dealId);
+            $stmt->bindParam(':spa', $spa);
+            $stmt->execute();
+
+            $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $resultado ?: null;
+
+        } catch (PDOException $e) {
+            LogHelper::logClickSign("ERRO PDO ao obter assinatura ativa por deal_id: " . $e->getMessage(), 'dao');
+            return null;
+        } catch (\Exception $e) {
+            LogHelper::logClickSign("ERRO geral ao obter assinatura ativa por deal_id: " . $e->getMessage(), 'dao');
+            return null;
+        }
+    }
+
 }

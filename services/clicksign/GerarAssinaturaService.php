@@ -21,34 +21,52 @@ class GerarAssinaturaService
         $entityId = $params['spa'] ?? $params['entityId'] ?? null;
         $id = $params['deal'] ?? $params['id'] ?? null;
 
-        if (empty($id) || empty($entityId)) {
-            $mensagem = ClickSignCodes::PARAMS_AUSENTES . " - Parâmetros obrigatórios ausentes.";
-            LogHelper::logClickSign($mensagem, 'service');
-            return ['success' => false, 'mensagem' => $mensagem];
-        }
-
         $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
         $configJson = $configExtra ? json_decode($configExtra, true) : [];
         $spaKey = 'SPA_' . $entityId;
         $fields = $configJson[$spaKey]['campos'] ?? [];
         $tokenClicksign = $configJson[$spaKey]['clicksign_token'] ?? null;
 
+        // Merge params with fields to ensure 'retorno' field name is available
         $params = array_merge($params, $fields);
+        $campoRetornoBitrix = $fields['retorno'] ?? null;
+        $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
+
+        if (empty($id) || empty($entityId)) {
+            $codigoRetorno = ClickSignCodes::PARAMS_AUSENTES;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            LogHelper::logClickSign($mensagem . " - Parâmetros obrigatórios ausentes.", 'service');
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, null);
+            return ['success' => false, 'mensagem' => $mensagem . " - Parâmetros obrigatórios ausentes."];
+        }
+
+        // Verificar se já existe uma assinatura ativa para este deal_id e spa
+        $assinaturaAtiva = ClickSignDAO::obterAssinaturaAtivaPorDealId($id, $entityId);
+        if ($assinaturaAtiva) {
+            $codigoRetorno = ClickSignCodes::ASSINATURA_JA_EM_ANDAMENTO;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            LogHelper::logClickSign($mensagem . " para este Deal.", 'service');
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, null);
+            return ['success' => false, 'mensagem' => $mensagem . " para este Deal."];
+        }
 
         if (!$tokenClicksign) {
-            $mensagem = ClickSignCodes::ACESSO_NAO_AUTORIZADO . " - Acesso não autorizado ou incompleto.";
-            LogHelper::logClickSign($mensagem, 'service');
-            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagem);
-            return ['success' => false, 'mensagem' => $mensagem];
+            $codigoRetorno = ClickSignCodes::ACESSO_NAO_AUTORIZADO;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            LogHelper::logClickSign($mensagem . " - Acesso não autorizado ou incompleto.", 'service');
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, null);
+            return ['success' => false, 'mensagem' => $mensagem . " - Acesso não autorizado ou incompleto."];
         }
 
         $registro = BitrixDealHelper::consultarDeal($entityId, $id, $fields);
         $dados = $registro['result'] ?? [];
 
         if (!isset($dados['id'])) {
-            $mensagem = ClickSignCodes::DEAL_NAO_ENCONTRADO . " - Deal não encontrado | ID: $id";
-            LogHelper::logClickSign("ERRO - $mensagem", 'service');
-            return ['success' => false, 'error' => $mensagem];
+            $codigoRetorno = ClickSignCodes::DEAL_NAO_ENCONTRADO;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            LogHelper::logClickSign("ERRO - " . $mensagem . " | ID: $id", 'service');
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, null);
+            return ['success' => false, 'error' => $mensagem . " | ID: $id"];
         }
 
         $camposNecessarios = ['contratante', 'contratada', 'testemunhas', 'data', 'arquivoaserassinado', 'arquivoassinado', 'idclicksign', 'retorno'];
@@ -63,10 +81,11 @@ class GerarAssinaturaService
         $errosValidacao = self::validarCamposEssenciais($dados, $mapCampos);
         if (!empty($errosValidacao)) {
             $detalhesErro = implode(', ', $errosValidacao);
-            $mensagemErro = ClickSignCodes::CAMPOS_INVALIDOS . " - Campos obrigatórios ausentes ou inválidos: $detalhesErro";
-            LogHelper::logClickSign("ERRO - $mensagemErro", 'service');
-            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagemErro);
-            return ['success' => false, 'error' => $mensagemErro];
+            $codigoRetorno = ClickSignCodes::CAMPOS_INVALIDOS;
+            $mensagemErro = UtilService::getMessageDescription($codigoRetorno);
+            LogHelper::logClickSign("ERRO - " . $mensagemErro . ": $detalhesErro", 'service');
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, null);
+            return ['success' => false, 'error' => $mensagemErro . ": $detalhesErro"];
         }
 
         $idsContratante = isset($mapCampos['contratante']) ? ($dados[$mapCampos['contratante']]['valor'] ?? null) : null;
@@ -84,9 +103,11 @@ class GerarAssinaturaService
 
         $resultadoSignatarios = UtilService::processarSignatarios($idsContratante, $idsContratada, $idsTestemunhas);
         if (!$resultadoSignatarios['success']) {
-            LogHelper::logClickSign("Erro: " . $resultadoSignatarios['mensagem'], 'service');
-            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $resultadoSignatarios['mensagem']);
-            return $resultadoSignatarios;
+            $codigoRetorno = $resultadoSignatarios['codigo'] ?? ClickSignCodes::DADOS_SIGNATARIO_FALTANTES;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            LogHelper::logClickSign("Erro: " . $mensagem . " - " . ($resultadoSignatarios['mensagem'] ?? ""), 'service');
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, null);
+            return ['success' => false, 'mensagem' => $mensagem . " - " . ($resultadoSignatarios['mensagem'] ?? "")];
         }
         $signatarios = $resultadoSignatarios['signatarios'];
         $todosSignatariosParaJson = $resultadoSignatarios['todosSignatariosParaJson'];
@@ -97,9 +118,11 @@ class GerarAssinaturaService
         $campoArquivo = isset($mapCampos['arquivoaserassinado']) && isset($dados[$mapCampos['arquivoaserassinado']]) ? $dados[$mapCampos['arquivoaserassinado']] : null;
         $arquivoConvertido = self::processarArquivo($campoArquivo);
         if (!$arquivoConvertido['success']) {
-            LogHelper::logClickSign($arquivoConvertido['mensagem'], 'service');
-            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $arquivoConvertido['mensagem']);
-            return $arquivoConvertido;
+            $codigoRetorno = $arquivoConvertido['codigo'] ?? ClickSignCodes::ERRO_CONVERTER_ARQUIVO;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            LogHelper::logClickSign($mensagem . " - " . ($arquivoConvertido['mensagem'] ?? ""), 'service');
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, null);
+            return ['success' => false, 'mensagem' => $mensagem . " - " . ($arquivoConvertido['mensagem'] ?? "")];
         }
 
         $payloadClickSign = [
@@ -114,9 +137,11 @@ class GerarAssinaturaService
         $retornoClickSign = ClickSignHelper::criarDocumento($payloadClickSign);
 
         if (!isset($retornoClickSign['document']['key'])) {
-            $mensagem = ClickSignCodes::FALHA_VINCULO_SIGNATARIOS . " - Erro ao criar documento na ClickSign.";
-            LogHelper::logClickSign($mensagem, 'service');
-            return ['success' => false, 'mensagem' => $mensagem];
+            $codigoRetorno = ClickSignCodes::FALHA_VINCULO_SIGNATARIOS;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            LogHelper::logClickSign($mensagem . " - Erro ao criar documento na ClickSign.", 'service');
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, null);
+            return ['success' => false, 'mensagem' => $mensagem . " - Erro ao criar documento na ClickSign."];
         }
         
         $documentKey = $retornoClickSign['document']['key'];
@@ -124,40 +149,62 @@ class GerarAssinaturaService
 
         $resultadoVinculo = UtilService::vincularSignatarios($documentKey, $signatarios);
         if (!$resultadoVinculo['success']) {
-            $mensagem = ClickSignCodes::FALHA_VINCULO_SIGNATARIOS . " - Documento criado, mas houve falha em um ou mais vínculos de signatários.";
-            return ['success' => false, 'mensagem' => $mensagem, 'document_key' => $documentKey, 'qtd_signatarios' => $qtdSignatarios, 'qtd_vinculos' => $resultadoVinculo['qtdVinculos']];
+            $codigoRetorno = ClickSignCodes::FALHA_VINCULO_SIGNATARIOS;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno);
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, $documentKey, $codigoRetorno, null);
+            return ['success' => false, 'mensagem' => $mensagem . " - Documento criado, mas houve falha em um ou mais vínculos de signatários.", 'document_key' => $documentKey, 'qtd_signatarios' => $qtdSignatarios, 'qtd_vinculos' => $resultadoVinculo['qtdVinculos']];
         }
 
         $clienteId = $GLOBALS['ACESSO_AUTENTICADO']['cliente_id'] ?? null;
         $webhookBitrix = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? null;
         $secretClicksign = $configJson[$spaKey]['clicksign_secret'] ?? null;
 
-        $dadosConexao = ['webhook_bitrix' => $webhookBitrix, 'clicksign_token' => $tokenClicksign, 'clicksign_secret' => $secretClicksign];
-
-        $dadosRegistro = array_merge($params, [
-            'document_key' => $documentKey,
-            'cliente_id' => $clienteId,
+        // Construir o JSON consolidado para dados_conexao
+        $consolidatedDadosConexao = [
+            'webhook_bitrix' => $webhookBitrix,
+            'clicksign_token' => $tokenClicksign,
+            'clicksign_secret' => $secretClicksign,
+            'campos' => $fields, // Inclui todos os mapeamentos de campos
             'deal_id' => $id,
             'spa' => $entityId,
-            'Signatarios' => json_encode($todosSignatariosParaJson, JSON_UNESCAPED_UNICODE),
             'etapa_concluida' => $params['EtapaConcluido'] ?? null,
-            'dados_conexao' => json_encode($dadosConexao, JSON_UNESCAPED_UNICODE),
-            'ids_signatarios' => json_encode($resultadoVinculo['mapaIds'], JSON_UNESCAPED_UNICODE)
-        ]);
+            'signatarios_detalhes' => [
+                'todos_signatarios' => array_map(function($signer) use ($resultadoVinculo) {
+                    $bitrixId = $signer['id'];
+                    $clicksignKey = null;
+                    foreach ($resultadoVinculo['mapaIds'] as $vinculo) {
+                        if ($vinculo['id_bitrix'] == $bitrixId) {
+                            $clicksignKey = $vinculo['key_clicksign'];
+                            break;
+                        }
+                    }
+                    $signer['key_clicksign'] = $clicksignKey;
+                    return $signer;
+                }, $todosSignatariosParaJson)
+            ]
+        ];
+
+        $dadosRegistro = [
+            'document_key' => $documentKey,
+            'cliente_id' => $clienteId,
+            'dados_conexao' => json_encode($consolidatedDadosConexao, JSON_UNESCAPED_UNICODE)
+        ];
 
         $gravado = self::registrarAssinaturaComRetry($dadosRegistro);
 
         if ($gravado) {
-            self::atualizarCamposSignatariosBitrix($params, $entityId, $id, $todosSignatariosParaJson);
-            $mensagem = ClickSignCodes::DOCUMENTO_ENVIADO . " - Documento enviado para assinatura";
-            UtilService::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, $mensagem);
-            LogHelper::logClickSign($mensagem . " e dados atualizados no Bitrix com sucesso", 'service');
+            // A função atualizarCamposSignatariosBitrix precisará ser ajustada para ler do JSON
+            self::atualizarCamposSignatariosBitrix($consolidatedDadosConexao, $entityId, $id, $todosSignatariosParaJson);
+            $mensagem = UtilService::getMessageDescription(ClickSignCodes::DOCUMENTO_ENVIADO);
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, true, $documentKey, ClickSignCodes::DOCUMENTO_ENVIADO, null);
+            LogHelper::logClickSign($mensagem, 'service');
             return ['success' => true, 'mensagem' => $mensagem, 'document_key' => $documentKey, 'qtd_signatarios' => $qtdSignatarios, 'qtd_vinculos' => $resultadoVinculo['qtdVinculos']];
         } else {
-            $mensagemErro = ClickSignCodes::FALHA_GRAVAR_ASSINATURA_BD . " - Erro ao registrar assinatura no banco de dados. AVISO: Os retornos automáticos não funcionarão.";
-            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagemErro);
-            LogHelper::logClickSign("Documento finalizado, mas erro ao gravar controle de assinatura", 'service');
-            return ['success' => false, 'mensagem' => $mensagemErro, 'document_key' => $documentKey];
+            $codigoRetorno = ClickSignCodes::FALHA_GRAVAR_ASSINATURA_BD;
+            $mensagemErro = UtilService::getMessageDescription($codigoRetorno);
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, null);
+            LogHelper::logClickSign($mensagemErro . " - Erro ao registrar assinatura no banco de dados. AVISO: Os retornos automáticos não funcionarão.", 'service');
+            return ['success' => false, 'mensagem' => $mensagemErro . " - Erro ao registrar assinatura no banco de dados. AVISO: Os retornos automáticos não funcionarão.", 'document_key' => $documentKey];
         }
     }
 
@@ -209,20 +256,7 @@ class GerarAssinaturaService
                 $dadosParaSalvar = [
                     'document_key'               => $dados['document_key'],
                     'cliente_id'                 => $dados['cliente_id'],
-                    'deal_id'                    => $dados['deal_id'],
-                    'spa'                        => $dados['spa'],
-                    'Signatarios'                => $dados['Signatarios'],
-                    'campo_contratante'          => $dados['contratante'] ?? null,
-                    'campo_contratada'           => $dados['contratada'] ?? null,
-                    'campo_testemunhas'          => $dados['testemunhas'] ?? null,
-                    'campo_data'                 => $dados['data'] ?? null,
-                    'campo_arquivoaserassinado'  => $dados['arquivoaserassinado'] ?? null,
-                    'campo_arquivoassinado'      => $dados['arquivoassinado'] ?? null,
-                    'campo_idclicksign'          => $dados['idclicksign'] ?? null,
-                    'campo_retorno'              => $dados['retorno'] ?? null,
-                    'etapa_concluida'            => $dados['etapa_concluida'] ?? null,
-                    'dados_conexao'              => $dados['dados_conexao'] ?? null,
-                    'ids_signatarios'            => $dados['ids_signatarios'] ?? null
+                    'dados_conexao'              => $dados['dados_conexao'] ?? null
                 ];
 
                 if (ClickSignDAO::registrarAssinaturaClicksign($dadosParaSalvar)) {
@@ -237,10 +271,12 @@ class GerarAssinaturaService
         return false;
     }
 
-    private static function atualizarCamposSignatariosBitrix(array $params, string $entityId, string $id, array $todosSignatariosParaJson)
+    private static function atualizarCamposSignatariosBitrix(array $consolidatedDadosConexao, string $entityId, string $id, array $todosSignatariosParaJson)
     {
-        $campoSignatariosAssinar = $params['signatarios_assinar'] ?? null;
-        $campoSignatariosAssinaram = $params['signatarios_assinaram'] ?? null;
+        $campos = $consolidatedDadosConexao['campos'] ?? [];
+        $campoSignatariosAssinar = $campos['signatarios_assinar'] ?? null;
+        $campoSignatariosAssinaram = $campos['signatarios_assinaram'] ?? null;
+        
         if ($campoSignatariosAssinar && $campoSignatariosAssinaram) {
             $idsSignatarios = array_column($todosSignatariosParaJson, 'id');
             $fieldsUpdate = [

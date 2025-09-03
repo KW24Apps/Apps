@@ -36,24 +36,32 @@ class BitrixDiskHelper
      */
     public static function findSubfolderIdByName($parentFolderId, $nameSubstring)
     {
-        $children = BitrixHelper::chamarApi('disk.folder.getchildren', ['id' => $parentFolderId]);
+        $start = 0;
+        do {
+            $params = [
+                'id' => $parentFolderId,
+                'start' => $start
+            ];
+            $children = BitrixHelper::chamarApi('disk.folder.getchildren', $params);
 
-        if (isset($children['result']) && is_array($children['result'])) {
-            foreach ($children['result'] as $item) {
-                // Verifica se é uma pasta e se o nome contém o trecho
-                if (isset($item['TYPE']) && $item['TYPE'] === 'folder' && strpos($item['NAME'], $nameSubstring) !== false) {
-                    return (int)$item['ID']; // Retorna o ID da primeira pasta encontrada
+            if (isset($children['result']) && is_array($children['result'])) {
+                foreach ($children['result'] as $item) {
+                    // Verifica se é uma pasta e se o nome contém o trecho
+                    if (isset($item['TYPE']) && $item['TYPE'] === 'folder' && strpos($item['NAME'], $nameSubstring) !== false) {
+                        return (int)$item['ID']; // Retorna o ID da primeira pasta encontrada
+                    }
                 }
             }
-        }
-        
-        // Paginação: Se houver mais itens, busca recursivamente (ou em loop)
-        if (isset($children['next'])) {
-            // Lógica de paginação pode ser adicionada aqui se necessário
-            // Por simplicidade, esta versão inicial busca apenas na primeira página de resultados
-        }
 
-        return null; // Retorna null se não encontrar
+            // Verifica se há mais páginas
+            $hasMore = isset($children['next']) && $children['next'] > 0;
+            if ($hasMore) {
+                $start = $children['next']; // Atualiza o 'start' para a próxima página
+            }
+
+        } while ($hasMore); // Continua enquanto houver mais páginas
+
+        return null; // Retorna null se não encontrar em nenhuma página
     }
 
     /**

@@ -14,9 +14,25 @@ use Helpers\LogHelper;
 
 class DiskController
 {
+    /**
+     * Remove caracteres especiais de uma string, mantendo apenas letras, números, espaços e hífens.
+     *
+     * @param string $string A string a ser sanitizada.
+     * @return string A string sanitizada.
+     */
+    private function sanitizeFolderName(string $string): string
+    {
+        // Remove caracteres especiais, mantendo letras, números, espaços e hífens
+        $sanitized = preg_replace('/[^a-zA-Z0-9\s-]/', '', $string);
+        // Substitui múltiplos espaços por um único espaço e remove espaços no início/fim
+        $sanitized = trim(preg_replace('/\s+/', ' ', $sanitized));
+        return $sanitized;
+    }
+
     public function RenomearPasta()
     {
         header('Content-Type: application/json');
+        //sleep(10); // Adiciona um atraso de 5 segundos conforme solicitado pelo usuário
 
         // IDs dos campos customizados
         $fieldIdDominioAntigo = 'UF_CRM_1756209754';
@@ -47,12 +63,16 @@ class DiskController
             $idDominioAtual = $companyData[$fieldIdDominioAtual] ?? null;
             $nomePadraoEmpresa = $companyData['TITLE'] ?? null;
 
-            if (empty($busca) || empty($idDominioAtual) || empty($nomePadraoEmpresa)) {
-                throw new \Exception("Campos essenciais (ID Domínio Antigo, ID Domínio Atual, Nome) não encontrados na empresa ID {$companyid}.");
+            // A validação foi ajustada para permitir '0' como um valor válido para $busca e $idDominioAtual.
+            // '0' não deve ser tratado como vazio, apenas null ou string vazia.
+            if (($busca === null || $busca === '') || ($idDominioAtual === null || $idDominioAtual === '') || empty($nomePadraoEmpresa)) {
+                throw new \Exception("Campos essenciais (ID Domínio Antigo, ID Domínio Atual, Nome) não encontrados ou são inválidos na empresa ID {$companyid}.");
             }
 
             // 4. Construir o novo nome da pasta
-            $novoNomePasta = $idDominioAtual . ' - ' . $nomePadraoEmpresa;
+            // Sanitiza o nome da empresa para remover caracteres especiais antes de construir o nome da pasta
+            $nomePadraoEmpresaSanitizado = $this->sanitizeFolderName($nomePadraoEmpresa);
+            $novoNomePasta = $idDominioAtual . ' - ' . $nomePadraoEmpresaSanitizado;
 
             // 5. Encontrar o ID da pasta alvo
             $idPastaAlvo = BitrixDiskHelper::findSubfolderIdByName($idPastaMae, $busca);
