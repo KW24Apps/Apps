@@ -141,26 +141,25 @@ class UtilService
         BitrixDealHelper::adicionarComentarioDeal($spa, $dealId, $comentario);
     }
 
-    public static function limparCamposBitrix(string $spa, string $dealId, array $dadosAssinatura)
+    public static function limparCamposBitrix(string $spa, string $dealId, array $consolidatedDadosConexao)
     {
         $fieldsLimpeza = [];
-        $camposParaLimpar = [
-            'campo_contratante', 'campo_contratada', 'campo_testemunhas',
-            'campo_arquivoaserassinado', 'campo_data', 'campo_idclicksign'
+        $camposMapeados = $consolidatedDadosConexao['campos'] ?? [];
+
+        // Campos que devem ser limpos, usando os nomes genéricos que são chaves em $camposMapeados
+        $genericFieldsToClear = [
+            'contratante', 'contratada', 'testemunhas',
+            'arquivoaserassinado', 'data', 'idclicksign', 'retorno', 'arquivoassinado',
+            'signatarios_assinar', 'signatarios_assinaram'
         ];
-        foreach ($camposParaLimpar as $campo) {
-            if (!empty($dadosAssinatura[$campo])) {
-                $fieldsLimpeza[$dadosAssinatura[$campo]] = '';
+
+        foreach ($genericFieldsToClear as $genericCampo) {
+            if (isset($camposMapeados[$genericCampo]) && !empty($camposMapeados[$genericCampo])) {
+                $bitrixFieldName = $camposMapeados[$genericCampo];
+                $fieldsLimpeza[$bitrixFieldName] = '';
             }
         }
         
-        $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
-        $configJson = $configExtra ? json_decode($configExtra, true) : [];
-        $spaKey = 'SPA_' . $spa;
-        $camposConfig = $configJson[$spaKey]['campos'] ?? [];
-        if (!empty($camposConfig['signatarios_assinar'])) $fieldsLimpeza[$camposConfig['signatarios_assinar']] = '';
-        if (!empty($camposConfig['signatarios_assinaram'])) $fieldsLimpeza[$camposConfig['signatarios_assinaram']] = '';
-
         if (!empty($fieldsLimpeza)) {
             BitrixDealHelper::editarDeal($spa, $dealId, $fieldsLimpeza);
         }

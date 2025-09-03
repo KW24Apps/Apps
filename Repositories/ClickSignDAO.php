@@ -162,4 +162,42 @@ class ClickSignDAO
             return null;
         }
     }
+
+    // Método para verificar se já existe uma assinatura ativa para um dado deal_id e spa
+    public static function verificarAssinaturaAtivaPorDealId(string $dealId, string $spa): bool
+    {
+        $config = require __DIR__ . '/../config/config.php';
+
+        try {
+            $pdo = new PDO(
+                "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+                $config['usuario'],
+                $config['senha']
+            );
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $sql = "
+                SELECT COUNT(*)
+                FROM assinaturas_clicksign
+                WHERE (documento_disponivel_processado = 0 OR documento_disponivel_processado IS NULL)
+                AND (status_closed IS NULL OR status_closed NOT IN ('cancel', 'deadline'))
+                AND JSON_EXTRACT(dados_conexao, '$.deal_id') = :dealId
+                AND JSON_EXTRACT(dados_conexao, '$.spa') = :spa
+            ";
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindParam(':dealId', $dealId);
+            $stmt->bindParam(':spa', $spa);
+            $stmt->execute();
+
+            return $stmt->fetchColumn() > 0;
+
+        } catch (PDOException $e) {
+            LogHelper::logClickSign("ERRO PDO ao verificar assinatura ativa por deal_id: " . $e->getMessage(), 'dao');
+            return false;
+        } catch (\Exception $e) {
+            LogHelper::logClickSign("ERRO geral ao verificar assinatura ativa por deal_id: " . $e->getMessage(), 'dao');
+            return false;
+        }
+    }
 }

@@ -46,6 +46,7 @@ class ClickSignCodes
     const ASSINATURA_JA_PROCESSADA = 'CS601';
     const EVENTO_FECHADO_JA_PROCESSADO = 'CS602';
     const DOCUMENTO_JA_DISPONIVEL = 'CS603';
+    const ASSINATURA_JA_EM_ANDAMENTO = 'CS604';
 
     // CS7XX - Webhooks e Retornos
     const WEBHOOK_PARAMS_AUSENTES = 'CS701';

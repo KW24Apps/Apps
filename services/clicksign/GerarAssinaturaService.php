@@ -27,6 +27,14 @@ class GerarAssinaturaService
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
+        // Verificar se já existe uma assinatura ativa para este deal_id e spa
+        if (ClickSignDAO::verificarAssinaturaAtivaPorDealId($id, $entityId)) {
+            $mensagem = ClickSignCodes::ASSINATURA_JA_EM_ANDAMENTO . " - Já existe uma assinatura em andamento para este Deal.";
+            LogHelper::logClickSign($mensagem, 'service');
+            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagem);
+            return ['success' => false, 'mensagem' => $mensagem];
+        }
+
         $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
         $configJson = $configExtra ? json_decode($configExtra, true) : [];
         $spaKey = 'SPA_' . $entityId;
