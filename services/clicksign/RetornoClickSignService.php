@@ -82,6 +82,12 @@ class RetornoClickSignService
                 if (in_array($s['email'], $assinaturasProcessadas)) $idsAssinaram[] = $s['id'];
             }
             $idsAAssinar = array_diff(array_column($todosSignatarios, 'id'), $idsAssinaram);
+
+            LogHelper::logClickSign("DEBUG - todosSignatarios: " . json_encode($todosSignatarios), 'service');
+            LogHelper::logClickSign("DEBUG - assinaturasProcessadas: " . json_encode($assinaturasProcessadas), 'service');
+            LogHelper::logClickSign("DEBUG - idsAssinaram: " . json_encode($idsAssinaram), 'service');
+            LogHelper::logClickSign("DEBUG - idsAAssinar: " . json_encode($idsAAssinar), 'service');
+
             BitrixDealHelper::editarDeal($spa, $dealId, [
                 $campoSignatariosAssinaram => array_values($idsAssinaram),
                 $campoSignatariosAssinar => empty($idsAAssinar) ? '' : array_values($idsAAssinar)
