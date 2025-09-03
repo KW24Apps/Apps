@@ -149,7 +149,7 @@ class UtilService
         // Campos que devem ser limpos, usando os nomes genéricos que são chaves em $camposMapeados
         $genericFieldsToClear = [
             'contratante', 'contratada', 'testemunhas',
-            'arquivoaserassinado', 'data', 'idclicksign', 'retorno', 'arquivoassinado',
+            'arquivoaserassinado', 'data', 'idclicksign',
             'signatarios_assinar', 'signatarios_assinaram'
         ];
 
