@@ -34,27 +34,30 @@ class GerarAssinaturaService
 
         if (empty($id) || empty($entityId)) {
             $codigoRetorno = ClickSignCodes::PARAMS_AUSENTES;
-            $mensagem = $codigoRetorno . "-" . (new \ReflectionClass(ClickSignCodes::class))->getConstants()['PARAMS_AUSENTES'];
+            $constantName = array_search($codigoRetorno, (new \ReflectionClass(ClickSignCodes::class))->getConstants());
+            $mensagem = $codigoRetorno . "-" . ($constantName ?: "MENSAGEM_DESCONHECIDA");
             LogHelper::logClickSign($mensagem . " - Parâmetros obrigatórios ausentes.", 'service');
             UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, " - Parâmetros obrigatórios ausentes.");
-            return ['success' => false, 'mensagem' => $mensagem . " - Parâmetros obrigatórios ausentes."];
+            return ['success' => false, 'mensagem' => $mensagem];
         }
 
         // Verificar se já existe uma assinatura ativa para este deal_id e spa
         if (ClickSignDAO::verificarAssinaturaAtivaPorDealId($id, $entityId)) {
             $codigoRetorno = ClickSignCodes::ASSINATURA_JA_EM_ANDAMENTO;
-            $mensagem = $codigoRetorno . "-" . (new \ReflectionClass(ClickSignCodes::class))->getConstants()['ASSINATURA_JA_EM_ANDAMENTO'];
+            $constantName = array_search($codigoRetorno, (new \ReflectionClass(ClickSignCodes::class))->getConstants());
+            $mensagem = $codigoRetorno . "-" . ($constantName ?: "MENSAGEM_DESCONHECIDA");
             LogHelper::logClickSign($mensagem . " para este Deal.", 'service');
             UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, " para este Deal.");
-            return ['success' => false, 'mensagem' => $mensagem . " para este Deal."];
+            return ['success' => false, 'mensagem' => $mensagem];
         }
 
         if (!$tokenClicksign) {
             $codigoRetorno = ClickSignCodes::ACESSO_NAO_AUTORIZADO;
-            $mensagem = $codigoRetorno . "-" . (new \ReflectionClass(ClickSignCodes::class))->getConstants()['ACESSO_NAO_AUTORIZADO'];
+            $constantName = array_search($codigoRetorno, (new \ReflectionClass(ClickSignCodes::class))->getConstants());
+            $mensagem = $codigoRetorno . "-" . ($constantName ?: "MENSAGEM_DESCONHECIDA");
             LogHelper::logClickSign($mensagem . " - Acesso não autorizado ou incompleto.", 'service');
             UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, " - Acesso não autorizado ou incompleto.");
-            return ['success' => false, 'mensagem' => $mensagem . " - Acesso não autorizado ou incompleto."];
+            return ['success' => false, 'mensagem' => $mensagem];
         }
 
         $registro = BitrixDealHelper::consultarDeal($entityId, $id, $fields);
@@ -62,10 +65,11 @@ class GerarAssinaturaService
 
         if (!isset($dados['id'])) {
             $codigoRetorno = ClickSignCodes::DEAL_NAO_ENCONTRADO;
-            $mensagem = $codigoRetorno . "-" . (new \ReflectionClass(ClickSignCodes::class))->getConstants()['DEAL_NAO_ENCONTRADO'];
+            $constantName = array_search($codigoRetorno, (new \ReflectionClass(ClickSignCodes::class))->getConstants());
+            $mensagem = $codigoRetorno . "-" . ($constantName ?: "MENSAGEM_DESCONHECIDA");
             LogHelper::logClickSign("ERRO - " . $mensagem . " | ID: $id", 'service');
             UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, " | ID: $id");
-            return ['success' => false, 'error' => $mensagem . " | ID: $id"];
+            return ['success' => false, 'error' => $mensagem];
         }
 
         $camposNecessarios = ['contratante', 'contratada', 'testemunhas', 'data', 'arquivoaserassinado', 'arquivoassinado', 'idclicksign', 'retorno'];
@@ -81,10 +85,11 @@ class GerarAssinaturaService
         if (!empty($errosValidacao)) {
             $detalhesErro = implode(', ', $errosValidacao);
             $codigoRetorno = ClickSignCodes::CAMPOS_INVALIDOS;
-            $mensagemErro = $codigoRetorno . "-" . (new \ReflectionClass(ClickSignCodes::class))->getConstants()['CAMPOS_INVALIDOS'];
+            $constantName = array_search($codigoRetorno, (new \ReflectionClass(ClickSignCodes::class))->getConstants());
+            $mensagemErro = $codigoRetorno . "-" . ($constantName ?: "MENSAGEM_DESCONHECIDA");
             LogHelper::logClickSign("ERRO - " . $mensagemErro . ": $detalhesErro", 'service');
             UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, ": $detalhesErro");
-            return ['success' => false, 'error' => $mensagemErro . ": $detalhesErro"];
+            return ['success' => false, 'error' => $mensagemErro];
         }
 
         $idsContratante = isset($mapCampos['contratante']) ? ($dados[$mapCampos['contratante']]['valor'] ?? null) : null;
@@ -107,7 +112,7 @@ class GerarAssinaturaService
             $mensagem = $codigoRetorno . "-" . ($constantName ?: "MENSAGEM_DESCONHECIDA");
             LogHelper::logClickSign("Erro: " . $mensagem . " - " . ($resultadoSignatarios['mensagem'] ?? ""), 'service');
             UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, " - " . ($resultadoSignatarios['mensagem'] ?? ""));
-            return ['success' => false, 'mensagem' => $mensagem . " - " . ($resultadoSignatarios['mensagem'] ?? "")];
+            return ['success' => false, 'mensagem' => $mensagem];
         }
         $signatarios = $resultadoSignatarios['signatarios'];
         $todosSignatariosParaJson = $resultadoSignatarios['todosSignatariosParaJson'];
@@ -123,7 +128,7 @@ class GerarAssinaturaService
             $mensagem = $codigoRetorno . "-" . ($constantName ?: "MENSAGEM_DESCONHECIDA");
             LogHelper::logClickSign($mensagem . " - " . ($arquivoConvertido['mensagem'] ?? ""), 'service');
             UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, " - " . ($arquivoConvertido['mensagem'] ?? ""));
-            return ['success' => false, 'mensagem' => $mensagem . " - " . ($arquivoConvertido['mensagem'] ?? "")];
+            return ['success' => false, 'mensagem' => $mensagem];
         }
 
         $payloadClickSign = [
@@ -143,7 +148,7 @@ class GerarAssinaturaService
             $mensagem = $codigoRetorno . "-" . ($constantName ?: "MENSAGEM_DESCONHECIDA");
             LogHelper::logClickSign($mensagem . " - Erro ao criar documento na ClickSign.", 'service');
             UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, " - Erro ao criar documento na ClickSign.");
-            return ['success' => false, 'mensagem' => $mensagem . " - Erro ao criar documento na ClickSign."];
+            return ['success' => false, 'mensagem' => $mensagem];
         }
         
         $documentKey = $retornoClickSign['document']['key'];
@@ -155,7 +160,7 @@ class GerarAssinaturaService
             $constantName = array_search($codigoRetorno, (new \ReflectionClass(ClickSignCodes::class))->getConstants());
             $mensagem = $codigoRetorno . "-" . ($constantName ?: "MENSAGEM_DESCONHECIDA");
             UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, $documentKey, $codigoRetorno, " - Documento criado, mas houve falha em um ou mais vínculos de signatários.");
-            return ['success' => false, 'mensagem' => $mensagem . " - Documento criado, mas houve falha em um ou mais vínculos de signatários.", 'document_key' => $documentKey, 'qtd_signatarios' => $qtdSignatarios, 'qtd_vinculos' => $resultadoVinculo['qtdVinculos']];
+            return ['success' => false, 'mensagem' => $mensagem, 'document_key' => $documentKey, 'qtd_signatarios' => $qtdSignatarios, 'qtd_vinculos' => $resultadoVinculo['qtdVinculos']];
         }
 
         $clienteId = $GLOBALS['ACESSO_AUTENTICADO']['cliente_id'] ?? null;
@@ -210,49 +215,28 @@ class GerarAssinaturaService
             $mensagemErro = $codigoRetorno . "-" . ($constantName ?: "MENSAGEM_DESCONHECIDA");
             UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, " - Erro ao registrar assinatura no banco de dados. AVISO: Os retornos automáticos não funcionarão.");
             LogHelper::logClickSign($mensagemErro . " - Erro ao registrar assinatura no banco de dados. AVISO: Os retornos automáticos não funcionarão.", 'service');
-            return ['success' => false, 'mensagem' => $mensagemErro . " - Erro ao registrar assinatura no banco de dados. AVISO: Os retornos automáticos não funcionarão.", 'document_key' => $documentKey];
+            return ['success' => false, 'mensagem' => $mensagemErro, 'document_key' => $documentKey];
         }
     }
 
     private static function validarCamposEssenciais(array $dados, array $mapCampos): array
     {
-        LogHelper::logClickSign("ValidarCamposEssenciais - Dados recebidos: " . json_encode($dados, JSON_UNESCAPED_UNICODE), 'debug');
-        LogHelper::logClickSign("ValidarCamposEssenciais - Mapeamento de campos: " . json_encode($mapCampos, JSON_UNESCAPED_UNICODE), 'debug');
-
         $erros = [];
-
-        // Validação do arquivo a ser assinado
-        $arquivoAserAssinadoBitrixField = $mapCampos['arquivoaserassinado'] ?? null;
-        if (!$arquivoAserAssinadoBitrixField || empty($dados[$arquivoAserAssinadoBitrixField]['valor'])) {
+        if (empty($dados[$mapCampos['arquivoaserassinado']]['valor'])) {
             $erros[] = 'Arquivo a ser assinado é obrigatório';
         }
-
-        // Validação da data limite de assinatura
-        $dataBitrixField = $mapCampos['data'] ?? null;
-        if (!$dataBitrixField || empty($dados[$dataBitrixField]['valor'])) {
+        if (empty($dados[$mapCampos['data']]['valor'])) {
             $erros[] = 'Data limite de assinatura é obrigatória';
         } else {
-            $dataLimite = substr($dados[$dataBitrixField]['valor'], 0, 10);
+            $dataLimite = substr($dados[$mapCampos['data']]['valor'], 0, 10);
             if ($dataLimite <= date('Y-m-d')) {
                 $erros[] = 'Data limite deve ser posterior à data atual';
             }
         }
-
-        // Validação de pelo menos um signatário
-        $temSignatario = false;
-        $camposSignatarios = ['contratante', 'contratada', 'testemunhas'];
-        foreach ($camposSignatarios as $campo) {
-            $bitrixField = $mapCampos[$campo] ?? null;
-            if ($bitrixField && !empty($dados[$bitrixField]['valor'])) {
-                $temSignatario = true;
-                break;
-            }
-        }
+        $temSignatario = !empty($dados[$mapCampos['contratante']]['valor']) || !empty($dados[$mapCampos['contratada']]['valor']) || !empty($dados[$mapCampos['testemunhas']]['valor']);
         if (!$temSignatario) {
             $erros[] = 'Pelo menos um signatário é obrigatório';
         }
-        
-        LogHelper::logClickSign("ValidarCamposEssenciais - Erros encontrados: " . json_encode($erros, JSON_UNESCAPED_UNICODE), 'debug');
         return $erros;
     }
 
