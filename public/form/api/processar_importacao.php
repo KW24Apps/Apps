@@ -158,22 +158,46 @@ try {
     
     // Processa cada chunk, criando um job para cada um
     foreach ($chunks as $chunk) {
-        // Formata os deals dentro do chunk para garantir que campos CRM_ENTITY de usuário estejam corretos
         $formattedChunk = [];
         foreach ($chunk as $deal) {
             $formattedDeal = [];
             foreach ($deal as $codigoBitrix => $valor) {
-                // Verifica se o campo é um campo de usuário (CRM_ENTITY) e se o valor é um ID
-                if (isset($camposBitrixMetadata[$codigoBitrix]) && $camposBitrixMetadata[$codigoBitrix]['type'] === 'crm_entity') {
-                    // A API do Bitrix para campos CRM_ENTITY de usuário espera um array ['user', ID]
-                    // ou apenas o ID se o campo for configurado para aceitar apenas usuários.
-                    // Vamos usar o formato de array para maior compatibilidade.
+                $meta = $camposBitrixMetadata[$codigoBitrix] ?? null;
+                $isMultiple = $meta['isMultiple'] ?? false;
+                $type = $meta['type'] ?? 'string';
+
+                // Lógica para campos múltiplos
+                if ($isMultiple && is_string($valor) && strpos($valor, ',') !== false) {
+                    $valoresSeparados = array_map('trim', explode(',', $valor));
+                    
+                    // Formatação específica para campos de e-mail e telefone
+                    if ($type === 'email' || $type === 'phone') {
+                        $formattedValues = [];
+                        foreach ($valoresSeparados as $v) {
+                            if (!empty($v)) {
+                                $formattedValues[] = ['VALUE' => $v, 'VALUE_TYPE' => 'WORK']; // Padrão WORK
+                            }
+                        }
+                        $formattedDeal[$codigoBitrix] = $formattedValues;
+                    } else {
+                        // Para outros campos múltiplos, apenas um array de strings
+                        $formattedDeal[$codigoBitrix] = array_filter($valoresSeparados);
+                    }
+                } 
+                // Lógica para campos CRM_ENTITY (usuários, empresas, contatos)
+                else if ($type === 'crm_entity') {
                     if (is_numeric($valor) && $valor > 0) {
                         $formattedDeal[$codigoBitrix] = ['user', (int)$valor];
                     } else {
-                        $formattedDeal[$codigoBitrix] = $valor; // Mantém o valor original se não for um ID válido
+                        $formattedDeal[$codigoBitrix] = $valor;
                     }
-                } else {
+                }
+                // Lógica para campos de usuário (Responsável e Solicitante) que já vêm como ID numérico
+                else if (($codigoBitrix === 'ASSIGNED_BY_ID' || $codigoBitrix === 'UF_CRM_1696177458') && is_numeric($valor) && $valor > 0) { // Exemplo de UF_CRM para solicitante
+                    $formattedDeal[$codigoBitrix] = (int)$valor;
+                }
+                // Caso padrão
+                else {
                     $formattedDeal[$codigoBitrix] = $valor;
                 }
             }
