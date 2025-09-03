@@ -81,6 +81,9 @@ class GerarAssinaturaService
             }
         }
 
+        LogHelper::logClickSign("GerarAssinaturaService::gerarAssinatura - Dados do Deal antes da validação: " . json_encode($dados, JSON_UNESCAPED_UNICODE), 'debug');
+        LogHelper::logClickSign("GerarAssinaturaService::gerarAssinatura - Mapeamento de Campos antes da validação: " . json_encode($mapCampos, JSON_UNESCAPED_UNICODE), 'debug');
+
         $errosValidacao = self::validarCamposEssenciais($dados, $mapCampos);
         if (!empty($errosValidacao)) {
             $detalhesErro = implode(', ', $errosValidacao);
@@ -221,22 +224,43 @@ class GerarAssinaturaService
 
     private static function validarCamposEssenciais(array $dados, array $mapCampos): array
     {
+        LogHelper::logClickSign("ValidarCamposEssenciais - Dados recebidos: " . json_encode($dados, JSON_UNESCAPED_UNICODE), 'debug');
+        LogHelper::logClickSign("ValidarCamposEssenciais - Mapeamento de campos: " . json_encode($mapCampos, JSON_UNESCAPED_UNICODE), 'debug');
+
         $erros = [];
-        if (empty($dados[$mapCampos['arquivoaserassinado']]['valor'])) {
+
+        // Validação do arquivo a ser assinado
+        $arquivoAserAssinadoBitrixField = $mapCampos['arquivoaserassinado'] ?? null;
+        if (!$arquivoAserAssinadoBitrixField || empty($dados[$arquivoAserAssinadoBitrixField]['valor'])) {
             $erros[] = 'Arquivo a ser assinado é obrigatório';
         }
-        if (empty($dados[$mapCampos['data']]['valor'])) {
+
+        // Validação da data limite de assinatura
+        $dataBitrixField = $mapCampos['data'] ?? null;
+        if (!$dataBitrixField || empty($dados[$dataBitrixField]['valor'])) {
             $erros[] = 'Data limite de assinatura é obrigatória';
         } else {
-            $dataLimite = substr($dados[$mapCampos['data']]['valor'], 0, 10);
+            $dataLimite = substr($dados[$dataBitrixField]['valor'], 0, 10);
             if ($dataLimite <= date('Y-m-d')) {
                 $erros[] = 'Data limite deve ser posterior à data atual';
             }
         }
-        $temSignatario = !empty($dados[$mapCampos['contratante']]['valor']) || !empty($dados[$mapCampos['contratada']]['valor']) || !empty($dados[$mapCampos['testemunhas']]['valor']);
+
+        // Validação de pelo menos um signatário
+        $temSignatario = false;
+        $camposSignatarios = ['contratante', 'contratada', 'testemunhas'];
+        foreach ($camposSignatarios as $campo) {
+            $bitrixField = $mapCampos[$campo] ?? null;
+            if ($bitrixField && !empty($dados[$bitrixField]['valor'])) {
+                $temSignatario = true;
+                break;
+            }
+        }
         if (!$temSignatario) {
             $erros[] = 'Pelo menos um signatário é obrigatório';
         }
+        
+        LogHelper::logClickSign("ValidarCamposEssenciais - Erros encontrados: " . json_encode($erros, JSON_UNESCAPED_UNICODE), 'debug');
         return $erros;
     }
 

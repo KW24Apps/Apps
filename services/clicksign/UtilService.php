@@ -129,7 +129,7 @@ class UtilService
 
         // Valor final para o campo de retorno do Bitrix (código + nome da constante)
         // A descrição amigável é usada apenas para a timeline.
-        $constantName = array_search($codigoParaCampoBitrix, (new \ReflectionClass(ClickSignCodes::class))->getConstants());
+        $constantName = self::getConstantName($codigoParaCampoBitrix);
         $valorCampoRetornoBitrix = $codigoParaCampoBitrix . "-" . ($constantName ?: "MENSAGEM_DESCONHECIDA");
 
 
@@ -244,5 +244,12 @@ class UtilService
             case ClickSignCodes::FALHA_ATUALIZAR_DOCUMENTO: return "Falha ao atualizar documento.";
             default: return "Mensagem de retorno desconhecida.";
         }
+    }
+
+    public static function getConstantName(string $code): ?string
+    {
+        $reflection = new \ReflectionClass(ClickSignCodes::class);
+        $constants = $reflection->getConstants();
+        return array_search($code, $constants);
     }
 }
