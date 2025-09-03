@@ -78,14 +78,10 @@ class RetornoClickSignService
         $dealId = $dadosAssinatura['deal_id'];
         $signerName = $requestData['event']['data']['signer']['name'] ?? 'N/A';
 
-        $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
-        $configJson = $configExtra ? json_decode($configExtra, true) : [];
-        $spaKey = 'SPA_' . $spa;
-        $campos = $configJson[$spaKey]['campos'] ?? [];
-        $campoSignatariosAssinar = $campos['signatarios_assinar'] ?? null;
-        $campoSignatariosAssinaram = $campos['signatarios_assinaram'] ?? null;
+        $campoSignatariosAssinar = $dadosAssinatura['campo_signatarios_assinar'] ?? null;
+        $campoSignatariosAssinaram = $dadosAssinatura['campo_signatarios_assinaram'] ?? null;
 
-        LogHelper::logClickSign("Valores dos campos - campoSignatariosAssinar: " . ($campoSignatariosAssinar ?? 'N/A') . " | campoSignatariosAssinaram: " . ($campoSignatariosAssinaram ?? 'N/A'), 'service');
+        LogHelper::logClickSign("Valores dos campos (direto de dadosAssinatura) - campoSignatariosAssinar: " . ($campoSignatariosAssinar ?? 'N/A') . " | campoSignatariosAssinaram: " . ($campoSignatariosAssinaram ?? 'N/A'), 'service');
 
         if ($campoSignatariosAssinar && $campoSignatariosAssinaram) {
             LogHelper::logClickSign("Entrou na condição if (\$campoSignatariosAssinar && \$campoSignatariosAssinaram).", 'service');
