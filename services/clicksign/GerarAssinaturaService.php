@@ -142,8 +142,18 @@ class GerarAssinaturaService
             'spa' => $entityId,
             'etapa_concluida' => $params['EtapaConcluido'] ?? null,
             'signatarios_detalhes' => [
-                'todos_signatarios' => $todosSignatariosParaJson,
-                'ids_vinculados' => $resultadoVinculo['mapaIds']
+                'todos_signatarios' => array_map(function($signer) use ($resultadoVinculo) {
+                    $bitrixId = $signer['id'];
+                    $clicksignKey = null;
+                    foreach ($resultadoVinculo['mapaIds'] as $vinculo) {
+                        if ($vinculo['id_bitrix'] == $bitrixId) {
+                            $clicksignKey = $vinculo['key_clicksign'];
+                            break;
+                        }
+                    }
+                    $signer['key_clicksign'] = $clicksignKey;
+                    return $signer;
+                }, $todosSignatariosParaJson)
             ]
         ];
 
