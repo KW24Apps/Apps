@@ -167,9 +167,14 @@ class UtilService
 
     public static function moverEtapaBitrix(string $spa, string $dealId, ?string $etapaConcluidaNome)
     {
-        if (!$etapaConcluidaNome) return;
+        if (!$etapaConcluidaNome) {
+            LogHelper::logClickSign("AVISO: Nome da etapa concluída não fornecido para o Deal $dealId na SPA $spa.", 'service');
+            return;
+        }
 
         $etapas = BitrixHelper::consultarEtapasPorTipo($spa);
+        LogHelper::logClickSign("Etapas consultadas para SPA $spa: " . json_encode($etapas), 'service');
+
         $statusIdAlvo = null;
         foreach ($etapas as $etapa) {
             if (isset($etapa['NAME']) && strtolower($etapa['NAME']) === strtolower($etapaConcluidaNome)) {
@@ -182,7 +187,7 @@ class UtilService
             BitrixDealHelper::editarDeal($spa, $dealId, ['stageId' => $statusIdAlvo]);
             LogHelper::logClickSign("Deal $dealId movido para a etapa '$etapaConcluidaNome' ($statusIdAlvo)", 'service');
         } else {
-            LogHelper::logClickSign("AVISO: Etapa '$etapaConcluidaNome' não encontrada para a SPA $spa.", 'service');
+            LogHelper::logClickSign("AVISO: Etapa '$etapaConcluidaNome' não encontrada para a SPA $spa. Etapas disponíveis: " . json_encode(array_column($etapas, 'NAME')), 'service');
         }
     }
 }
