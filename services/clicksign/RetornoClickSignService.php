@@ -71,6 +71,8 @@ class RetornoClickSignService
 
     private static function assinaturaRealizada(array $requestData, array $dadosAssinatura): array
     {
+        LogHelper::logClickSign("Início da função assinaturaRealizada.", 'service');
+
         $signerEmail = $requestData['event']['data']['signer']['email'] ?? null;
         $spa = $dadosAssinatura['spa'];
         $dealId = $dadosAssinatura['deal_id'];
@@ -83,7 +85,10 @@ class RetornoClickSignService
         $campoSignatariosAssinar = $campos['signatarios_assinar'] ?? null;
         $campoSignatariosAssinaram = $campos['signatarios_assinaram'] ?? null;
 
+        LogHelper::logClickSign("Valores dos campos - campoSignatariosAssinar: " . ($campoSignatariosAssinar ?? 'N/A') . " | campoSignatariosAssinaram: " . ($campoSignatariosAssinaram ?? 'N/A'), 'service');
+
         if ($campoSignatariosAssinar && $campoSignatariosAssinaram) {
+            LogHelper::logClickSign("Entrou na condição if (\$campoSignatariosAssinar && \$campoSignatariosAssinaram).", 'service');
             $todosSignatarios = json_decode($dadosAssinatura['Signatarios'], true);
             // Agora, $dadosAssinatura['assinatura_processada'] já contém o e-mail do signatário atual
             $assinaturasProcessadas = array_filter(explode(';', $dadosAssinatura['assinatura_processada'] ?? ''));
@@ -100,6 +105,8 @@ class RetornoClickSignService
                 $campoSignatariosAssinaram => array_values($idsAssinaram),
                 $campoSignatariosAssinar => empty($idsAAssinar) ? [] : array_values($idsAAssinar) // Alterado para enviar array vazio
             ]);
+        } else {
+            LogHelper::logClickSign("Não entrou na condição if (\$campoSignatariosAssinar && \$campoSignatariosAssinaram).", 'service');
         }
 
         $mensagem = ClickSignCodes::ASSINATURA_REALIZADA . " - Assinatura feita por $signerName - $signerEmail";
