@@ -258,7 +258,6 @@ class GerarAssinaturaService
                     'dados_conexao'              => $dados['dados_conexao'] ?? null
                 ];
 
-                LogHelper::logClickSign("Dados sendo enviados para ClickSignDAO::registrarAssinaturaClicksign: " . json_encode($dadosParaSalvar, JSON_UNESCAPED_UNICODE), 'debug');
                 if (ClickSignDAO::registrarAssinaturaClicksign($dadosParaSalvar)) {
                     return true;
                 }

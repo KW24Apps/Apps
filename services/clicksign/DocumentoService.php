@@ -147,8 +147,10 @@ class DocumentoService
         }
         
         $dealData = BitrixDealHelper::consultarDeal($entityId, $id, [$campoIdClickSignOriginal]);
+        LogHelper::logClickSign("DocumentoService::getAuthAndDocumentKey - Raw dealData from Bitrix: " . json_encode($dealData, JSON_UNESCAPED_UNICODE), 'debug');
         $campoIdClickSignFormatado = array_key_first(BitrixHelper::formatarCampos([$campoIdClickSignOriginal => null]));
         $documentKey = $dealData['result'][$campoIdClickSignFormatado]['valor'] ?? null;
+        LogHelper::logClickSign("DocumentoService::getAuthAndDocumentKey - Extracted documentKey: " . ($documentKey ?? 'NULL'), 'debug');
 
         if (empty($documentKey)) {
             $codigoRetorno = ClickSignCodes::DOCUMENTO_NAO_ENCONTRADO_BD;
