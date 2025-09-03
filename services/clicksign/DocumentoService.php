@@ -21,9 +21,7 @@ class DocumentoService
         $resultado = ClickSignHelper::cancelarDocumento($documentKey);
 
         if (isset($resultado['document'])) {
-            $mensagem = "Documento ($documentKey) cancelado com sucesso.";
-            UtilService::atualizarRetornoBitrix($params, $params['spa'], $params['deal'], true, $documentKey, $mensagem);
-            return ['success' => true, 'mensagem' => $mensagem];
+            return ['success' => true];
         } else {
             $erro = $resultado['errors'][0] ?? 'Erro desconhecido ao cancelar.';
             $mensagem = "Falha ao cancelar documento ($documentKey): $erro";
