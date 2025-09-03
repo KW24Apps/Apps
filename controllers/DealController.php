@@ -14,7 +14,7 @@ class DealController
         // Definir timeout de 30 minutos para criação de deals
         set_time_limit(1800); // 30 minutos = 1800 segundos
         
-        $params = $_GET;
+        $params = array_merge($_GET, $_POST);
 
         $spa = $params['spa'] ?? null;
         $categoryId = $params['CATEGORY_ID'] ?? null;

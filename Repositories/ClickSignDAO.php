@@ -9,11 +9,9 @@ use PDOException;
 
 class ClickSignDAO
 {
-    // Método para registrar uma assinatura ClickSign no banco de dados
-    public static function registrarAssinaturaClicksign($dados)
+    private static function getConnection(): ?PDO
     {
         $config = require __DIR__ . '/../config/config.php';
-      
         try {
             $pdo = new PDO(
                 "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
@@ -21,21 +19,38 @@ class ClickSignDAO
                 $config['senha']
             );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            return $pdo;
+        } catch (PDOException $e) {
+            LogHelper::logClickSign("ERRO PDO ao conectar ao banco de dados: " . $e->getMessage(), 'dao');
+            return null;
+        } catch (\Exception $e) {
+            LogHelper::logClickSign("ERRO geral ao conectar ao banco de dados: " . $e->getMessage(), 'dao');
+            return null;
+        }
+    }
 
-            $sql = "INSERT INTO assinaturas_clicksign 
+    // Método para registrar uma assinatura ClickSign no banco de dados
+    public static function registrarAssinaturaClicksign($dados)
+    {
+        try {
+            $pdo = self::getConnection();
+            if (!$pdo) {
+                return false;
+            }
+
+            $sql = "INSERT INTO assinaturas_clicksign
                     (document_key, cliente_id, dados_conexao)
-                    VALUES 
+                    VALUES
                     (:document_key, :cliente_id, :dados_conexao)";
-            
+
             $stmt = $pdo->prepare($sql);
             $stmt->execute($dados);
             return true; // Retorna sucesso
         } catch (PDOException $e) {
-            // Log de erro PDO
+            // O erro já é logado no getConnection, mas logamos aqui para o contexto específico da inserção
             LogHelper::logClickSign("ERRO PDO ao inserir em assinaturas_clicksign: " . $e->getMessage(), 'dao');
             return false; // Retorna falha
         } catch (\Exception $e) {
-            // Log de erro genérico
             LogHelper::logClickSign("ERRO geral ao salvar assinatura: " . $e->getMessage(), 'dao');
             return false; // Retorna falha
         }
@@ -44,15 +59,11 @@ class ClickSignDAO
     // Método para salvar o status_closed de uma assinatura ClickSign
     public static function salvarStatus(string $documentKey, ?string $statusClosed = null, ?string $assinaturaProcessada = null, ?bool $documentoFechadoProcessado = null, ?bool $documentoDisponivelProcessado = null, ?bool $prazoAdiado = null): bool
     {
-        $config = require __DIR__ . '/../config/config.php';
-
         try {
-            $pdo = new PDO(
-                "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
-                $config['usuario'],
-                $config['senha']
-            );
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo = self::getConnection();
+            if (!$pdo) {
+                return false;
+            }
 
             $updates = [];
             $params = [':documentKey' => $documentKey];
@@ -104,15 +115,11 @@ class ClickSignDAO
     // Método para obter uma assinatura ClickSign completa pelo documentKey
     public static function obterAssinaturaClickSign(string $documentKey): ?array
     {
-        $config = require __DIR__ . '/../config/config.php';
-
         try {
-            $pdo = new PDO(
-                "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
-                $config['usuario'],
-                $config['senha']
-            );
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo = self::getConnection();
+            if (!$pdo) {
+                return null;
+            }
 
             $sql = "SELECT * FROM assinaturas_clicksign WHERE document_key = :documentKey LIMIT 1";
             $stmt = $pdo->prepare($sql);
@@ -134,15 +141,11 @@ class ClickSignDAO
     // Método para obter todas as assinaturas ativas que precisam de verificação de prazo
     public static function obterAssinaturasAtivasParaVerificacao(): ?array
     {
-        $config = require __DIR__ . '/../config/config.php';
-
         try {
-            $pdo = new PDO(
-                "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
-                $config['usuario'],
-                $config['senha']
-            );
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo = self::getConnection();
+            if (!$pdo) {
+                return null;
+            }
 
             $sql = "
                 SELECT document_key, dados_conexao, cliente_id, spa, deal_id, campo_data, campo_retorno
@@ -160,6 +163,9 @@ class ClickSignDAO
         } catch (PDOException $e) {
             LogHelper::logClickSign("ERRO PDO ao obter assinaturas ativas para verificação: " . $e->getMessage(), 'dao');
             return null;
+        } catch (\Exception $e) {
+            LogHelper::logClickSign("ERRO geral ao obter assinaturas ativas para verificação: " . $e->getMessage(), 'dao');
+            return null;
         }
     }
 
@@ -167,15 +173,11 @@ class ClickSignDAO
     // Retorna um array associativo com os dados da assinatura (incluindo document_key) ou null se não encontrada.
     public static function obterAssinaturaAtivaPorDealId(string $dealId, string $spa): ?array
     {
-        $config = require __DIR__ . '/../config/config.php';
-
         try {
-            $pdo = new PDO(
-                "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
-                $config['usuario'],
-                $config['senha']
-            );
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo = self::getConnection();
+            if (!$pdo) {
+                return null;
+            }
 
             $sql = "
                 SELECT document_key, dados_conexao
@@ -203,5 +205,4 @@ class ClickSignDAO
             return null;
         }
     }
-
 }
