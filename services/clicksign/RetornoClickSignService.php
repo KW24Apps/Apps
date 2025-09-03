@@ -28,6 +28,9 @@ class RetornoClickSignService
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
+        LogHelper::logClickSign("Dados da assinatura - Signatários: " . ($dadosAssinatura['Signatarios'] ?? 'N/A'), 'service');
+        LogHelper::logClickSign("Dados da assinatura - Assinaturas Processadas: " . ($dadosAssinatura['assinatura_processada'] ?? 'N/A'), 'service');
+
         $dadosConexao = json_decode($dadosAssinatura['dados_conexao'], true);
         $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $dadosConexao['webhook_bitrix'] ?? null;
         
@@ -89,6 +92,9 @@ class RetornoClickSignService
                 if (in_array($s['email'], $assinaturasProcessadas)) $idsAssinaram[] = $s['id'];
             }
             $idsAAssinar = array_diff(array_column($todosSignatarios, 'id'), $idsAssinaram);
+
+            LogHelper::logClickSign("Signatários que já assinaram (idsAssinaram): " . json_encode(array_values($idsAssinaram)), 'service');
+            LogHelper::logClickSign("Signatários que não assinaram (idsAAssinar): " . json_encode(array_values($idsAAssinar)), 'service');
 
             BitrixDealHelper::editarDeal($spa, $dealId, [
                 $campoSignatariosAssinaram => array_values($idsAssinaram),
