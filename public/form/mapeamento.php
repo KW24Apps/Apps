@@ -89,8 +89,9 @@ ob_start();
 // Caminho do arquivo CSV salvo na etapa anterior
 $uploadDir = __DIR__ . '/uploads/';
 $csvFile = null;
+$delimiter = ','; // Separador padrão
 
-// Busca o arquivo mais recente enviado (simples, pode ser melhorado)
+// Busca o arquivo mais recente enviado
 $files = glob($uploadDir . '*.csv');
 if ($files) {
     usort($files, function($a, $b) { return filemtime($b) - filemtime($a); });
@@ -99,8 +100,22 @@ if ($files) {
 
 $colunas = [];
 if ($csvFile && ($handle = fopen($csvFile, 'r')) !== false) {
-    // Fornece o parâmetro $escape explicitamente para evitar deprecated
-    $colunas = fgetcsv($handle, 0, ',', '"', "\\");
+    // Detecta o delimitador
+    $firstLine = fgets($handle);
+    rewind($handle); // Volta para o início do arquivo
+
+    $commaCount = substr_count($firstLine, ',');
+    $semicolonCount = substr_count($firstLine, ';');
+
+    if ($semicolonCount > $commaCount) {
+        $delimiter = ';';
+    }
+    
+    // Armazena o delimitador na sessão para uso posterior
+    $_SESSION['importacao_form']['csv_delimiter'] = $delimiter;
+
+    // Lê o cabeçalho com o delimitador detectado
+    $colunas = fgetcsv($handle, 0, $delimiter, '"', "\\");
     fclose($handle);
 }
 

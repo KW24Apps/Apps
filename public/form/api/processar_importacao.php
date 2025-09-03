@@ -58,6 +58,7 @@ try {
         throw new Exception('Arquivo CSV não encontrado no servidor');
     }
     $csvFile = $uploadDir . $nomeArquivoSessao;
+    $csvDelimiter = $_SESSION['importacao_form']['csv_delimiter'] ?? ','; // Recupera o delimitador da sessão, padrão vírgula
 
     // Processa o CSV para criar os deals, com logging detalhado
     $deals = [];
@@ -66,10 +67,10 @@ try {
     $linhasInvalidas = 0;
 
     if (($handle = fopen($csvFile, 'r')) !== FALSE) {
-        $header = fgetcsv($handle);
+        $header = fgetcsv($handle, 0, $csvDelimiter); // Usa o delimitador detectado
         $numeroLinha = 1;
 
-        while (($row = fgetcsv($handle)) !== FALSE) {
+        while (($row = fgetcsv($handle, 0, $csvDelimiter)) !== FALSE) { // Usa o delimitador detectado
             $numeroLinha++;
             $linhasLidas++;
 
