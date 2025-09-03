@@ -112,21 +112,18 @@ class UtilService
         return ['success' => $sucessoVinculo, 'qtdVinculos' => $qtdVinculos, 'mapaIds' => $mapaIds];
     }
 
-    public static function atualizarRetornoBitrix($params, $spa, $dealId, $sucesso, $documentKey, $codigoRetorno = null)
+    public static function atualizarRetornoBitrix($params, $spa, $dealId, $sucesso, $documentKey, $codigoRetorno = null, $mensagemCustomizadaComentario = null)
     {
         $campoRetorno = $params['retorno'] ?? $params['campo_retorno'] ?? null;
         $campoIdClickSign = $params['idclicksign'] ?? $params['campo_idclicksign'] ?? null;
 
-        // Se um código de retorno for fornecido, use-o para o campo Bitrix e obtenha a descrição para o comentário.
-        // Caso contrário, use as mensagens padrão.
+        // Mensagem para o campo Bitrix (sempre o código)
         $mensagemParaCampoBitrix = $codigoRetorno ?? ($sucesso ? ClickSignCodes::DOCUMENTO_ENVIADO : ClickSignCodes::FALHA_GRAVAR_ASSINATURA_BD);
+        
+        // Mensagem para o comentário na timeline (descrição do código + customização)
         $mensagemParaComentario = self::getMessageDescription($mensagemParaCampoBitrix);
-        // Se a mensagem customizada for um código, use a descrição correspondente.
-        // Caso contrário, use a mensagem customizada diretamente ou as mensagens padrão.
-        if ($codigoRetorno) {
-            $mensagemParaComentario = self::getMessageDescription($codigoRetorno);
-        } else {
-            $mensagemParaComentario = $sucesso ? "Documento enviado para assinatura" : "Erro no envio do documento para assinatura";
+        if ($mensagemCustomizadaComentario) {
+            $mensagemParaComentario .= $mensagemCustomizadaComentario;
         }
 
 

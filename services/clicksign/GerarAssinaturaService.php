@@ -22,16 +22,19 @@ class GerarAssinaturaService
         $id = $params['deal'] ?? $params['id'] ?? null;
 
         if (empty($id) || empty($entityId)) {
-            $mensagem = ClickSignCodes::PARAMS_AUSENTES . " - Parâmetros obrigatórios ausentes.";
+            $codigoRetorno = ClickSignCodes::PARAMS_AUSENTES;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno) . " - Parâmetros obrigatórios ausentes.";
             LogHelper::logClickSign($mensagem, 'service');
+            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $codigoRetorno, " - Parâmetros obrigatórios ausentes.");
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
         // Verificar se já existe uma assinatura ativa para este deal_id e spa
         if (ClickSignDAO::verificarAssinaturaAtivaPorDealId($id, $entityId)) {
-            $mensagem = ClickSignCodes::ASSINATURA_JA_EM_ANDAMENTO . " - Já existe uma assinatura em andamento para este Deal.";
+            $codigoRetorno = ClickSignCodes::ASSINATURA_JA_EM_ANDAMENTO;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno) . " para este Deal.";
             LogHelper::logClickSign($mensagem, 'service');
-            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagem);
+            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $codigoRetorno, " para este Deal.");
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
@@ -44,9 +47,10 @@ class GerarAssinaturaService
         $params = array_merge($params, $fields);
 
         if (!$tokenClicksign) {
-            $mensagem = ClickSignCodes::ACESSO_NAO_AUTORIZADO . " - Acesso não autorizado ou incompleto.";
+            $codigoRetorno = ClickSignCodes::ACESSO_NAO_AUTORIZADO;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno) . " - Acesso não autorizado ou incompleto.";
             LogHelper::logClickSign($mensagem, 'service');
-            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagem);
+            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $codigoRetorno, " - Acesso não autorizado ou incompleto.");
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
@@ -54,8 +58,10 @@ class GerarAssinaturaService
         $dados = $registro['result'] ?? [];
 
         if (!isset($dados['id'])) {
-            $mensagem = ClickSignCodes::DEAL_NAO_ENCONTRADO . " - Deal não encontrado | ID: $id";
+            $codigoRetorno = ClickSignCodes::DEAL_NAO_ENCONTRADO;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno) . " | ID: $id";
             LogHelper::logClickSign("ERRO - $mensagem", 'service');
+            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $codigoRetorno, " | ID: $id");
             return ['success' => false, 'error' => $mensagem];
         }
 
@@ -71,9 +77,10 @@ class GerarAssinaturaService
         $errosValidacao = self::validarCamposEssenciais($dados, $mapCampos);
         if (!empty($errosValidacao)) {
             $detalhesErro = implode(', ', $errosValidacao);
-            $mensagemErro = ClickSignCodes::CAMPOS_INVALIDOS . " - Campos obrigatórios ausentes ou inválidos: $detalhesErro";
+            $codigoRetorno = ClickSignCodes::CAMPOS_INVALIDOS;
+            $mensagemErro = UtilService::getMessageDescription($codigoRetorno) . ": $detalhesErro";
             LogHelper::logClickSign("ERRO - $mensagemErro", 'service');
-            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagemErro);
+            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $codigoRetorno, ": $detalhesErro");
             return ['success' => false, 'error' => $mensagemErro];
         }
 
@@ -92,9 +99,11 @@ class GerarAssinaturaService
 
         $resultadoSignatarios = UtilService::processarSignatarios($idsContratante, $idsContratada, $idsTestemunhas);
         if (!$resultadoSignatarios['success']) {
-            LogHelper::logClickSign("Erro: " . $resultadoSignatarios['mensagem'], 'service');
-            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $resultadoSignatarios['mensagem']);
-            return $resultadoSignatarios;
+            $codigoRetorno = $resultadoSignatarios['codigo'] ?? ClickSignCodes::DADOS_SIGNATARIO_FALTANTES;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno) . " - " . ($resultadoSignatarios['mensagem'] ?? "");
+            LogHelper::logClickSign("Erro: " . $mensagem, 'service');
+            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $codigoRetorno, " - " . ($resultadoSignatarios['mensagem'] ?? ""));
+            return ['success' => false, 'mensagem' => $mensagem];
         }
         $signatarios = $resultadoSignatarios['signatarios'];
         $todosSignatariosParaJson = $resultadoSignatarios['todosSignatariosParaJson'];
@@ -105,9 +114,11 @@ class GerarAssinaturaService
         $campoArquivo = isset($mapCampos['arquivoaserassinado']) && isset($dados[$mapCampos['arquivoaserassinado']]) ? $dados[$mapCampos['arquivoaserassinado']] : null;
         $arquivoConvertido = self::processarArquivo($campoArquivo);
         if (!$arquivoConvertido['success']) {
-            LogHelper::logClickSign($arquivoConvertido['mensagem'], 'service');
-            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $arquivoConvertido['mensagem']);
-            return $arquivoConvertido;
+            $codigoRetorno = $arquivoConvertido['codigo'] ?? ClickSignCodes::ERRO_CONVERTER_ARQUIVO;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno) . " - " . ($arquivoConvertido['mensagem'] ?? "");
+            LogHelper::logClickSign($mensagem, 'service');
+            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $codigoRetorno, " - " . ($arquivoConvertido['mensagem'] ?? ""));
+            return ['success' => false, 'mensagem' => $mensagem];
         }
 
         $payloadClickSign = [
@@ -122,8 +133,10 @@ class GerarAssinaturaService
         $retornoClickSign = ClickSignHelper::criarDocumento($payloadClickSign);
 
         if (!isset($retornoClickSign['document']['key'])) {
-            $mensagem = ClickSignCodes::FALHA_VINCULO_SIGNATARIOS . " - Erro ao criar documento na ClickSign.";
+            $codigoRetorno = ClickSignCodes::FALHA_VINCULO_SIGNATARIOS;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno) . " - Erro ao criar documento na ClickSign.";
             LogHelper::logClickSign($mensagem, 'service');
+            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $codigoRetorno, " - Erro ao criar documento na ClickSign.");
             return ['success' => false, 'mensagem' => $mensagem];
         }
         
@@ -132,7 +145,9 @@ class GerarAssinaturaService
 
         $resultadoVinculo = UtilService::vincularSignatarios($documentKey, $signatarios);
         if (!$resultadoVinculo['success']) {
-            $mensagem = ClickSignCodes::FALHA_VINCULO_SIGNATARIOS . " - Documento criado, mas houve falha em um ou mais vínculos de signatários.";
+            $codigoRetorno = ClickSignCodes::FALHA_VINCULO_SIGNATARIOS;
+            $mensagem = UtilService::getMessageDescription($codigoRetorno) . " - Documento criado, mas houve falha em um ou mais vínculos de signatários.";
+            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, $documentKey, $codigoRetorno, " - Documento criado, mas houve falha em um ou mais vínculos de signatários.");
             return ['success' => false, 'mensagem' => $mensagem, 'document_key' => $documentKey, 'qtd_signatarios' => $qtdSignatarios, 'qtd_vinculos' => $resultadoVinculo['qtdVinculos']];
         }
 
@@ -177,12 +192,14 @@ class GerarAssinaturaService
             // A função atualizarCamposSignatariosBitrix precisará ser ajustada para ler do JSON
             self::atualizarCamposSignatariosBitrix($consolidatedDadosConexao, $entityId, $id, $todosSignatariosParaJson);
             $mensagem = ClickSignCodes::DOCUMENTO_ENVIADO . " - Documento enviado para assinatura";
-            UtilService::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, $mensagem);
+            UtilService::atualizarRetornoBitrix($params, $entityId, $id, true, $documentKey, ClickSignCodes::DOCUMENTO_ENVIADO, " - Documento enviado para assinatura e dados atualizados no Bitrix com sucesso");
+            $mensagem = UtilService::getMessageDescription(ClickSignCodes::DOCUMENTO_ENVIADO) . " - Documento enviado para assinatura";
             LogHelper::logClickSign($mensagem . " e dados atualizados no Bitrix com sucesso", 'service');
             return ['success' => true, 'mensagem' => $mensagem, 'document_key' => $documentKey, 'qtd_signatarios' => $qtdSignatarios, 'qtd_vinculos' => $resultadoVinculo['qtdVinculos']];
         } else {
-            $mensagemErro = ClickSignCodes::FALHA_GRAVAR_ASSINATURA_BD . " - Erro ao registrar assinatura no banco de dados. AVISO: Os retornos automáticos não funcionarão.";
-            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $mensagemErro);
+            $codigoRetorno = ClickSignCodes::FALHA_GRAVAR_ASSINATURA_BD;
+            $mensagemErro = UtilService::getMessageDescription($codigoRetorno) . " - Erro ao registrar assinatura no banco de dados. AVISO: Os retornos automáticos não funcionarão.";
+            UtilService::atualizarRetornoBitrix($params, $entityId, $id, false, null, $codigoRetorno, " - Erro ao registrar assinatura no banco de dados. AVISO: Os retornos automáticos não funcionarão.");
             LogHelper::logClickSign("Documento finalizado, mas erro ao gravar controle de assinatura", 'service');
             return ['success' => false, 'mensagem' => $mensagemErro, 'document_key' => $documentKey];
         }
