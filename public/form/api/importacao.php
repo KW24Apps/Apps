@@ -14,6 +14,35 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
+// Inicia o buffer de saída para capturar qualquer saída inesperada
+ob_start();
+
+// Define um manipulador de erros para capturar erros fatais e garantir uma resposta JSON
+set_exception_handler(function ($exception) {
+    ob_clean(); // Limpa qualquer saída anterior
+    http_response_code(500);
+    echo json_encode([
+        'sucesso' => false,
+        'mensagem' => 'Erro interno do servidor: ' . $exception->getMessage()
+    ]);
+    error_log("ERRO FATAL (Exception Handler): " . $exception->getMessage() . " em " . $exception->getFile() . ":" . $exception->getLine());
+    exit();
+});
+
+set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+    // Captura apenas erros que não são warnings ou notices, que já são tratados pelo error_reporting
+    if (!(error_reporting() & $errno)) {
+        return false; // Deixa o PHP lidar com isso
+    }
+    ob_clean(); // Limpa qualquer saída anterior
+    http_response_code(500);
+    echo json_encode([
+        'sucesso' => false,
+        'mensagem' => 'Erro interno do servidor: ' . $errstr . ' na linha ' . $errline
+    ]);
+    error_log("ERRO FATAL (Error Handler): " . $errstr . " em " . $errfile . ":" . $errline);
+    exit();
+});
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -191,6 +220,9 @@ try {
     $redirectUrl = '/Apps/public/form/mapeamento.php' . ($cliente ? '?cliente=' . urlencode($cliente) : '');
     
     error_log("SUCESSO! Redirecionando para: " . $redirectUrl);
+    
+    // Limpa o buffer de saída antes de enviar o JSON
+    ob_clean();
     echo json_encode([
         'sucesso' => true,
         'arquivo' => $nomeArquivo,
@@ -201,9 +233,14 @@ try {
 } catch (Exception $e) {
     error_log("ERRO: " . $e->getMessage());
     http_response_code(400);
+    
+    // Limpa o buffer de saída antes de enviar o JSON de erro
+    ob_clean();
     echo json_encode([
         'sucesso' => false,
         'mensagem' => $e->getMessage()
     ]);
 }
+// Finaliza o buffer de saída
+ob_end_flush();
 ?>
