@@ -2,6 +2,14 @@
 // api/importacao.php - Processa upload de arquivos CSV
 error_log("=== DEBUG UPLOAD INICIO ===");
 
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+
+// Aumenta os limites de memória e tempo de execução para lidar com arquivos grandes
+ini_set('memory_limit', '256M'); 
+ini_set('max_execution_time', 300); // 5 minutos
+
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
@@ -65,8 +73,36 @@ try {
 
     error_log("Verificando arquivo...");
     if (!isset($_FILES['arquivo']) || $_FILES['arquivo']['error'] !== UPLOAD_ERR_OK) {
-        error_log("ERRO arquivo: " . ($_FILES['arquivo']['error'] ?? 'não enviado'));
-        throw new Exception('Erro no upload do arquivo');
+        $uploadError = $_FILES['arquivo']['error'] ?? UPLOAD_ERR_NO_FILE;
+        $errorMessage = 'Erro no upload do arquivo: ';
+        switch ($uploadError) {
+            case UPLOAD_ERR_INI_SIZE:
+                $errorMessage .= 'O arquivo excede o limite de tamanho definido no php.ini (upload_max_filesize).';
+                break;
+            case UPLOAD_ERR_FORM_SIZE:
+                $errorMessage .= 'O arquivo excede o limite de tamanho definido no formulário HTML.';
+                break;
+            case UPLOAD_ERR_PARTIAL:
+                $errorMessage .= 'O upload do arquivo foi feito apenas parcialmente.';
+                break;
+            case UPLOAD_ERR_NO_FILE:
+                $errorMessage .= 'Nenhum arquivo foi enviado.';
+                break;
+            case UPLOAD_ERR_NO_TMP_DIR:
+                $errorMessage .= 'Faltando uma pasta temporária.';
+                break;
+            case UPLOAD_ERR_CANT_WRITE:
+                $errorMessage .= 'Falha ao escrever o arquivo em disco.';
+                break;
+            case UPLOAD_ERR_EXTENSION:
+                $errorMessage .= 'Uma extensão do PHP interrompeu o upload do arquivo.';
+                break;
+            default:
+                $errorMessage .= 'Motivo desconhecido (código: ' . $uploadError . ').';
+                break;
+        }
+        error_log("ERRO arquivo: " . $errorMessage);
+        throw new Exception($errorMessage);
     }
     error_log("Arquivo OK");
 
@@ -105,12 +141,27 @@ try {
         throw new Exception('Erro ao salvar arquivo: ' . ($uploadError['message'] ?? 'Motivo desconhecido'));
     }
 
+    // Detecta o delimitador do CSV para contar as linhas
+    $delimiter = ','; // Padrão
+    if (($handle = fopen($caminhoArquivo, 'r')) !== false) {
+        $firstLine = fgets($handle);
+        rewind($handle);
+        $commaCount = substr_count($firstLine, ',');
+        $semicolonCount = substr_count($firstLine, ';');
+        if ($semicolonCount > $commaCount) {
+            $delimiter = ';';
+        }
+        fclose($handle);
+    }
+    // Salva o delimitador na sessão para uso posterior
+    $_SESSION['importacao_form']['csv_delimiter'] = $delimiter;
+
     // Conta as linhas do arquivo para exibir na confirmação
     $totalLinhas = 0;
     if (($handle = fopen($caminhoArquivo, 'r')) !== false) {
         // Pula o cabeçalho
-        fgetcsv($handle); 
-        while (fgetcsv($handle) !== false) {
+        fgetcsv($handle, 0, $delimiter); 
+        while (fgetcsv($handle, 0, $delimiter) !== false) {
             $totalLinhas++;
         }
         fclose($handle);
@@ -124,13 +175,14 @@ try {
         'arquivo_salvo' => $nomeArquivo, // Nome do arquivo no servidor
         'arquivo_original' => $arquivo['name'], // Nome original do arquivo
         'total_linhas' => $totalLinhas, // Total de registros
-        'upload_time' => date('Y-m-d H:i:s')
+        'upload_time' => date('Y-m-d H:i:s'),
+        'csv_delimiter' => $delimiter // Garante que o delimitador esteja na sessão
     ];
 
     // Reabre o arquivo para pegar os cabeçalhos para o mapeamento
     $headers = [];
     if (($handle = fopen($caminhoArquivo, 'r')) !== false) {
-        $headers = fgetcsv($handle, 0, ',', '"', "\\");
+        $headers = fgetcsv($handle, 0, $delimiter, '"', "\\"); // Usa o delimitador detectado
         fclose($handle);
     }
 
