@@ -101,14 +101,12 @@ class DocumentoService
 
     private static function getAuthAndDocumentKey(array $params): array
     {
-        LogHelper::logClickSign("DocumentoService::getAuthAndDocumentKey - Parâmetros recebidos: " . json_encode($params), 'debug');
         $entityId = $params['spa'] ?? null;
         $id = $params['deal'] ?? null;
 
         // Extrai campo_retorno dos params de entrada para uso imediato em caso de erro
         $campoRetornoBitrix = $params['retorno'] ?? $params['campo_retorno'] ?? null;
         $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
-        LogHelper::logClickSign("DocumentoService::getAuthAndDocumentKey - campoRetornoBitrix inicial: " . $campoRetornoBitrix, 'debug');
 
         if (empty($id) || empty($entityId)) {
             $codigoRetorno = ClickSignCodes::PARAMS_AUSENTES;
@@ -127,7 +125,6 @@ class DocumentoService
         // Atualiza campoRetornoBitrix com base em fieldsConfig se disponível
         $campoRetornoBitrix = $fieldsConfig['retorno'] ?? $campoRetornoBitrix;
         $paramsForUpdate = ['campo_retorno' => $campoRetornoBitrix];
-        LogHelper::logClickSign("DocumentoService::getAuthAndDocumentKey - campoRetornoBitrix após fieldsConfig: " . $campoRetornoBitrix, 'debug');
 
         if (!$tokenClicksign) {
             $codigoRetorno = ClickSignCodes::ACESSO_NAO_AUTORIZADO;
@@ -137,20 +134,9 @@ class DocumentoService
             return ['success' => false, 'mensagem' => $mensagem . ' - Acesso não autorizado ou incompleto.'];
         }
 
-        $campoIdClickSignOriginal = $fieldsConfig['idclicksign'] ?? null;
-        if (empty($campoIdClickSignOriginal)) {
-            $codigoRetorno = ClickSignCodes::TOKEN_AUSENTE; // Usando TOKEN_AUSENTE como um código genérico para campo ausente
-            $mensagem = UtilService::getMessageDescription($codigoRetorno);
-            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, null, $codigoRetorno, null);
-            LogHelper::logClickSign($mensagem . ' - Campo "idclicksign" não configurado para esta SPA.', 'service');
-            return ['success' => false, 'mensagem' => $mensagem . ' - Campo "idclicksign" não configurado para esta SPA.'];
-        }
-        
-        $dealData = BitrixDealHelper::consultarDeal($entityId, $id, [$campoIdClickSignOriginal]);
-        LogHelper::logClickSign("DocumentoService::getAuthAndDocumentKey - Raw dealData from Bitrix: " . json_encode($dealData, JSON_UNESCAPED_UNICODE), 'debug');
-        $campoIdClickSignFormatado = array_key_first(BitrixHelper::formatarCampos([$campoIdClickSignOriginal => null]));
-        $documentKey = $dealData['result'][$campoIdClickSignFormatado]['valor'] ?? null;
-        LogHelper::logClickSign("DocumentoService::getAuthAndDocumentKey - Extracted documentKey: " . ($documentKey ?? 'NULL'), 'debug');
+        // Obter os dados da assinatura ativa do banco de dados local.
+        $assinaturaAtiva = \Repositories\ClickSignDAO::obterAssinaturaAtivaPorDealId($id, $entityId);
+        $documentKey = $assinaturaAtiva['document_key'] ?? null;
 
         if (empty($documentKey)) {
             $codigoRetorno = ClickSignCodes::DOCUMENTO_NAO_ENCONTRADO_BD;
@@ -159,8 +145,6 @@ class DocumentoService
             LogHelper::logClickSign($mensagem . ' - Ação ignorada, nenhum documento para atualizar.', 'service');
             return ['success' => false, 'mensagem' => $mensagem . ' - Ação ignorada, nenhum documento para atualizar.'];
         }
-
-        LogHelper::logClickSign("DocumentoService::getAuthAndDocumentKey - campoRetornoBitrix final: " . $campoRetornoBitrix, 'debug');
 
         return [
             'success' => true,

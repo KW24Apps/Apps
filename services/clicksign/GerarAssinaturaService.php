@@ -41,7 +41,8 @@ class GerarAssinaturaService
         }
 
         // Verificar se já existe uma assinatura ativa para este deal_id e spa
-        if (ClickSignDAO::verificarAssinaturaAtivaPorDealId($id, $entityId)) {
+        $assinaturaAtiva = ClickSignDAO::obterAssinaturaAtivaPorDealId($id, $entityId);
+        if ($assinaturaAtiva) {
             $codigoRetorno = ClickSignCodes::ASSINATURA_JA_EM_ANDAMENTO;
             $mensagem = UtilService::getMessageDescription($codigoRetorno);
             LogHelper::logClickSign($mensagem . " para este Deal.", 'service');

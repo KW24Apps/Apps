@@ -163,8 +163,9 @@ class ClickSignDAO
         }
     }
 
-    // Método para verificar se já existe uma assinatura ativa para um dado deal_id e spa
-    public static function verificarAssinaturaAtivaPorDealId(string $dealId, string $spa): bool
+    // Método para obter dados de uma assinatura ativa pelo deal_id e spa do JSON dados_conexao
+    // Retorna um array associativo com os dados da assinatura (incluindo document_key) ou null se não encontrada.
+    public static function obterAssinaturaAtivaPorDealId(string $dealId, string $spa): ?array
     {
         $config = require __DIR__ . '/../config/config.php';
 
@@ -177,12 +178,13 @@ class ClickSignDAO
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             $sql = "
-                SELECT COUNT(*)
+                SELECT document_key, dados_conexao
                 FROM assinaturas_clicksign
                 WHERE (documento_disponivel_processado = 0 OR documento_disponivel_processado IS NULL)
                 AND (status_closed IS NULL OR status_closed NOT IN ('cancel', 'deadline'))
                 AND JSON_EXTRACT(dados_conexao, '$.deal_id') = :dealId
                 AND JSON_EXTRACT(dados_conexao, '$.spa') = :spa
+                LIMIT 1
             ";
 
             $stmt = $pdo->prepare($sql);
@@ -190,14 +192,16 @@ class ClickSignDAO
             $stmt->bindParam(':spa', $spa);
             $stmt->execute();
 
-            return $stmt->fetchColumn() > 0;
+            $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $resultado ?: null;
 
         } catch (PDOException $e) {
-            LogHelper::logClickSign("ERRO PDO ao verificar assinatura ativa por deal_id: " . $e->getMessage(), 'dao');
-            return false;
+            LogHelper::logClickSign("ERRO PDO ao obter assinatura ativa por deal_id: " . $e->getMessage(), 'dao');
+            return null;
         } catch (\Exception $e) {
-            LogHelper::logClickSign("ERRO geral ao verificar assinatura ativa por deal_id: " . $e->getMessage(), 'dao');
-            return false;
+            LogHelper::logClickSign("ERRO geral ao obter assinatura ativa por deal_id: " . $e->getMessage(), 'dao');
+            return null;
         }
     }
+
 }
