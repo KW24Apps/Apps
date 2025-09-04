@@ -70,17 +70,51 @@ try {
     $linhasVazias = 0;
     $linhasInvalidas = 0;
 
-    if (($handle = fopen($csvFile, 'r')) !== FALSE) {
+    // Adiciona tratamento de codificação
+    $fileContent = file_get_contents($csvFile);
+    $encoding = mb_detect_encoding($fileContent, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
+    error_log("DEBUG: Codificação detectada para $nomeArquivoSessao: $encoding");
+
+    if ($encoding && $encoding !== 'UTF-8') {
+        $fileContent = iconv($encoding, 'UTF-8//IGNORE', $fileContent);
+        // Salva o conteúdo convertido em um arquivo temporário para fgetcsv
+        $tempCsvFile = tempnam(sys_get_temp_dir(), 'converted_csv_');
+        file_put_contents($tempCsvFile, $fileContent);
+        $csvFileToRead = $tempCsvFile;
+        error_log("DEBUG: Arquivo CSV convertido para UTF-8 e salvo temporariamente em: $tempCsvFile");
+    } else {
+        $csvFileToRead = $csvFile;
+    }
+
+    if (($handle = fopen($csvFileToRead, 'r')) !== FALSE) {
         $header = fgetcsv($handle, 0, $csvDelimiter); // Usa o delimitador detectado
         $numeroLinha = 1;
+
+        if ($header === false) {
+            error_log("ERRO: Não foi possível ler o cabeçalho do CSV. Delimitador: '$csvDelimiter', Arquivo: '$csvFileToRead'");
+            throw new Exception('Não foi possível ler o cabeçalho do arquivo CSV. Verifique o delimitador ou a formatação.');
+        }
+        
+        // Log do cabeçalho para debug
+        error_log("DEBUG: Cabeçalho do CSV: " . json_encode($header));
 
         while (($row = fgetcsv($handle, 0, $csvDelimiter)) !== FALSE) { // Usa o delimitador detectado
             $numeroLinha++;
             $linhasLidas++;
 
+            // Log da linha bruta para debug
+            error_log("DEBUG: Linha $numeroLinha (bruta): " . json_encode($row));
+
             if (empty(array_filter($row, function($value) { return $value !== null && $value !== ''; }))) {
                 $linhasVazias++;
                 error_log("DEBUG: Linha $numeroLinha pulada (vazia).");
+                continue;
+            }
+
+            // Verifica se o número de colunas na linha corresponde ao cabeçalho
+            if (count($row) !== count($header)) {
+                $linhasInvalidas++;
+                error_log("DEBUG: Linha $numeroLinha pulada (número de colunas inconsistente). Esperado: " . count($header) . ", Encontrado: " . count($row) . ". Dados: " . json_encode($row));
                 continue;
             }
 
@@ -126,12 +160,18 @@ try {
                 }
                 
                 $deals[] = $deal;
+                error_log("DEBUG: Linha $numeroLinha processada com sucesso. Deal: " . json_encode($deal));
             } else {
                 $linhasInvalidas++;
-                error_log("DEBUG: Linha $numeroLinha pulada (inválida ou sem campos mapeados). Dados: " . implode(', ', $row));
+                error_log("DEBUG: Linha $numeroLinha pulada (inválida ou sem campos mapeados). Dados: " . json_encode($row));
             }
         }
         fclose($handle);
+        // Remove o arquivo temporário se foi criado
+        if (isset($tempCsvFile) && file_exists($tempCsvFile)) {
+            unlink($tempCsvFile);
+            error_log("DEBUG: Arquivo temporário removido: $tempCsvFile");
+        }
     }
 
     if (empty($deals)) {
