@@ -171,30 +171,53 @@ try {
         throw new Exception('Erro ao salvar arquivo: ' . ($uploadError['message'] ?? 'Motivo desconhecido'));
     }
 
-    $delimiter = ','; // Separador padrão
     $totalLinhas = 0;
     $headers = [];
+    $delimiter = ','; // Delimitador padrão
 
     if (($handle = fopen($caminhoArquivo, 'r')) !== false) {
-        // Detecta o delimitador na primeira linha
+        // Tenta detectar o delimitador de forma mais robusta
         $firstLine = fgets($handle);
         rewind($handle); // Volta para o início do arquivo
 
-        $commaCount = substr_count($firstLine, ',');
-        $semicolonCount = substr_count($firstLine, ';');
+        $testDelimiters = [',', ';'];
+        $bestDelimiter = ',';
+        $maxColumns = 0;
 
-        if ($semicolonCount > $commaCount) {
-            $delimiter = ';';
+        foreach ($testDelimiters as $testDel) {
+            $testHandle = fopen($caminhoArquivo, 'r');
+            $testHeaders = fgetcsv($testHandle, 0, $testDel, '"', "\\");
+            fclose($testHandle);
+            
+            if (is_array($testHeaders) && count($testHeaders) > $maxColumns) {
+                $maxColumns = count($testHeaders);
+                $bestDelimiter = $testDel;
+            }
         }
-        
+        $delimiter = $bestDelimiter;
+        error_log("Delimitador detectado: " . $delimiter);
+
         // Lê o cabeçalho com o delimitador detectado
         $headers = fgetcsv($handle, 0, $delimiter, '"', "\\");
         
-        // Conta as linhas restantes
-        while (fgetcsv($handle, 0, $delimiter) !== false) {
-            $totalLinhas++;
+        // Conta as linhas restantes de forma mais eficiente
+        // Subtrai 1 para não contar o cabeçalho
+        $file = new SplFileObject($caminhoArquivo, 'r');
+        $file->setFlags(SplFileObject::READ_CSV | SplFileObject::SKIP_EMPTY | SplFileObject::READ_AHEAD);
+        $file->setCsvControl($delimiter, '"', "\\");
+
+        $totalLinhas = 0;
+        $isFirstLine = true;
+        foreach ($file as $row) {
+            if ($isFirstLine) {
+                $isFirstLine = false;
+                continue; // Pula o cabeçalho
+            }
+            if (is_array($row) && count(array_filter($row, function($value) { return $value !== null && $value !== ''; })) > 0) {
+                $totalLinhas++;
+            }
         }
-        fclose($handle);
+        fclose($handle); // Fecha o handle original
     } else {
         throw new Exception('Erro ao abrir o arquivo CSV para leitura.');
     }
