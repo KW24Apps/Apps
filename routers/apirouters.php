@@ -15,7 +15,6 @@ return [
 
     // Deal
     '/deal/criar' => ['DealController', 'criar', 'POST'],
-    '/deal/criar' => ['DealController', 'criar', 'GET'],
     '/deal/consultar' => ['DealController', 'consultar', 'GET'],
     '/deal/editar' => ['DealController', 'editar', 'POST'],
 
