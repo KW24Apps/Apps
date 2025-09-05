@@ -293,4 +293,4 @@ try {
     header("Location: $redirectUrl");
     exit;
 }
-?>
+// A tag de fechamento ?> é omitida intencionalmente para evitar problemas de saída de espaço em branco.
