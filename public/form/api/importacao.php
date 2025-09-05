@@ -5,6 +5,7 @@ error_log("=== DEBUG UPLOAD INICIO ===");
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/../logs/debug_bitrix.log'); // Define o arquivo de log explicitamente
 
 // Aumenta os limites de memória e tempo de execução para lidar com arquivos grandes
 ini_set('memory_limit', '256M'); 
@@ -200,23 +201,16 @@ try {
         // Lê o cabeçalho com o delimitador detectado
         $headers = fgetcsv($handle, 0, $delimiter, '"', "\\");
         
-        // Conta as linhas restantes de forma mais eficiente
+        // Conta as linhas restantes de forma mais simples e robusta
         // Subtrai 1 para não contar o cabeçalho
-        $file = new SplFileObject($caminhoArquivo, 'r');
-        $file->setFlags(SplFileObject::READ_CSV | SplFileObject::SKIP_EMPTY | SplFileObject::READ_AHEAD);
-        $file->setCsvControl($delimiter, '"', "\\");
-
-        $totalLinhas = 0;
-        $isFirstLine = true;
-        foreach ($file as $row) {
-            if ($isFirstLine) {
-                $isFirstLine = false;
-                continue; // Pula o cabeçalho
-            }
-            if (is_array($row) && count(array_filter($row, function($value) { return $value !== null && $value !== ''; })) > 0) {
-                $totalLinhas++;
-            }
+        $allLines = file($caminhoArquivo, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $totalLinhas = count($allLines) - 1; // Subtrai o cabeçalho
+        
+        // Garante que totalLinhas não seja negativo se o arquivo tiver apenas cabeçalho ou for vazio
+        if ($totalLinhas < 0) {
+            $totalLinhas = 0;
         }
+        
         fclose($handle); // Fecha o handle original
     } else {
         throw new Exception('Erro ao abrir o arquivo CSV para leitura.');

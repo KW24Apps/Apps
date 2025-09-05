@@ -2,6 +2,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/../logs/debug_bitrix.log'); // Define o arquivo de log explicitamente
 
 // Aumenta os limites de memória e tempo de execução para lidar com arquivos grandes
 ini_set('memory_limit', '256M'); 
