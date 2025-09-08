@@ -179,8 +179,8 @@ try {
         throw new Exception('Nenhum deal válido encontrado no arquivo CSV');
     }
 
-    // Divide os deals em chunks de até 2000 itens cada
-    $maxDealsPerJob = 2000;
+    // Divide os deals em chunks de até 1000 itens cada
+    $maxDealsPerJob = 1000;
     $chunks = array_chunk($deals, $maxDealsPerJob);
     
     $jobIds = [];
