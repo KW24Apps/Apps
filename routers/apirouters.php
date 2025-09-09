@@ -24,5 +24,6 @@ return [
     '/geraroptnd' => ['GeraroptndController', 'executar', 'POST'],
     '/mediahora' => ['MediaHoraController', 'executar', 'POST'],
     '/scheduler' => ['SchedulerController', 'executar', 'POST'],
-    '/importar' => ['']
+    '/importar' => [''],
+    '/date-calculator/diff-webhook' => ['DateCalculatorController', 'calculateDateDifferenceWebhook', 'POST']
 ];
