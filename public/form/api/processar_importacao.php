@@ -2,6 +2,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/../logs/debug_bitrix.log'); // Define o arquivo de log explicitamente
 
 // Aumenta os limites de memória e tempo de execução para lidar com arquivos grandes
 ini_set('memory_limit', '256M'); 
@@ -178,8 +179,8 @@ try {
         throw new Exception('Nenhum deal válido encontrado no arquivo CSV');
     }
 
-    // Divide os deals em chunks de até 2000 itens cada
-    $maxDealsPerJob = 2000;
+    // Divide os deals em chunks de até 1000 itens cada
+    $maxDealsPerJob = 1000;
     $chunks = array_chunk($deals, $maxDealsPerJob);
     
     $jobIds = [];
@@ -292,4 +293,4 @@ try {
     header("Location: $redirectUrl");
     exit;
 }
-?>
+// A tag de fechamento ?> é omitida intencionalmente para evitar problemas de saída de espaço em branco.
