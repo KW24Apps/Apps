@@ -25,5 +25,5 @@ return [
     '/mediahora' => ['MediaHoraController', 'executar', 'POST'],
     '/scheduler' => ['SchedulerController', 'executar', 'POST'],
     '/importar' => [''],
-    '/date-calculator/diff-webhook' => ['DateCalculatorController', 'calculateDateDifferenceWebhook', 'POST']
+    '/calcdata/dias' => ['DateCalculatorController', 'calculateDateDifferenceWebhook', 'POST']
 ];

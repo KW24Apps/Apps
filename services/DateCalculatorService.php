@@ -22,14 +22,23 @@ class DateCalculatorService
             if (!$date1) {
                 throw new Exception("Formato de data inválido para data1: {$date1String}. Esperado DD/MM/YYYY.");
             }
+            $date1->setTime(0, 0, 0); // Zera a hora para cálculo apenas de dias
 
             $date2 = $date2String ? DateTime::createFromFormat('d/m/Y', $date2String) : new DateTime();
             if (!$date2) {
                 throw new Exception("Formato de data inválido para data2: {$date2String}. Esperado DD/MM/YYYY.");
             }
+            $date2->setTime(0, 0, 0); // Zera a hora para cálculo apenas de dias
 
+            // Calcula a diferença: (data a vencer) - (data atual)
+            // Se date1 for futura, o intervalo será positivo.
             $interval = $date1->diff($date2);
-            $days = (int)$interval->format('%r%a'); // %r para sinal, %a para dias totais
+            $days = (int)$interval->format('%a'); // Apenas o número absoluto de dias
+            
+            // Ajusta o sinal: se date1 for anterior a date2, o resultado deve ser negativo
+            if ($date1 < $date2) {
+                $days = -$days;
+            }
 
             return $days;
 
