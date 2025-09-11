@@ -46,12 +46,12 @@ class DateCalculatorController
         try {
             $message = '';
             if (!$data01) {
-                $message = 'sem data para realizar o calculo';
+                $message = 'API: Sem data para realizar o calculo';
             } else {
                 // 3. Calcular a diferença de datas
                 $daysDifference = $this->dateCalculatorService->calculateDifferenceInDays($data01, $data02);
                 if ($daysDifference < 0) {
-                    $message = 'data de calculo inferior a de teste';
+                    $message = 'API: Data de calculo inferior a de teste';
                 }
             }
 
