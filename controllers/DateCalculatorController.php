@@ -34,20 +34,46 @@ class DateCalculatorController
         // O cliente já foi validado no INDEX, e o webhook do Bitrix está disponível na variável global.
 
         // 2. Validar parâmetros essenciais
-        if (!$data01 || !$retorno || !$spaId || !$dealId) { // Exigir spaId e dealId
+        if (!$retorno || !$spaId || !$dealId) { // Exigir retorno, spaId e dealId
             http_response_code(400);
             echo json_encode([
                 'success' => false,
-                'message' => 'Parâmetros data01, retorno, SPA e deal são obrigatórios.'
+                'message' => 'Parâmetros retorno, SPA e deal são obrigatórios.'
             ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
             return;
         }
 
         try {
-            // 3. Calcular a diferença de datas
-            $daysDifference = $this->dateCalculatorService->calculateDifferenceInDays($data01, $data02);
+            $message = '';
+            if (!$data01) {
+                $message = 'sem data para realizar o calculo';
+            } else {
+                // 3. Calcular a diferença de datas
+                $daysDifference = $this->dateCalculatorService->calculateDifferenceInDays($data01, $data02);
+                if ($daysDifference < 0) {
+                    $message = 'data de calculo inferior a de teste';
+                }
+            }
 
-            // 4. Preparar dados para atualização no Bitrix
+            if (!empty($message)) {
+                // Preparar dados para atualização no Bitrix com a mensagem de erro
+                $fieldsToUpdate = [
+                    $retorno => $message
+                ];
+
+                // Chamar BitrixDealHelper para atualizar o campo com a mensagem de erro
+                $bitrixResult = BitrixDealHelper::editarDeal($spaId, $dealId, $fieldsToUpdate);
+
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'message' => $message,
+                    'bitrix_response' => $bitrixResult
+                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                return;
+            }
+
+            // 4. Preparar dados para atualização no Bitrix com o resultado do cálculo
             $fieldsToUpdate = [
                 $retorno => $daysDifference
             ];
