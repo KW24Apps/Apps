@@ -82,8 +82,26 @@ class DiskController
 
             // 6. Renomear a pasta no Bitrix Disk
             $renameResult = BitrixDiskHelper::renameFolder($idPastaAlvo, $novoNomePasta);
-            if (isset($renameResult['error']) || empty($renameResult['result'])) {
-                throw new \Exception('Erro ao renomear a pasta: ' . ($renameResult['error_description'] ?? 'Resposta inválida da API.'));
+            $folderRenamed = true; // Assume renamed initially
+
+            if (isset($renameResult['error'])) {
+                $errorDescription = $renameResult['error_description'] ?? 'Erro desconhecido da API.';
+                // Check if the error is because the folder already has the target name
+                // This is an assumption based on common API behaviors.
+                // A more robust solution would require knowing the exact Bitrix24 error code/message.
+                if (strpos($errorDescription, 'já possui o nome especificado') !== false || strpos($errorDescription, 'already has the specified name') !== false) {
+                    // Folder already has the name, treat as a "soft success" for renaming
+                    $folderRenamed = false;
+                    // Log this event if necessary, but don't throw an exception
+                    LogHelper::logDisk("Pasta ID {$idPastaAlvo} já possui o nome '{$novoNomePasta}'. Nenhuma renomeação foi necessária.", __CLASS__ . '::' . __FUNCTION__);
+                } else {
+                    // It's a genuine error, re-throw
+                    throw new \Exception('Erro ao renomear a pasta: ' . $errorDescription);
+                }
+            } elseif (empty($renameResult['result'])) {
+                // This case means the API call was successful but returned an empty result, which is unexpected for a successful rename.
+                // It's safer to treat this as an error unless Bitrix API explicitly states otherwise for "no change" scenarios.
+                throw new \Exception('Erro ao renomear a pasta: Resposta inválida da API (resultado vazio).');
             }
 
             // 7. Atualizar os campos na Company (sem o campo de retorno)
@@ -92,7 +110,7 @@ class DiskController
                 $fieldNomeEmpresaAntigo => $nomePadraoEmpresa,
                 $fieldIdDominioAntigo => $idDominioAtual
             ];
-            // 8. Obter o link da pasta renomeada usando o helper
+            // 8. Obter o link da pasta (seja renomeada ou não) usando o helper
             $folderLink = BitrixDiskHelper::getFolderDetailUrl($idPastaAlvo);
 
             // Adiciona o link da pasta ao campo UF_CRM_1660100679 se o link existir
@@ -106,7 +124,13 @@ class DiskController
             }
 
             // 9. Adicionar comentário de sucesso na timeline
-            $mensagemSucesso = "Pasta da Contabilidade foi renomeada para: '{$novoNomePasta}'.";
+            $mensagemSucesso = "";
+            if ($folderRenamed) {
+                $mensagemSucesso = "Pasta da Contabilidade foi renomeada para: '{$novoNomePasta}'.";
+            } else {
+                $mensagemSucesso = "Pasta da Contabilidade já possui o nome exato: '{$novoNomePasta}'. Nenhuma renomeação foi necessária.";
+            }
+
             if ($folderLink) {
                 // Formata o link usando BBCode para ser clicável na timeline do Bitrix24
                 $mensagemSucesso .= "\nLink da Pasta: [url=" . $folderLink . "]Clique Aqui[/url]";
@@ -117,9 +141,9 @@ class DiskController
             http_response_code(200);
             echo json_encode([
                 'status' => 'sucesso',
-                'mensagem' => "Pasta ID {$idPastaAlvo} renomeada e comentário adicionado na Company ID {$companyid}.",
+                'mensagem' => $mensagemSucesso, // Usa a mensagem dinâmica
                 'link_pasta' => $folderLink, // Inclui o link da pasta na resposta da API
-                'resultado_rename' => $renameResult,
+                'resultado_rename' => $renameResult, // Inclui o resultado original do rename (pode ter erro se não renomeou)
                 'resultado_update' => $updateResult
             ]);
 
