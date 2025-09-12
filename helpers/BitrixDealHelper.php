@@ -113,34 +113,34 @@ class BitrixDealHelper
             
             if (isset($resultado['result']['result'])) {
                 foreach ($resultado['result']['result'] as $key => $res) {
-                    if (isset($res['item']['id'])) {
+                    $itemId = null;
+                    // Tenta extrair o ID do item de várias estruturas possíveis
+                    if (isset($res['item']['id'])) { // crm.item.add para SPA (nova API)
+                        $itemId = $res['item']['id'];
+                    } elseif (isset($res['result']['item']['id'])) { // Outra variação para crm.item.add
+                        $itemId = $res['result']['item']['id'];
+                    } elseif (isset($res['result']) && is_numeric($res['result'])) { // crm.deal.add (legado) ou outras APIs que retornam ID direto
+                        $itemId = $res['result'];
+                    } elseif (isset($res['result']) && is_array($res['result']) && isset($res['result']['ID'])) { // crm.deal.add (legado) com ID dentro de array
+                        $itemId = $res['result']['ID'];
+                    }
+
+                    if ($itemId) {
                         $sucessosChunk++;
-                        $idsChunk[] = $res['item']['id'];
-                        $todosIds[] = $res['item']['id'];
-                    } elseif (isset($res['result']['item']['id'])) {
-                        $sucessosChunk++;
-                        $idsChunk[] = $res['result']['item']['id'];
-                        $todosIds[] = $res['result']['item']['id'];
-                    } elseif (isset($res['result']) && is_numeric($res['result'])) {
-                        $sucessosChunk++;
-                        $idsChunk[] = $res['result'];
-                        $todosIds[] = $res['result'];
+                        $idsChunk[] = $itemId;
+                        $todosIds[] = $itemId;
                     } else {
-                        // LOG do erro específico
+                        // Se não encontrou o ID, registra como erro
                         LogHelper::logBitrixHelpers("DEAL FALHOU - Key: $key - Erro: " . json_encode($res, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
                     }
                 }
             } else {
-                error_log("ERRO: Resposta da API não tem estrutura esperada");
-                error_log("Resposta completa: " . print_r($resultado, true));
-            }
-            
-            if (!empty($errosChunk)) {
-                error_log("ERROS encontrados no chunk " . ($chunkIndex + 1) . ": " . print_r($errosChunk, true));
+                // Se a estrutura principal 'result.result' não existe, é um erro geral do batch
+                LogHelper::logBitrixHelpers("ERRO GERAL BATCH: Resposta da API não tem estrutura esperada ou erro geral. Resposta completa: " . json_encode($resultado, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
             }
             
             $totalSucessos += $sucessosChunk;
-            $totalErros += count($chunk) - $sucessosChunk;
+            $totalErros += count($chunk) - $sucessosChunk; // Calcula erros com base no que não foi sucesso
             
             // LOG de resumo do chunk
             LogHelper::logBitrixHelpers("CHUNK RESUMO - Sucessos: $sucessosChunk | Erros: " . (count($chunk) - $sucessosChunk) . " | IDs: " . implode(',', $idsChunk), __CLASS__ . '::' . __FUNCTION__);
