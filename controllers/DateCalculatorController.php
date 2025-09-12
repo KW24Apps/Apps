@@ -4,37 +4,39 @@ namespace Controllers;
 
 require_once __DIR__ . '/../services/DateCalculatorService.php';
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
-require_once __DIR__ . '/../helpers/BitrixDealHelper.php'; // Adicionado
-// require_once __DIR__ . '/../helpers/LogHelper.php'; // Removido conforme feedback
+require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
+require_once __DIR__ . '/../helpers/LogHelper.php'; // Adicionado para logging da fila
 
 use Services\DateCalculatorService;
 use Helpers\BitrixHelper;
-use Helpers\BitrixDealHelper; // Adicionado
-// use Helpers\LogHelper; // Removido conforme feedback
+use Helpers\BitrixDealHelper;
+use Helpers\LogHelper; // Adicionado para logging da fila
 use Exception;
 
 class DateCalculatorController
 {
     private $dateCalculatorService;
+    private const QUEUE_FILE = __DIR__ . '/../queue/bitrix_updates.json';
 
     public function __construct()
     {
         $this->dateCalculatorService = new DateCalculatorService();
+        // Garante que o diretório da fila exista
+        $queueDir = dirname(self::QUEUE_FILE);
+        if (!is_dir($queueDir)) {
+            mkdir($queueDir, 0777, true);
+        }
     }
 
     public function calculateDateDifferenceWebhook()
     {
-        // 1. Extrair parâmetros da URL (GET), conforme o exemplo do webhook
         $data01 = $_GET['data01'] ?? null;
-        $data02 = $_GET['data02'] ?? null; // Opcional
+        $data02 = $_GET['data02'] ?? null;
         $retorno = $_GET['retorno'] ?? null;
-        $spaId = $_GET['spa'] ?? null; // ID da SPA, que será o entityTypeId (corrigido para 'spa' minúsculo)
-        $dealId = $_GET['deal'] ?? null; // ID do Deal, que será o ID do item
+        $spaId = $_GET['spa'] ?? null;
+        $dealId = $_GET['deal'] ?? null;
 
-        // O cliente já foi validado no INDEX, e o webhook do Bitrix está disponível na variável global.
-
-        // 2. Validar parâmetros essenciais
-        if (!$retorno || !$spaId || !$dealId) { // Exigir retorno, spaId e dealId
+        if (!$retorno || !$spaId || !$dealId) {
             http_response_code(400);
             echo json_encode([
                 'success' => false,
@@ -45,69 +47,70 @@ class DateCalculatorController
 
         try {
             $message = '';
+            $daysDifference = null;
+
             if (!$data01) {
                 $message = 'API: Sem data para realizar o calculo';
             } else {
-                // 3. Calcular a diferença de datas
                 $daysDifference = $this->dateCalculatorService->calculateDifferenceInDays($data01, $data02);
                 if ($daysDifference < 0) {
                     $message = 'API: Data de calculo inferior a de teste';
                 }
             }
 
+            $fieldsToUpdate = [];
             if (!empty($message)) {
-                // Preparar dados para atualização no Bitrix com a mensagem de erro
-                $fieldsToUpdate = [
-                    $retorno => $message
-                ];
-
-                // Chamar BitrixDealHelper para atualizar o campo com a mensagem de erro
-                $bitrixResult = BitrixDealHelper::editarDeal($spaId, $dealId, $fieldsToUpdate);
-
-                http_response_code(400);
-                echo json_encode([
-                    'success' => false,
-                    'message' => $message,
-                    'bitrix_response' => $bitrixResult
-                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-                return;
+                $fieldsToUpdate = [$retorno => $message];
+            } else {
+                $fieldsToUpdate = [$retorno => $daysDifference];
             }
 
-            // 4. Preparar dados para atualização no Bitrix com o resultado do cálculo
-            $fieldsToUpdate = [
-                $retorno => $daysDifference
+            // Enfileirar a requisição em vez de chamar a API do Bitrix diretamente
+            $queueData = [
+                'spaId' => $spaId,
+                'dealId' => $dealId,
+                'fieldsToUpdate' => $fieldsToUpdate,
+                'timestamp' => time()
             ];
 
-            // 5. Chamar BitrixDealHelper para atualizar o campo
-            // O primeiro parâmetro é o entityTypeId (SPA ID), o segundo é o dealId (ID do item)
-            $bitrixResult = BitrixDealHelper::editarDeal($spaId, $dealId, $fieldsToUpdate);
-
-            if (isset($bitrixResult['error']) || (isset($bitrixResult['status']) && $bitrixResult['status'] === 'erro')) {
-                // LogHelper::logBitrixHelpers("Erro ao atualizar Bitrix: " . json_encode($bitrixResult, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__); // Removido conforme feedback
-                http_response_code(500);
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'Erro ao atualizar Bitrix.',
-                    'bitrix_error' => $bitrixResult['mensagem'] ?? $bitrixResult['error_description'] ?? $bitrixResult['error']
-                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-                return;
-            }
+            $this->enqueueBitrixUpdate($queueData);
 
             http_response_code(200);
             echo json_encode([
                 'success' => true,
-                'message' => 'Diferença de dias calculada e Bitrix atualizado com sucesso.',
-                'days_difference' => $daysDifference,
-                'bitrix_response' => $bitrixResult
+                'message' => 'Requisição enfileirada para atualização do Bitrix.',
+                'queued_data' => $queueData
             ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
         } catch (Exception $e) {
-            // LogHelper::logAcessoAplicacao(['mensagem' => 'Erro no cálculo ou atualização: ' . $e->getMessage(), 'trace' => $e->getTraceAsString()], 'ERROR'); // Removido conforme feedback
+            LogHelper::logAcessoAplicacao(['mensagem' => 'Erro no cálculo ou enfileiramento: ' . $e->getMessage(), 'trace' => $e->getTraceAsString()], 'ERROR');
             http_response_code(500);
             echo json_encode([
                 'success' => false,
                 'message' => 'Erro interno do servidor: ' . $e->getMessage()
             ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        }
+    }
+
+    private function enqueueBitrixUpdate(array $data): void
+    {
+        $file = self::QUEUE_FILE;
+        $jsonLine = json_encode($data, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+
+        $fp = fopen($file, 'a');
+        if ($fp) {
+            if (flock($fp, LOCK_EX)) { // Bloqueio exclusivo para escrita
+                fwrite($fp, $jsonLine);
+                flock($fp, LOCK_UN); // Libera o bloqueio
+                LogHelper::logAcessoAplicacao(['mensagem' => 'Requisição adicionada à fila.', 'data' => $data], 'INFO');
+            } else {
+                LogHelper::logAcessoAplicacao(['mensagem' => 'Não foi possível obter o bloqueio do arquivo de fila para escrita.', 'data' => $data], 'ERROR');
+                throw new Exception('Não foi possível enfileirar a requisição devido a um problema de bloqueio de arquivo.');
+            }
+            fclose($fp);
+        } else {
+            LogHelper::logAcessoAplicacao(['mensagem' => 'Não foi possível abrir o arquivo de fila para escrita.', 'file' => $file, 'data' => $data], 'ERROR');
+            throw new Exception('Não foi possível enfileirar a requisição.');
         }
     }
 }
