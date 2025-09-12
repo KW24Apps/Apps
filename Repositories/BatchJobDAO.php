@@ -136,4 +136,17 @@ class BatchJobDAO
         return $stmt->fetch(\PDO::FETCH_ASSOC)['total'] > 0;
     }
 
+    /**
+     * Atualiza os contadores de itens processados, sucesso e erro de um job.
+     */
+    public function atualizarContadoresItens(string $jobId, int $sucesso = 0, int $erro = 0, int $processados = 0): bool
+    {
+        $sql = "UPDATE batch_jobs 
+                SET items_sucesso = items_sucesso + ?, 
+                    items_erro = items_erro + ?, 
+                    items_processados = items_processados + ? 
+                WHERE job_id = ?";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([$sucesso, $erro, $processados, $jobId]);
+    }
 }

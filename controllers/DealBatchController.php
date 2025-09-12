@@ -74,6 +74,8 @@ class DealBatchController
                 if ($itemJaProcessado) {
                     LogHelper::logDealBatchController("ITEM - Job: {$job['job_id']} | Item {$index} já processado com sucesso. Pulando.");
                     $totalItensProcessados++;
+                    // Atualiza contadores no DAO para itens pulados
+                    $dao->atualizarContadoresItens($job['job_id'], 1, 0, 1);
                     continue;
                 }
 
@@ -93,6 +95,11 @@ class DealBatchController
                 $progressoItens[] = $itemResult;
                 $dao->atualizarProgressoItens($job['job_id'], $progressoItens);
 
+                // Atualiza contadores no DAO
+                $sucesso = ($itemResult['status'] === 'sucesso') ? 1 : 0;
+                $erro = ($itemResult['status'] === 'erro') ? 1 : 0;
+                $dao->atualizarContadoresItens($job['job_id'], $sucesso, $erro, 1);
+
                 if ($itemResult['status'] === 'sucesso') {
                     $totalItensProcessados++;
                 } else {
@@ -104,6 +111,7 @@ class DealBatchController
             }
             
             $statusFinal = ($totalItensComErro === 0) ? 'concluido' : 'parcialmente_concluido';
+            // Os contadores já foram atualizados incrementalmente, então não precisamos passá-los aqui
             $dao->marcarComoConcluido($job['job_id'], ['total_processados' => $totalItensProcessados, 'total_erros' => $totalItensComErro], $progressoItens);
             
             // NOVO: Verificar se deve reprocessar automaticamente (lógica original)
