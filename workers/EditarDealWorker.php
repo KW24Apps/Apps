@@ -14,7 +14,7 @@ class EditarDealWorker
     private const QUEUE_FILE = __DIR__ . '/../queue/bitrix_updates.json';
     private const PROCESSED_QUEUE_FILE = __DIR__ . '/../queue/bitrix_updates_processed.json';
     private const ERROR_QUEUE_FILE = __DIR__ . '/../queue/bitrix_updates_error.json';
-    private const BATCH_SIZE = 15; // Número máximo de itens por lote para enviar ao Bitrix
+    private const BATCH_SIZE = 10; // Número máximo de itens por lote para enviar ao Bitrix
     private const BATCH_DELAY_SECONDS = 1; // Atraso de 1 segundo entre cada lote
 
     public function __construct()
