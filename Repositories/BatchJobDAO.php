@@ -84,7 +84,7 @@ class BatchJobDAO
      */
     public function marcarComoProcessando(string $jobId): bool
     {
-        $sql = "UPDATE batch_jobs SET status = 'processando', iniciado_em = NOW() WHERE job_id = ?";
+        $sql = "UPDATE batch_jobs SET status = 'processando', iniciado_em = NOW(), ultima_atualizacao_progresso = NOW() WHERE job_id = ?";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([$jobId]);
     }
@@ -94,7 +94,7 @@ class BatchJobDAO
      */
     public function marcarComoConcluido(string $jobId, array $resultado, array $progressoItens): bool
     {
-        $sql = "UPDATE batch_jobs SET status = 'concluido', concluido_em = NOW(), resultado = ?, progresso_itens = ? WHERE job_id = ?";
+        $sql = "UPDATE batch_jobs SET status = 'concluido', concluido_em = NOW(), resultado = ?, progresso_itens = ?, ultima_atualizacao_progresso = NOW() WHERE job_id = ?";
         $stmt = $this->pdo->prepare($sql);
         $resultadoJson = json_encode($resultado, JSON_UNESCAPED_UNICODE);
         $progressoItensJson = json_encode($progressoItens, JSON_UNESCAPED_UNICODE);
@@ -106,7 +106,7 @@ class BatchJobDAO
      */
     public function marcarComoErro(string $jobId, string $mensagemErro, ?array $progressoItens = null): bool
     {
-        $sql = "UPDATE batch_jobs SET status = 'erro', erro_mensagem = ?, progresso_itens = ? WHERE job_id = ?";
+        $sql = "UPDATE batch_jobs SET status = 'erro', erro_mensagem = ?, progresso_itens = ?, ultima_atualizacao_progresso = NOW() WHERE job_id = ?";
         $stmt = $this->pdo->prepare($sql);
         $progressoItensJson = $progressoItens ? json_encode($progressoItens, JSON_UNESCAPED_UNICODE) : null;
         return $stmt->execute([$mensagemErro, $progressoItensJson, $jobId]);
@@ -117,7 +117,7 @@ class BatchJobDAO
      */
     public function atualizarProgressoItens(string $jobId, array $progressoItens): bool
     {
-        $sql = "UPDATE batch_jobs SET progresso_itens = ? WHERE job_id = ?";
+        $sql = "UPDATE batch_jobs SET progresso_itens = ?, ultima_atualizacao_progresso = NOW() WHERE job_id = ?";
         $stmt = $this->pdo->prepare($sql);
         $progressoItensJson = json_encode($progressoItens, JSON_UNESCAPED_UNICODE);
         return $stmt->execute([$progressoItensJson, $jobId]);
@@ -130,7 +130,7 @@ class BatchJobDAO
     {
         // Considera jobs "processando" que não atingiram o timeout
         $timeoutMinutes = 10; 
-        $sql = "SELECT COUNT(*) as total FROM batch_jobs WHERE status = 'processando' AND iniciado_em >= (NOW() - INTERVAL {$timeoutMinutes} MINUTE)";
+        $sql = "SELECT COUNT(*) as total FROM batch_jobs WHERE status = 'processando' AND ultima_atualizacao_progresso >= (NOW() - INTERVAL {$timeoutMinutes} MINUTE)";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute();
         return $stmt->fetch(\PDO::FETCH_ASSOC)['total'] > 0;
@@ -144,7 +144,8 @@ class BatchJobDAO
         $sql = "UPDATE batch_jobs 
                 SET items_sucesso = items_sucesso + ?, 
                     items_erro = items_erro + ?, 
-                    items_processados = items_processados + ? 
+                    items_processados = items_processados + ?,
+                    ultima_atualizacao_progresso = NOW() 
                 WHERE job_id = ?";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([$sucesso, $erro, $processados, $jobId]);
