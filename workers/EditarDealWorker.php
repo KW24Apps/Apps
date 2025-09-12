@@ -50,8 +50,19 @@ class EditarDealWorker
             $spaId = $updateData['spaId'];
             $dealId = $updateData['dealId'];
             $fieldsToUpdate = $updateData['fieldsToUpdate'];
+            $webhookBitrix = $updateData['webhookBitrix'] ?? null; // Recupera o webhook da fila
 
             LogHelper::logAcessoAplicacao(['mensagem' => "Processando atualização para Deal ID: $dealId (SPA ID: $spaId)."], 'INFO');
+
+            // Configura o webhook na variável global antes de chamar BitrixDealHelper
+            if ($webhookBitrix) {
+                $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhookBitrix;
+            } else {
+                LogHelper::logAcessoAplicacao(['mensagem' => 'Webhook não encontrado na fila para o item.', 'dealId' => $dealId, 'update' => $updateData], 'ERROR');
+                $errorCount++;
+                $this->logErrorUpdates([$updateData], ['error' => 'Webhook não encontrado na fila.']);
+                continue; // Pula para o próximo item da fila
+            }
 
             try {
                 // Chamar BitrixDealHelper::editarDeal para um único item.

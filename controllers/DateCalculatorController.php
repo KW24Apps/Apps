@@ -66,11 +66,14 @@ class DateCalculatorController
             }
 
             // Enfileirar a requisição em vez de chamar a API do Bitrix diretamente
+            $webhookBitrix = $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] ?? null;
+
             $queueData = [
                 'spaId' => $spaId,
                 'dealId' => $dealId,
                 'fieldsToUpdate' => $fieldsToUpdate,
-                'timestamp' => time()
+                'timestamp' => time(),
+                'webhookBitrix' => $webhookBitrix // Adiciona o webhook à fila
             ];
 
             $this->enqueueBitrixUpdate($queueData);
