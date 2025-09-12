@@ -14,17 +14,17 @@ class EditarDealWorker
     private const QUEUE_FILE = __DIR__ . '/../queue/bitrix_updates.json';
     private const PROCESSED_QUEUE_FILE = __DIR__ . '/../queue/bitrix_updates_processed.json';
     private const ERROR_QUEUE_FILE = __DIR__ . '/../queue/bitrix_updates_error.json';
-    private const BATCH_SIZE = 15; // Max items per Bitrix batch call (BitrixDealHelper already handles this, but for clarity)
-    private const REQUEST_DELAY_SECONDS = 0.2; // 1/5 = 0.2 seconds per request to stay within 5 req/sec limit
+    private const BATCH_SIZE = 15; // Número máximo de itens por lote para enviar ao Bitrix
+    private const BATCH_DELAY_SECONDS = 1; // Atraso de 1 segundo entre cada lote
 
     public function __construct()
     {
-        // Ensure queue directories exist
+        // Garante que os diretórios da fila existam
         $queueDir = dirname(self::QUEUE_FILE);
         if (!is_dir($queueDir)) {
             mkdir($queueDir, 0777, true);
         }
-        // Ensure processed and error queue files exist
+        // Garante que os arquivos de fila processados e de erro existam
         if (!file_exists(self::PROCESSED_QUEUE_FILE)) {
             file_put_contents(self::PROCESSED_QUEUE_FILE, '');
         }
@@ -45,46 +45,65 @@ class EditarDealWorker
 
         $processedCount = 0;
         $errorCount = 0;
+        $currentBatch = [];
 
-        foreach ($pendingUpdates as $updateData) {
-            $spaId = $updateData['spaId'];
-            $dealId = $updateData['dealId'];
-            $fieldsToUpdate = $updateData['fieldsToUpdate'];
-            $webhookBitrix = $updateData['webhookBitrix'] ?? null; // Recupera o webhook da fila
+        foreach ($pendingUpdates as $index => $updateData) {
+            $currentBatch[] = $updateData;
 
-            LogHelper::logAcessoAplicacao(['mensagem' => "Processando atualização para Deal ID: $dealId (SPA ID: $spaId)."], 'INFO');
+            // Processa o lote se atingir o tamanho máximo ou se for o último item
+            if (count($currentBatch) >= self::BATCH_SIZE || $index === count($pendingUpdates) - 1) {
+                LogHelper::logAcessoAplicacao(['mensagem' => 'Processando lote de ' . count($currentBatch) . ' atualizações.'], 'INFO');
+                
+                // Agrupar dealIds e fieldsToUpdate para a chamada batch
+                $dealIds = [];
+                $fieldsCollection = [];
+                $spaId = null; // Será definido pelo primeiro item do lote
+                $webhookBitrix = null; // Será definido pelo primeiro item do lote
 
-            // Configura o webhook na variável global antes de chamar BitrixDealHelper
-            if ($webhookBitrix) {
-                $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhookBitrix;
-            } else {
-                LogHelper::logAcessoAplicacao(['mensagem' => 'Webhook não encontrado na fila para o item.', 'dealId' => $dealId, 'update' => $updateData], 'ERROR');
-                $errorCount++;
-                $this->logErrorUpdates([$updateData], ['error' => 'Webhook não encontrado na fila.']);
-                continue; // Pula para o próximo item da fila
-            }
-
-            try {
-                // Chamar BitrixDealHelper::editarDeal para um único item.
-                // O BitrixDealHelper já encapsula isso em uma chamada batch interna.
-                $bitrixResult = BitrixDealHelper::editarDeal($spaId, $dealId, $fieldsToUpdate);
-
-                if (isset($bitrixResult['status']) && $bitrixResult['status'] === 'sucesso') {
-                    $processedCount++;
-                    LogHelper::logAcessoAplicacao(['mensagem' => 'Atualização processada com sucesso.', 'dealId' => $dealId, 'result' => $bitrixResult], 'INFO');
-                    $this->logProcessedUpdates([$updateData]); // Log como array para consistência
-                } else {
-                    $errorCount++;
-                    LogHelper::logAcessoAplicacao(['mensagem' => 'Erro ao processar atualização no Bitrix.', 'dealId' => $dealId, 'result' => $bitrixResult, 'update' => $updateData], 'ERROR');
-                    $this->logErrorUpdates([$updateData], $bitrixResult); // Log como array para consistência
+                foreach ($currentBatch as $item) {
+                    $dealIds[] = $item['dealId'];
+                    $fieldsCollection[] = $item['fieldsToUpdate'];
+                    if ($spaId === null) {
+                        $spaId = $item['spaId']; // Assume que todos os itens no lote têm o mesmo spaId
+                    }
+                    if ($webhookBitrix === null) {
+                        $webhookBitrix = $item['webhookBitrix'] ?? null; // Recupera o webhook do primeiro item do lote
+                    }
                 }
-            } catch (Exception $e) {
-                $errorCount++;
-                LogHelper::logAcessoAplicacao(['mensagem' => 'Exceção ao processar atualização no Bitrix: ' . $e->getMessage(), 'dealId' => $dealId, 'update' => $updateData, 'trace' => $e->getTraceAsString()], 'ERROR');
-                $this->logErrorUpdates([$updateData], ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]); // Log como array para consistência
-            }
 
-            usleep(self::REQUEST_DELAY_SECONDS * 1000000); // Atraso para respeitar o limite de taxa
+                // Configura o webhook na variável global antes de chamar BitrixDealHelper
+                if ($webhookBitrix) {
+                    $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] = $webhookBitrix;
+                } else {
+                    LogHelper::logAcessoAplicacao(['mensagem' => 'Webhook não encontrado na fila para o lote. Pulando lote.', 'updates' => $currentBatch], 'ERROR');
+                    $errorCount += count($currentBatch);
+                    $this->logErrorUpdates($currentBatch, ['error' => 'Webhook não encontrado na fila para o lote.']);
+                    $currentBatch = []; // Limpa o lote e continua para o próximo
+                    continue;
+                }
+
+                try {
+                    // Chamar BitrixDealHelper::editarDeal que já usa batch internamente
+                    $bitrixResult = BitrixDealHelper::editarDeal($spaId, $dealIds, $fieldsCollection, self::BATCH_SIZE);
+
+                    if (isset($bitrixResult['status']) && $bitrixResult['status'] === 'sucesso') {
+                        $processedCount += $bitrixResult['quantidade'];
+                        LogHelper::logAcessoAplicacao(['mensagem' => 'Lote processado com sucesso.', 'result' => $bitrixResult], 'INFO');
+                        $this->logProcessedUpdates($currentBatch);
+                    } else {
+                        $errorCount += count($currentBatch);
+                        LogHelper::logAcessoAplicacao(['mensagem' => 'Erro ao processar lote no Bitrix.', 'result' => $bitrixResult, 'updates' => $currentBatch], 'ERROR');
+                        $this->logErrorUpdates($currentBatch, $bitrixResult);
+                    }
+                } catch (Exception $e) {
+                    $errorCount += count($currentBatch);
+                    LogHelper::logAcessoAplicacao(['mensagem' => 'Exceção ao processar lote no Bitrix: ' . $e->getMessage(), 'updates' => $currentBatch, 'trace' => $e->getTraceAsString()], 'ERROR');
+                    $this->logErrorUpdates($currentBatch, ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+                }
+
+                $currentBatch = []; // Limpar lote para o próximo
+                sleep(self::BATCH_DELAY_SECONDS); // Atraso de 1 segundo entre os lotes
+            }
         }
 
         $this->clearQueueFile(); // Limpa o arquivo da fila após processar tudo
