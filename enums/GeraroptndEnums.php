@@ -100,7 +100,7 @@ class GeraroptndEnums
     // ============================================
     // IDs DE VALORES DE CAMPOS
     // ============================================
-    const UFCRM_CONSULTORIA_SIM_ID = '21182'; // ID para o valor "Sim" do campo ufCrm_1737406675
+    const UFCRM_CONSULTORIA_SIM_ID = 21182; // ID para o valor "Sim" do campo ufCrm_1737406675
 
     // ============================================
     // TIPOS ADMINISTRATIVOS (PARA LÓGICA DE DECISÃO)

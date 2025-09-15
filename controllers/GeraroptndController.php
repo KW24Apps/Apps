@@ -249,15 +249,12 @@ class GeraroptndController
     {
         // Prioridade 1: Verificar campo "Consultoria"
         $consultoriaValor = $item['ufCrm_1737406675']['valor'] ?? null;
-        LogHelper::logGerarOportunidade("DEBUG: determinarDestinoDeals - consultoriaValor: " . var_export($consultoriaValor, true) . " | UFCRM_CONSULTORIA_SIM_ID: " . GeraroptndEnums::UFCRM_CONSULTORIA_SIM_ID . " | Comparacao: " . var_export($consultoriaValor === GeraroptndEnums::UFCRM_CONSULTORIA_SIM_ID, true));
         if ($consultoriaValor === GeraroptndEnums::UFCRM_CONSULTORIA_SIM_ID) {
-            LogHelper::logGerarOportunidade("DEBUG: determinarDestinoDeals - Destino: CONSULTORIA");
             return ['category_id' => GeraroptndEnums::CATEGORIA_CONSULTORIA, 'stage_id' => GeraroptndEnums::STAGE_ID_TRIAGEM_CONSULTORIA];
         }
 
         $tipoProcessoTexto = $item['ufCrm_1650979003']['texto'] ?? 'Não definido';
         $tipoNormalizado = strtolower(trim($tipoProcessoTexto));
-        LogHelper::logGerarOportunidade("DEBUG: determinarDestinoDeals - processType: " . $processType . " | tipoProcessoTexto: " . $tipoProcessoTexto . " | tipoNormalizado: " . $tipoNormalizado);
 
         if ($processType == 1) { // Solicitando Diagnóstico
             $vaiParaRelatorio = in_array($tipoNormalizado, ['administrativo', 'administrativo (anexo v)', 'administrativo anexo 5', 'contencioso ativo']) || empty($tipoProcessoTexto) || $tipoProcessoTexto === 'Não definido';
