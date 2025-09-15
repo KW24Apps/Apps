@@ -247,6 +247,12 @@ class GeraroptndController
 
     private function determinarDestinoDeals($processType, $item)
     {
+        // Prioridade 1: Verificar campo "Consultoria"
+        $consultoriaValor = $item['ufCrm_1737406675']['valor'] ?? null;
+        if ($consultoriaValor === GeraroptndEnums::UFCRM_CONSULTORIA_SIM_ID) {
+            return ['category_id' => GeraroptndEnums::CATEGORIA_CONSULTORIA, 'stage_id' => GeraroptndEnums::STAGE_ID_TRIAGEM_CONSULTORIA];
+        }
+
         $tipoProcessoTexto = $item['ufCrm_1650979003']['texto'] ?? 'Não definido';
         $tipoNormalizado = strtolower(trim($tipoProcessoTexto));
 

@@ -82,6 +82,7 @@ class GeraroptndEnums
     const CATEGORIA_CONTENCIOSO = 55;
     const CATEGORIA_RELATORIO_PRELIMINAR = 17; 
     const CATEGORIA_OPERACIONAL = 15;
+    const CATEGORIA_CONSULTORIA = 77;
 
     // ============================================
     // FASES/ETAPAS DE DESTINO
@@ -93,6 +94,13 @@ class GeraroptndEnums
     // IDs de controle (já corretos)
     const STAGE_ID_SOLICITAR_DIAGNOSTICO = '1257'; // C53:UC_1PAPS7 - Solicitar Diagnóstico  
     const STAGE_ID_CONCLUIDO = '1061';             // C53:WON - Concluído
+
+    const STAGE_ID_TRIAGEM_CONSULTORIA = 'C77:NEW'; //Fase Consultoria
+
+    // ============================================
+    // IDs DE VALORES DE CAMPOS
+    // ============================================
+    const UFCRM_CONSULTORIA_SIM_ID = '21182'; // ID para o valor "Sim" do campo ufCrm_1737406675
 
     // ============================================
     // TIPOS ADMINISTRATIVOS (PARA LÓGICA DE DECISÃO)
