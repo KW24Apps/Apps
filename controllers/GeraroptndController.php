@@ -294,6 +294,7 @@ class GeraroptndController
             $dealCompleto['ufcrm_1707331568'] = $dealId;
             $dealCompleto['stageId'] = $destinoInfo['stage_id'];
             $dealCompleto['ufCrm_1755632512'] = 'criando DEALS';
+            $dealCompleto['assignedById'] = 43; // Definindo o usuário responsável como ID 43
             
             $dealsCompletos[] = $dealCompleto;
         }
