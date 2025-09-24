@@ -20,9 +20,12 @@ class BitrixHelper
         $url = $webhookBase . '/' . $endpoint . '.json';
         $postData = http_build_query($params);
         
-        // Log temporário para capturar o payload exato
-        file_put_contents(__DIR__ . '/../../logs/payload_exact.log', date('[Y-m-d H:i:s] ') . "Endpoint: $endpoint" . PHP_EOL . $postData . PHP_EOL . "---" . PHP_EOL, FILE_APPEND);
-
+        // Log temporário aprimorado para capturar request e response
+        $logData = date('[Y-m-d H:i:s]') . PHP_EOL;
+        $logData .= "Endpoint: $endpoint" . PHP_EOL;
+        $logData .= "------------------ REQUEST PAYLOAD ------------------" . PHP_EOL;
+        $logData .= $postData . PHP_EOL;
+        
         $startTime = microtime(true);
 
         $ch = curl_init($url);
@@ -36,6 +39,12 @@ class BitrixHelper
         $curlErro = curl_error($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+
+        // Continuação do log aprimorado
+        $logData .= "------------------ RESPONSE BODY ------------------" . PHP_EOL;
+        $logData .= $resposta . PHP_EOL;
+        $logData .= "=====================================================" . PHP_EOL;
+        file_put_contents(__DIR__ . '/../../logs/payload_exact.log', $logData, FILE_APPEND);
 
         $endTime = microtime(true);
         $tempoExecucao = round(($endTime - $startTime) * 1000, 2);
