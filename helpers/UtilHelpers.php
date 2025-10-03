@@ -36,7 +36,7 @@ class UtilHelpers
 
 
         return [
-            'base64'   => 'data:' . $mime . ';base64,' . $base64,
+            'base64'   => $base64,
             'nome'     => $nome,
             'extensao' => $extensao,
             'mime'     => $mime
