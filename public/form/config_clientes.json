@@ -10,25 +10,27 @@
       "147_226_spa": "Espaço AMI - Envio de WhatsApp"
     },
     "links_funis": {
-      "2_43_deal": "https://gnapp.bitrix24.com.br/crm/deal/kanban/category/43",
-      "2_53_deal": "https://gnapp.bitrix24.com.br/crm/deal/kanban/category/53",
-      "2_65_deal": "https://gnapp.bitrix24.com.br/crm/deal/kanban/category/65",
-      "2_73_deal": "https://gnapp.bitrix24.com.br/crm/deal/kanban/category/73",
-      "2_75_deal": "https://gnapp.bitrix24.com.br/crm/deal/kanban/category/75",
-      "2_69_deal": "https://gnapp.bitrix24.com.br/crm/deal/kanban/category/69",
-      "147_226_spa": "https://gnapp.bitrix24.com.br/crm/type/147/kanban/category/226"
+      "2_43_deal": "https://gnapp.bitrix24.com.br/crm/deal/kanban/category/43/",
+      "2_53_deal": "https://gnapp.bitrix24.com.br/crm/deal/kanban/category/53/",
+      "2_65_deal": "https://gnapp.bitrix24.com.br/crm/deal/kanban/category/65/",
+      "2_73_deal": "https://gnapp.bitrix24.com.br/crm/deal/kanban/category/73/",
+      "2_75_deal": "https://gnapp.bitrix24.com.br/crm/deal/kanban/category/75/",
+      "2_69_deal": "https://gnapp.bitrix24.com.br/crm/deal/kanban/category/69/",
+      "147_226_spa": "https://gnapp.bitrix24.com.br/crm/type/147/kanban/category/226/"
     }
   },
   "triocardmP8vTx63Hr5yQn2kWc1gLj9BzFsE": {
     "funis": {
       "2_2_deal": "Closer",
       "2_0_deal": "Pré Vendas",
-      "2_4_deal": "Marketing"
+      "2_4_deal": "Marketing",
+      "1042_18_spa": "TESTE DE IMPORT"
     },
     "links_funis": {
       "2_2_deal": "https://triocard.bitrix24.com.br/crm/deal/kanban/category/2/",
       "2_0_deal": "https://triocard.bitrix24.com.br/crm/deal/kanban/category/0/",
-      "2_4_deal": "https://triocard.bitrix24.com.br/crm/deal/kanban/category/4/"
+      "2_4_deal": "https://triocard.bitrix24.com.br/crm/deal/kanban/category/4/",
+      "1042_18_spa": "https://triocard.bitrix24.com.br/crm/type/1042/kanban/category/18/"
     }
   }
 }
