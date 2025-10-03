@@ -111,7 +111,7 @@ class ClickSignHelper
     public static function vincularSignatario($dados)
     {
         // Aqui, 'list' já deve ser o array padrão esperado pela API
-        return self::enviarRequisicao('POST', '/lists', $dados);
+        return self::enviarRequisicao('POST', '/lists', ['list' => $dados]);
     }
 
     // Envia notificação ao signatário (com lembrete automático de 2 em 2 dias)
