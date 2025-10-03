@@ -69,7 +69,7 @@ class UtilService
 
     public static function vincularSignatarios(string $documentKey, array $signatarios): array
     {
-        $mapSignAs = ['contratante' => 'contractor', 'contratada' => 'contractee', 'testemunha' => 'witness'];
+        $mapSignAs = ['contratante' => 'party', 'contratada' => 'party', 'testemunha' => 'witness'];
         $sucessoVinculo = true;
         $qtdVinculos = 0;
         $mapaIds = [];
