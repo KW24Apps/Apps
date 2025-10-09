@@ -215,7 +215,9 @@ class RetornoClickSignService
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
-        $arquivoParaBitrix = [['filename' => $arquivoBase64['nome'], 'data' => $arquivoBase64['base64']]];
+        // Remover o prefixo 'data:mime/type;base64,' antes de enviar para o Bitrix
+        $base64Puro = preg_replace('/^data:[^;]+;base64,/', '', $arquivoBase64['base64']);
+        $arquivoParaBitrix = [['filename' => $arquivoBase64['nome'], 'data' => $base64Puro]];
         $resultado = BitrixDealHelper::editarDeal($consolidatedDadosConexao['spa'], $consolidatedDadosConexao['deal_id'], [$campoArquivoAssinado => $arquivoParaBitrix]);
 
         if (isset($resultado['status']) && $resultado['status'] === 'sucesso') {
