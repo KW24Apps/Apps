@@ -156,6 +156,7 @@ class BitrixHelper
         ];
 
         $respostaApi = BitrixHelper::chamarApi('crm.item.fields', $params);
+        LogHelper::logDeal("Metadados de campos para entityTypeId {$entityTypeId}: " . json_encode($respostaApi['result']['fields'] ?? [], JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
         return $respostaApi['result']['fields'] ?? [];
     }
     

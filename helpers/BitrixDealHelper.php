@@ -83,7 +83,7 @@ class BitrixDealHelper
                 }
                 
                 // LOG DE DEPURAÇÃO FINAL: Verifica o conteúdo exato de $formattedFields antes de montar a chamada
-                error_log("DEBUG FINAL - Fields para API: " . print_r($formattedFields, true));
+                LogHelper::logBitrixHelpers("DEBUG FINAL - Fields para API (BitrixDealHelper): " . json_encode($formattedFields, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
                 
                 $params = [
                     'entityTypeId' => $entityId,

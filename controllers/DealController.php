@@ -4,7 +4,10 @@ namespace Controllers;
 require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../services/DealService.php';
+require_once __DIR__ . '/../helpers/LogHelper.php'; // Adicionado para logs
 use Helpers\BitrixDealHelper;
+use Helpers\BitrixHelper;
+use Helpers\LogHelper; // Adicionado para logs
 use Services\DealService;
 
 class DealController
@@ -32,7 +35,7 @@ class DealController
         $resultado = BitrixDealHelper::criarDeal($spa, $categoryId, $camposTratados);
 
         header('Content-Type: application/json');
-        echo json_encode($resultado);
+        echo json_encode($resultado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
 
     public function consultar()
@@ -53,14 +56,20 @@ class DealController
         // Definir timeout de 30 minutos para edição de deals
         set_time_limit(1800); // 30 minutos = 1800 segundos
         
-        $params = $_GET;
-        $entityId = $params['spa'] ?? $params['entityId'] ?? null;
+        $params = array_merge($_GET, $_POST); // Usar array_merge para incluir POST também
+        $spa = $params['spa'] ?? $params['entityId'] ?? null;
         $dealId = $params['deal'] ?? $params['id'] ?? null;
 
-        // Remove os campos fixos antes de repassar para os fields
-        unset($params['cliente'], $params['spa'], $params['entityId'], $params['deal'], $params['id']);
+        // Remove os parâmetros de controle para isolar apenas os campos do deal
+        $fields = $params;
+        unset($fields['cliente'], $fields['spa'], $fields['entityId'], $fields['deal'], $fields['id']);
 
-        $resultado = BitrixDealHelper::editarDeal($entityId, $dealId, $params);
+        // Trata campos com nomes amigáveis antes de editar o deal
+        $dealService = new DealService();
+        $entityTypeId = $spa ?? 2; // 2 é o ID padrão para Deals Clássicos
+        $camposTratados = $dealService->tratarCamposAmigaveis($fields, $entityTypeId);
+
+        $resultado = BitrixDealHelper::editarDeal($spa, $dealId, $camposTratados);
 
         header('Content-Type: application/json');
         echo json_encode($resultado);
