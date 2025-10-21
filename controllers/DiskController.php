@@ -22,8 +22,8 @@ class DiskController
      */
     private function sanitizeFolderName(string $string): string
     {
-        // Remove todos os caracteres que não são letras, números ou pontos
-        $sanitized = preg_replace('/[^a-zA-Z0-9.]/', '', $string);
+        // Remove todos os caracteres que não são letras, números, pontos ou espaços
+        $sanitized = preg_replace('/[^a-zA-Z0-9. ]/', '', $string);
         // Não é necessário substituir múltiplos espaços ou remover espaços no início/fim, pois todos os espaços serão removidos pela regex acima.
         return $sanitized;
     }
