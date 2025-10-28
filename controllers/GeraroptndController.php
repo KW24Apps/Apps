@@ -21,7 +21,7 @@ class GeraroptndController
         header('Content-Type: application/json');
 
         $dealId = $this->obterDealId();
-        LogHelper::logGerarOportunidade("INFO: Processo iniciado para o Deal ID: " . ($dealId ?? 'N/A'));
+        // LogHelper::logGerarOportunidade("INFO: Processo iniciado para o Deal ID: " . ($dealId ?? 'N/A')); // Removido
 
         try {
             // ============================================
@@ -56,7 +56,7 @@ class GeraroptndController
 
             if (empty($combinacoesParaCriar)) {
                 $mensagem = 'Todos os deals já foram criados';
-                LogHelper::logGerarOportunidade("SUCCESS: {$mensagem} para o Deal ID: {$dealId}");
+                // LogHelper::logGerarOportunidade("SUCCESS: {$mensagem} para o Deal ID: {$dealId}"); // Removido
                 echo json_encode(['sucesso' => true, 'mensagem' => $mensagem], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
                 return;
             }
@@ -89,7 +89,7 @@ class GeraroptndController
             // ============================================
             // PARTE 6: RETORNO FINAL
             // ============================================
-            LogHelper::logGerarOportunidade("SUCCESS: Processo finalizado para o Deal ID {$dealId}. Criados {$resultadoCriacao['quantidade']} deals.");
+            // LogHelper::logGerarOportunidade("SUCCESS: Processo finalizado para o Deal ID {$dealId}. Criados {$resultadoCriacao['quantidade']} deals."); // Removido
             $this->retornarRespostaFinal($resultadoCriacao, $resultadoUpdate, $dealId, $item, $processType, count($combinacoesParaCriar));
 
         } catch (Exception $e) {
@@ -107,20 +107,20 @@ class GeraroptndController
 
     private function buscarDadosDealPrincipal(int $dealId)
     {
-        LogHelper::logGerarOportunidade("DEBUG: Buscando dados do Deal Principal para ID: {$dealId}");
+        // LogHelper::logGerarOportunidade("DEBUG: Buscando dados do Deal Principal para ID: {$dealId}"); // Removido
         $camposBitrix = GeraroptndEnums::getAllFields();
         $camposStr = implode(',', $camposBitrix);
-        LogHelper::logGerarOportunidade("DEBUG: Campos solicitados para o Deal ID {$dealId}: {$camposStr}");
+        // LogHelper::logGerarOportunidade("DEBUG: Campos solicitados para o Deal ID {$dealId}: {$camposStr}"); // Removido
         
-        LogHelper::logGerarOportunidade("DEBUG: Chamando BitrixDealHelper::consultarDeal para Deal ID {$dealId}...");
+        // LogHelper::logGerarOportunidade("DEBUG: Chamando BitrixDealHelper::consultarDeal para Deal ID {$dealId}..."); // Removido
         $resultado = BitrixDealHelper::consultarDeal(2, $dealId, $camposStr);
-        LogHelper::logGerarOportunidade("DEBUG: Retorno de BitrixDealHelper::consultarDeal para Deal ID {$dealId}: " . json_encode($resultado, JSON_UNESCAPED_UNICODE));
+        // LogHelper::logGerarOportunidade("DEBUG: Retorno de BitrixDealHelper::consultarDeal para Deal ID {$dealId}: " . json_encode($resultado, JSON_UNESCAPED_UNICODE)); // Removido
         
         // O BitrixDealHelper::consultarDeal já retorna no formato desejado
         // ['result' => ['campoTecnico' => ['nome' => 'Nome Amigável', 'valor' => ..., 'texto' => ..., 'type' => ..., 'isMultiple' => ...]]]
         $item = $resultado['result'] ?? [];
         
-        LogHelper::logGerarOportunidade("DEBUG: Item (dados do deal) após adaptação em buscarDadosDealPrincipal para Deal ID {$dealId}: " . json_encode($item, JSON_UNESCAPED_UNICODE));
+        // LogHelper::logGerarOportunidade("DEBUG: Item (dados do deal) após adaptação em buscarDadosDealPrincipal para Deal ID {$dealId}: " . json_encode($item, JSON_UNESCAPED_UNICODE)); // Removido
         return $item;
     }
 
