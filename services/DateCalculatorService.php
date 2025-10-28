@@ -40,6 +40,9 @@ class DateCalculatorService
                 $days = -$days;
             }
 
+            // Adiciona log para depuração
+            error_log("DateCalculatorService: date1String={$date1String}, date2String={$date2String}, date1=" . $date1->format('Y-m-d') . ", date2=" . $date2->format('Y-m-d') . ", daysDifference={$days}");
+
             return $days;
 
         } catch (Exception $e) {
