@@ -20,9 +20,6 @@ class BitrixHelper
         $url = $webhookBase . '/' . $endpoint . '.json';
         $postData = http_build_query($params);
         
-        // Log temporário para capturar o payload exato
-        file_put_contents(__DIR__ . '/../../logs/payload_exact.log', date('[Y-m-d H:i:s] ') . "Endpoint: $endpoint" . PHP_EOL . $postData . PHP_EOL . "---" . PHP_EOL, FILE_APPEND);
-
         $startTime = microtime(true);
 
         $ch = curl_init($url);
@@ -49,31 +46,15 @@ class BitrixHelper
             $paramsParaLog['webhook'] = '[WEBHOOK OCULTO]';
         }
         
-        // Log detalhado para debug
-        $logCompleto = "[$traceId] Endpoint: $endpoint | HTTP: $httpCode | Tempo: {$tempoExecucao}ms";
-        
-        // Adicionar erro cURL se houver
-        if (!empty($curlErro)) {
-            $logCompleto .= " | cURL Erro: $curlErro";
-        }
-        
-        // Adicionar informações da requisição para debug
-        $logCompleto .= " | URL: " . strtok($url, '?'); // Mostra URL sem query string
-        $logCompleto .= " | POST Data Size: " . strlen($postData) . " bytes";
-        
-        // Log dos parâmetros principais (sempre, para debug)
-        $paramsResumo = [];
-        if (isset($params['entityTypeId'])) $paramsResumo['entityTypeId'] = $params['entityTypeId'];
-        if (isset($params['id'])) $paramsResumo['id'] = $params['id'];
-        if (isset($params['cmd'])) $paramsResumo['batch_commands'] = count($params['cmd']);
-        if (isset($params['filter'])) $paramsResumo['filter_keys'] = array_keys($params['filter']);
-        if (isset($params['select'])) $paramsResumo['select_fields'] = is_array($params['select']) ? count($params['select']) : 1;
-        if (!empty($paramsResumo)) {
-            $logCompleto .= " | Params Resumo: " . json_encode($paramsResumo, JSON_UNESCAPED_UNICODE);
-        }
-        
         // Verificar se houve erro na resposta da API
         if (isset($respostaJson['error']) || isset($respostaJson['error_description']) || $httpCode >= 400 || !empty($curlErro)) {
+            $logCompleto = "[$traceId] Endpoint: $endpoint | HTTP: $httpCode | Tempo: {$tempoExecucao}ms";
+            
+            // Adicionar erro cURL se houver
+            if (!empty($curlErro)) {
+                $logCompleto .= " | cURL Erro: $curlErro";
+            }
+            
             $logCompleto .= " | STATUS: ERRO";
             
             // Adicionar detalhes do erro da API
@@ -91,58 +72,8 @@ class BitrixHelper
             // Log dos parâmetros completos em caso de erro
             $logCompleto .= " | Full Params: " . json_encode($paramsParaLog, JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
             
-        } else {
-            // Log de sucesso mais detalhado
-            $logCompleto .= " | STATUS: SUCESSO";
-            
-            if (isset($respostaJson['result'])) {
-                if (is_array($respostaJson['result'])) {
-                    $logCompleto .= " | Items: " . count($respostaJson['result']);
-                    
-                    // Para batch, log detalhado dos resultados
-                    if ($endpoint === 'batch' && isset($respostaJson['result']['result'])) {
-                        $batchResults = $respostaJson['result']['result'];
-                        $sucessos = 0;
-                        $erros = 0;
-                        $errosList = [];
-                        
-                        foreach ($batchResults as $key => $resultado) {
-                            if (isset($resultado['error']) || isset($resultado['error_description'])) {
-                                $erros++;
-                                $errosList[] = $key . ':' . ($resultado['error'] ?? 'unknown');
-                            } else {
-                                $sucessos++;
-                            }
-                        }
-                        
-                        $logCompleto .= " | Batch Total: " . count($batchResults);
-                        $logCompleto .= " | Batch Sucessos: $sucessos";
-                        if ($erros > 0) {
-                            $logCompleto .= " | Batch Erros: $erros";
-                            $logCompleto .= " | Batch Erros Detail: " . implode(', ', array_slice($errosList, 0, 5)) . ($erros > 5 ? '...' : '');
-                        }
-                    }
-                    
-                    // Para listas com paginação
-                    if (isset($respostaJson['result']['items'])) {
-                        $logCompleto .= " | Page Items: " . count($respostaJson['result']['items']);
-                    }
-                    if (isset($respostaJson['total'])) {
-                        $logCompleto .= " | Total Available: " . $respostaJson['total'];
-                    }
-                    if (isset($respostaJson['next'])) {
-                        $logCompleto .= " | Next Page: " . $respostaJson['next'];
-                    }
-                }
-            }
-            
-            // Log de campos retornados para debug
-            if (isset($respostaJson['result']['fields'])) {
-                $logCompleto .= " | Fields Count: " . count($respostaJson['result']['fields']);
-            }
+            LogHelper::logBitrixHelpers($logCompleto, __CLASS__ . '::' . __FUNCTION__);
         }
-
-        LogHelper::logBitrixHelpers($logCompleto, __CLASS__ . '::' . __FUNCTION__);
 
         return $respostaJson;
     }
@@ -156,7 +87,6 @@ class BitrixHelper
         ];
 
         $respostaApi = BitrixHelper::chamarApi('crm.item.fields', $params);
-        LogHelper::logDeal("Metadados de campos para entityTypeId {$entityTypeId}: " . json_encode($respostaApi['result']['fields'] ?? [], JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
         return $respostaApi['result']['fields'] ?? [];
     }
     
@@ -177,15 +107,38 @@ class BitrixHelper
             }
 
             $campoFormatado = $campo;
-            if (!preg_match('/^ufCrm(\d+_)?\d+$/', $campo)) {
-                $campoNormalizado = strtoupper(str_replace(['ufcrm_', 'uf_crm_'], 'UF_CRM_', $campo));
-                if (preg_match('/^UF_CRM_(\d+)_([0-9]+)$/', $campoNormalizado, $m)) {
+            // Verifica se o campo já está no formato Bitrix (ufCrm_XXXX ou UF_CRM_XXXX)
+            // Se sim, mantém o nome original para evitar formatação desnecessária.
+            // A regex foi ajustada para ser mais abrangente e case-insensitive.
+            // Verifica se o campo já está no formato camelCase (ufCrm_ ou ufCrmIDSPA_)
+            // ou se é um nome amigável (não começa com UF_CRM_). Se sim, não altera.
+            // Padrões para campos já formatados em camelCase:
+            // ufCrm_12345 (Deal/Company/Contact)
+            // ufCrm191_12345 (SPA)
+            if (preg_match('/^ufCrm_(\d+)$/', $campo) || preg_match('/^ufCrm(\d+)_(\d+)$/', $campo)) {
+                $campoFormatado = $campo;
+            } 
+            // Se o campo começa com UF_CRM_ (maiúsculo), aplica a conversão.
+            else if (preg_match('/^UF_CRM_/i', $campo)) { // Case-insensitive para UF_CRM_
+                $campoNormalizado = strtoupper($campo); // Normaliza para maiúsculas para as regexes específicas
+                
+                // Padrão para SPA: UF_CRM_idspa_codigo -> ufCrmidspa_codigo
+                if (preg_match('/^UF_CRM_(\d+)_(\d+)$/', $campoNormalizado, $m)) {
                     $campoFormatado = 'ufCrm' . $m[1] . '_' . $m[2];
-                } elseif (preg_match('/^UF_CRM_([0-9]+)$/', $campoNormalizado, $m)) {
+                } 
+                // Padrão para Deal/Company/Contact: UF_CRM_codigo -> ufCrm_codigo
+                elseif (preg_match('/^UF_CRM_(\d+)$/', $campoNormalizado, $m)) {
                     $campoFormatado = 'ufCrm_' . $m[1];
+                } 
+                // Se for UF_CRM_ mas não corresponder aos padrões conhecidos, mantém o original
+                else {
+                    $campoFormatado = $campo;
                 }
             }
-
+            // Se não for UF_CRM_ e não for ufCrm_ (camelCase), é um nome amigável.
+            else {
+                $campoFormatado = $campo;
+            }
             if ($validarValores && !empty($metadata) && isset($metadata[$campoFormatado])) {
                 $meta = $metadata[$campoFormatado];
                 $tipo = $meta['type'] ?? 'string';

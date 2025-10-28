@@ -3,21 +3,17 @@ namespace Helpers;
 
 require_once __DIR__ . '/../helpers/BitrixHelper.php';
 require_once __DIR__ . '/../Repositories/BatchJobDAO.php';
+require_once __DIR__ . '/../services/DealService.php'; // Adicionado para incluir o arquivo da classe
 
 use Helpers\BitrixHelper;
 use Repositories\BatchJobDAO;
+use Services\DealService; // Adicionado para permitir o uso direto da classe
 
 class BitrixDealHelper
 {
     // Cria um ou vários negócios no Bitrix24 via API (sempre em batch, sem agendamento)
     public static function criarDeal($entityId, $categoryId, $fields, int $tamanhoLote = 15): array
     {
-        error_log("=== DEBUG CRIAR DEAL ===");
-        error_log("EntityId: " . $entityId);
-        error_log("CategoryId: " . $categoryId);
-        error_log("Total fields recebidos: " . count($fields));
-        error_log("Primeiro field: " . print_r($fields[0] ?? 'nenhum', true));
-        
         // Sempre trata $fields como array de arrays
         if (!isset($fields[0]) || !is_array($fields[0])) {
             $fields = [$fields];
@@ -32,11 +28,8 @@ class BitrixDealHelper
         $startTime = microtime(true);
 
         foreach ($chunks as $chunkIndex => $chunk) {
-            error_log("Processando chunk " . ($chunkIndex + 1) . " com " . count($chunk) . " deals");
-            
             $batchCommands = [];
             foreach ($chunk as $index => $dealFields) {
-                error_log("DEBUG: Deal $index campos originais: " . print_r($dealFields, true));
                 
                 // Formata nomes e valida/formata valores dos campos
                 $formattedFields = BitrixHelper::formatarCampos($dealFields, $entityId, true);
@@ -82,31 +75,24 @@ class BitrixDealHelper
                     }
                 }
                 
-                // LOG DE DEPURAÇÃO FINAL: Verifica o conteúdo exato de $formattedFields antes de montar a chamada
-                LogHelper::logBitrixHelpers("DEBUG FINAL - Fields para API (BitrixDealHelper): " . json_encode($formattedFields, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
-                
+                // Adicionar log do payload antes de montar a chamada da API
+                LogHelper::logDeal("DEBUG: Payload para crm.item.add (BitrixDealHelper::criarDeal) - entityTypeId: " . $entityId . ", fields: " . json_encode($formattedFields, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
+
                 $params = [
                     'entityTypeId' => $entityId,
                     'fields' => $formattedFields
                 ];
                 
-                // LOG ADICIONAL: Registrar os parâmetros exatos de cada deal antes de enviar
-                LogHelper::logBitrixHelpers("DEAL PARAMS (Chunk {$chunkIndex}, Index {$index}): " . json_encode($params, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
-                
                 $batchCommands["deal$index"] = 'crm.item.add?' . http_build_query($params);
-                
-                error_log("DEBUG: Deal $index comando: " . $batchCommands["deal$index"]);
             }
             
-            error_log("Batch commands preparados: " . count($batchCommands));
-            
             $resultado = BitrixHelper::chamarApi('batch', ['cmd' => $batchCommands], [
-                'log' => true
+                'log' => false // Mantido como false, pois o log detalhado será feito aqui
             ]);
             
-            // LOG ADICIONAL para debug
-            LogHelper::logBitrixHelpers("BATCH DEBUG - Chunk processado com " . count($chunk) . " deals. Resposta: " . json_encode($resultado, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
-            
+            // Log da resposta COMPLETA da API do Bitrix para o batch
+            LogHelper::logDeal("DEBUG: Resposta COMPLETA da API Bitrix para batch (criarDeal): " . json_encode($resultado, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
+
             $sucessosChunk = 0;
             $idsChunk = [];
             $errosChunk = [];
@@ -131,19 +117,16 @@ class BitrixDealHelper
                         $todosIds[] = $itemId;
                     } else {
                         // Se não encontrou o ID, registra como erro
-                        LogHelper::logBitrixHelpers("DEAL FALHOU - Key: $key - Erro: " . json_encode($res, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
+                        LogHelper::logDeal("DEAL FALHOU - Key: $key - Erro: " . json_encode($res, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
                     }
                 }
             } else {
                 // Se a estrutura principal 'result.result' não existe, é um erro geral do batch
-                LogHelper::logBitrixHelpers("ERRO GERAL BATCH: Resposta da API não tem estrutura esperada ou erro geral. Resposta completa: " . json_encode($resultado, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
+                LogHelper::logDeal("ERRO GERAL BATCH: Resposta da API não tem estrutura esperada ou erro geral. Resposta completa: " . json_encode($resultado, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
             }
             
             $totalSucessos += $sucessosChunk;
             $totalErros += count($chunk) - $sucessosChunk; // Calcula erros com base no que não foi sucesso
-            
-            // LOG de resumo do chunk
-            LogHelper::logBitrixHelpers("CHUNK RESUMO - Sucessos: $sucessosChunk | Erros: " . (count($chunk) - $sucessosChunk) . " | IDs: " . implode(',', $idsChunk), __CLASS__ . '::' . __FUNCTION__);
         }
 
         $endTime = microtime(true);
@@ -255,8 +238,31 @@ class BitrixDealHelper
             $fields = array_map('trim', $fields);
         }
 
-        if (!in_array('id', $fields)) {
-            array_unshift($fields, 'id');
+        // Instancia DealService para tratar nomes amigáveis
+        $dealService = null;
+        try {
+            $dealService = new DealService(); // Alterado para usar a declaração 'use'
+        } catch (\Throwable $e) {
+            LogHelper::logDeal("ERROR: Falha ao instanciar DealService em consultarDeal: " . $e->getMessage() . " | Trace: " . $e->getTraceAsString(), __CLASS__ . '::' . __FUNCTION__);
+            throw $e; // Re-lança a exceção para ser capturada pelo try-catch principal
+        }
+        
+        // Mapeia os campos solicitados (amigáveis ou UF_CRM_) para seus nomes técnicos Bitrix
+        // A função tratarCamposAmigaveis espera um array associativo, então criamos um
+        // onde cada campo solicitado tem um valor dummy (null) para que o serviço possa mapear apenas o nome.
+        $camposParaMapear = [];
+        foreach ($fields as $campo) {
+            $camposParaMapear[$campo] = null;
+        }
+
+        $camposMapeados = $dealService->tratarCamposAmigaveis($camposParaMapear, $entityId);
+        
+        // Extrai apenas os nomes técnicos dos campos que foram mapeados com sucesso
+        $camposTecnicosSolicitados = array_keys($camposMapeados);
+
+        // Garante que 'id' esteja sempre presente nos campos solicitados
+        if (!in_array('id', $camposTecnicosSolicitados)) {
+            array_unshift($camposTecnicosSolicitados, 'id');
         }
 
         // 2. Consulta o negócio (deal)
@@ -264,66 +270,75 @@ class BitrixDealHelper
             'entityTypeId' => $entityId,
             'id' => $dealId,
         ];
-        $respostaApi = BitrixHelper::chamarApi('crm.item.get', $params, []);
-        $dadosBrutos = $respostaApi['result']['item'] ?? [];
 
-        // 3. Consulta os campos da SPA
+        $respostaApi = BitrixHelper::chamarApi('crm.item.get', $params, []);
+        $dadosBrutosOriginais = $respostaApi['result']['item'] ?? [];
+
+        // Normaliza as chaves dos dados brutos recebidos da API
+        $dadosBrutosNormalizados = BitrixHelper::formatarCampos($dadosBrutosOriginais);
+
+        // 3. Consulta os campos da SPA (metadados)
         $camposSpa = BitrixHelper::consultarCamposCrm($entityId);
 
         // 4. Consulta as etapas do tipo
         $etapas = BitrixHelper::consultarEtapasPorTipo($entityId);
 
-        // 5. Formata os campos para o padrão camelCase
-        $camposFormatados = BitrixHelper::formatarCampos(array_fill_keys($fields, null));
-        
-        $valoresBrutos = [];
-        foreach (array_keys($camposFormatados) as $campoConvertido) {
-            $valoresBrutos[$campoConvertido] = $dadosBrutos[$campoConvertido] ?? null;
-        }
-        
-        // Garantir que companyId seja incluído se existir nos dados brutos
-        if (isset($dadosBrutos['companyId']) && !isset($valoresBrutos['companyId'])) {
-            $valoresBrutos['companyId'] = $dadosBrutos['companyId'];
-        }
-
-        // 6. Mapeia valores enumerados
-        $valoresConvertidos = BitrixHelper::mapearValoresEnumerados($valoresBrutos, $camposSpa);
-
-        // 7. Mapeia o nome amigável da etapa, se existir campo de etapa
-        $stageName = null;
-        if (isset($valoresBrutos['stageId'])) {
-            $stageName = BitrixHelper::mapearEtapaPorId($valoresBrutos['stageId'], $etapas);
-        }
-
-        // 8. Monta resposta amigável SEMPRE incluindo todos os campos solicitados
+        // 5. Monta resposta amigável SEMPRE incluindo todos os campos solicitados
         $resultadoFinal = [];
-        foreach ($fields as $campoOriginal) {
-            // Converte o campo para o padrão Bitrix
-            $campoConvertidoArr = BitrixHelper::formatarCampos([$campoOriginal => null]);
-            $campoConvertido = array_key_first($campoConvertidoArr);
-            $valorBruto = $valoresBrutos[$campoConvertido] ?? null;
-            $valorConvertido = $valoresConvertidos[$campoConvertido] ?? $valorBruto;
-            $spa = $camposSpa[$campoConvertido] ?? [];
-            $nomeAmigavel = $spa['title'] ?? $campoOriginal;
-            $texto = $valorConvertido;
+        foreach ($camposTecnicosSolicitados as $campoTecnico) {
+
+            // Obtém o valor bruto do array normalizado
+            $valorBruto = $dadosBrutosNormalizados[$campoTecnico] ?? null;
+            
+            $spa = $camposSpa[$campoTecnico] ?? [];
+            $nomeAmigavel = $spa['title'] ?? $campoTecnico; // Usa o title do metadado se disponível
             $type = $spa['type'] ?? null;
             $isMultiple = $spa['isMultiple'] ?? false;
-            // Se for stageId, usa o nome da etapa como texto
-            if ($campoConvertido === 'stageId') {
-                $texto = $stageName ?? $valorBruto;
-                $nomeAmigavel = 'Fase';
+
+            $textoFinal = $valorBruto; // Valor padrão para texto é o valor bruto
+
+            // Mapeamento para campos de enumeração (incluindo UF_CRM_ e sourceId se for enumeração)
+            if (isset($spa['type']) && $spa['type'] === 'enumeration' && isset($spa['items'])) {
+                $mapa = [];
+                foreach ($spa['items'] as $item) {
+                    $mapa[$item['ID']] = $item['VALUE'];
+                    // Alguns campos de source podem ter STATUS_ID como chave
+                    if (isset($item['STATUS_ID'])) {
+                        $mapa[$item['STATUS_ID']] = $item['VALUE'];
+                    }
+                }
+                if (is_array($valorBruto)) {
+                    $textoFinal = array_map(function($v) use ($mapa) {
+                        return $mapa[$v] ?? $v;
+                    }, $valorBruto);
+                } else {
+                    $textoFinal = $mapa[$valorBruto] ?? $valorBruto;
+                }
             }
-            $resultadoFinal[$campoConvertido] = [
+
+            // Tratamento especial para stageId
+            if ($campoTecnico === 'stageId') {
+                $stageName = BitrixHelper::mapearEtapaPorId($valorBruto, $etapas);
+                $textoFinal = $stageName ?? $valorBruto;
+                $nomeAmigavel = 'Fase';
+                $type = 'crm_status';
+            }
+            
+            // Tratamento especial para companyId
+            if ($campoTecnico === 'companyId' && $valorBruto !== null) {
+                $nomeAmigavel = 'Empresa';
+                $type = 'crm_company';
+                $textoFinal = $valorBruto; // Mantém o ID da empresa como texto
+            }
+
+
+            $resultadoFinal[$campoTecnico] = [
                 'nome' => $nomeAmigavel,
                 'valor' => $valorBruto,
-                'texto' => $texto,
+                'texto' => $textoFinal,
                 'type' => $type,
                 'isMultiple' => $isMultiple
             ];
-        }
-        // Sempre inclui o id bruto
-        if (isset($valoresBrutos['id'])) {
-            $resultadoFinal['id'] = $valoresBrutos['id'];
         }
 
         return ['result' => $resultadoFinal];
