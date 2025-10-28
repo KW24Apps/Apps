@@ -7,6 +7,7 @@ use Helpers\LogHelper;
 
 class DealService
 {
+    // Forçando recarga do arquivo para depuração.
     private $camposMetadata = [];
     private $mapeamentoTitulos = [];
 
@@ -34,31 +35,24 @@ class DealService
             $nomeCampoTecnico = null;
             $definicaoCampo = null;
 
-            // Log do nome original da URL
-            LogHelper::logDeal("DEBUG MAPPING: Processando nomeCampoUrl: '$nomeCampoUrl'", __CLASS__ . '::' . __FUNCTION__);
-
             $nomeCampoUrlNormalizadoUF = null;
             // Verifica se o campo da URL começa com UF_CRM_ ou ufcrm_
             if (preg_match('/^(UF_CRM_|ufcrm_)([0-9]+(?:_[0-9]+)?)$/i', $nomeCampoUrl)) {
                 $nomeCampoUrlNormalizadoUF = $this->normalizarNomeCampo($nomeCampoUrl, $entityTypeId);
-                LogHelper::logDeal("DEBUG MAPPING: nomeCampoUrlNormalizadoUF (UF): '$nomeCampoUrlNormalizadoUF'", __CLASS__ . '::' . __FUNCTION__);
             }
 
             // 1. Verifica se o nome do campo da URL (normalizado como UF) já é um nome técnico
             if ($nomeCampoUrlNormalizadoUF && isset($this->camposMetadata[$entityTypeId][$nomeCampoUrlNormalizadoUF])) {
                 $nomeCampoTecnico = $nomeCampoUrlNormalizadoUF;
                 $definicaoCampo = $this->camposMetadata[$entityTypeId][$nomeCampoUrlNormalizadoUF];
-                LogHelper::logDeal("DEBUG MAPPING: Encontrado por nome tecnico UF: '$nomeCampoTecnico'", __CLASS__ . '::' . __FUNCTION__);
             } 
             // Normaliza o nome do campo da URL para comparação com title e upperName
             $nomeCampoUrlNormalizadoParaComparacao = $this->normalizarNomeParaComparacao($nomeCampoUrl);
-            LogHelper::logDeal("DEBUG MAPPING: nomeCampoUrlNormalizadoParaComparacao: '$nomeCampoUrlNormalizadoParaComparacao'", __CLASS__ . '::' . __FUNCTION__);
 
             // 1. Verifica se o nome do campo da URL (normalizado como UF) já é um nome técnico
             if ($nomeCampoUrlNormalizadoUF && isset($this->camposMetadata[$entityTypeId][$nomeCampoUrlNormalizadoUF])) {
                 $nomeCampoTecnico = $nomeCampoUrlNormalizadoUF;
                 $definicaoCampo = $this->camposMetadata[$entityTypeId][$nomeCampoUrlNormalizadoUF];
-                LogHelper::logDeal("DEBUG MAPPING: Encontrado por nome tecnico UF: '$nomeCampoTecnico'", __CLASS__ . '::' . __FUNCTION__);
             } 
             // 2. Se não for um UF_CRM_ ou não encontrado, tenta buscar pelo nome amigável (title) ou upperName
             else {
@@ -66,22 +60,18 @@ class DealService
                     // Tenta comparar com o 'title' (nome amigável)
                     if (isset($metadata['title'])) {
                         $bitrixTitleNormalizado = $this->normalizarNomeParaComparacao($metadata['title']);
-                        LogHelper::logDeal("DEBUG MAPPING: Comparando URL normalizada '$nomeCampoUrlNormalizadoParaComparacao' com Bitrix title normalizado: '$bitrixTitleNormalizado' (campo Bitrix: '$bitrixFieldName')", __CLASS__ . '::' . __FUNCTION__);
                         if ($bitrixTitleNormalizado === $nomeCampoUrlNormalizadoParaComparacao) {
                             $nomeCampoTecnico = $bitrixFieldName;
                             $definicaoCampo = $metadata;
-                            LogHelper::logDeal("DEBUG MAPPING: Encontrado por title: '$nomeCampoTecnico'", __CLASS__ . '::' . __FUNCTION__);
                             break;
                         }
                     }
                     // Se não encontrou pelo title, tenta comparar com o 'upperName'
                     if (!$nomeCampoTecnico && isset($metadata['upperName'])) {
                         $bitrixUpperNameNormalizado = $this->normalizarNomeParaComparacao($metadata['upperName']);
-                        LogHelper::logDeal("DEBUG MAPPING: Comparando URL normalizada '$nomeCampoUrlNormalizadoParaComparacao' com Bitrix upperName normalizado: '$bitrixUpperNameNormalizado' (campo Bitrix: '$bitrixFieldName')", __CLASS__ . '::' . __FUNCTION__);
                         if ($bitrixUpperNameNormalizado === $nomeCampoUrlNormalizadoParaComparacao) {
                             $nomeCampoTecnico = $bitrixFieldName;
                             $definicaoCampo = $metadata;
-                            LogHelper::logDeal("DEBUG MAPPING: Encontrado por upperName: '$nomeCampoTecnico'", __CLASS__ . '::' . __FUNCTION__);
                             break;
                         }
                     }
@@ -92,13 +82,9 @@ class DealService
             if ($nomeCampoTecnico && $definicaoCampo) {
                 $valorFinal = $this->converterValorSeNecessario($valorCampo, $definicaoCampo);
                 $payloadFinal[$nomeCampoTecnico] = $valorFinal;
-                LogHelper::logDeal("DEBUG MAPPING: Campo '$nomeCampoUrl' mapeado para '$nomeCampoTecnico' com valor '$valorFinal'", __CLASS__ . '::' . __FUNCTION__);
-            } else {
-                LogHelper::logDeal("Campo da URL '$nomeCampoUrl' (normalizado UF: '$nomeCampoUrlNormalizadoUF', nome URL normalizado para comparacao: '$nomeCampoUrlNormalizadoParaComparacao') nao foi encontrado no Bitrix e sera ignorado.", __CLASS__ . '::' . __FUNCTION__);
             }
         }
 
-        LogHelper::logDeal("Payload Final apos tratarCamposAmigaveis: " . json_encode($payloadFinal, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
         return $payloadFinal;
     }
 
@@ -182,16 +168,13 @@ class DealService
             foreach ($definicaoCampo['items'] as $item) {
                 // Comparação insensível a maiúsculas/minúsculas
                 if (strcasecmp($item['VALUE'], $valor) == 0) {
-                    LogHelper::logDeal("Valor '{$valor}' convertido para ID '{$item['ID']}' para o campo '{$definicaoCampo['title']}'.", __CLASS__ . '::' . __FUNCTION__);
                     return $item['ID']; // Retorna o ID correspondente
                 }
             }
-            LogHelper::logDeal("Valor '{$valor}' nao encontrado nas opcoes do campo '{$definicaoCampo['title']}'. O valor original sera mantido.", __CLASS__ . '::' . __FUNCTION__);
         }
 
         // Se o campo é múltiplo e o valor recebido não é um array, converte para array
         if (isset($definicaoCampo['isMultiple']) && $definicaoCampo['isMultiple'] && !is_array($valor)) {
-            LogHelper::logDeal("Campo '{$definicaoCampo['title']}' e multiplo. Valor '{$valor}' convertido para array.", __CLASS__ . '::' . __FUNCTION__);
             return [$valor];
         }
         
