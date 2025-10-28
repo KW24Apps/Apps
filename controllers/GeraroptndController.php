@@ -107,10 +107,21 @@ class GeraroptndController
 
     private function buscarDadosDealPrincipal(int $dealId)
     {
+        LogHelper::logGerarOportunidade("DEBUG: Buscando dados do Deal Principal para ID: {$dealId}");
         $camposBitrix = GeraroptndEnums::getAllFields();
         $camposStr = implode(',', $camposBitrix);
+        LogHelper::logGerarOportunidade("DEBUG: Campos solicitados para o Deal ID {$dealId}: {$camposStr}");
+        
+        LogHelper::logGerarOportunidade("DEBUG: Chamando BitrixDealHelper::consultarDeal para Deal ID {$dealId}...");
         $resultado = BitrixDealHelper::consultarDeal(2, $dealId, $camposStr);
-        return $resultado['result'] ?? [];
+        LogHelper::logGerarOportunidade("DEBUG: Retorno de BitrixDealHelper::consultarDeal para Deal ID {$dealId}: " . json_encode($resultado, JSON_UNESCAPED_UNICODE));
+        
+        // O BitrixDealHelper::consultarDeal já retorna no formato desejado
+        // ['result' => ['campoTecnico' => ['nome' => 'Nome Amigável', 'valor' => ..., 'texto' => ..., 'type' => ..., 'isMultiple' => ...]]]
+        $item = $resultado['result'] ?? [];
+        
+        LogHelper::logGerarOportunidade("DEBUG: Item (dados do deal) após adaptação em buscarDadosDealPrincipal para Deal ID {$dealId}: " . json_encode($item, JSON_UNESCAPED_UNICODE));
+        return $item;
     }
 
     private function extrairListaDeCampo(array $item, string $campo, bool $filtrarNegativos = false): array
@@ -194,7 +205,7 @@ class GeraroptndController
 
         return 0; // Tipo de processo não determinado
     }
-
+    
     private function obterCombinacoesParaCriar($processType, $empresas, $oportunidadesOferecidas, $oportunidadesConvertidas, $oportunidadesMapeadas, $dealId)
     {
         $dealsExistentesResult = BitrixHelper::listarItensCrm(2, [
@@ -277,30 +288,50 @@ class GeraroptndController
     private function montarArrayCompletoParaCriacao($combinacoes, $camposParaEspelhar, $destinoInfo, $dealId)
     {
         $dealsCompletos = [];
-        
+        $entityTypeId = 2; // Para Deals
+
         foreach ($combinacoes as $combinacao) {
             $dealCompleto = [];
             
             foreach ($camposParaEspelhar as $campo => $valorCompleto) {
-                if (is_array($valorCompleto) && isset($valorCompleto['valor'])) {
-                    $dealCompleto[$campo] = $valorCompleto['valor'];
+                $valorParaAdicionar = null;
+
+                // Extrai o 'valor' se for um array com a chave 'valor', caso contrário usa o valor completo
+                if (is_array($valorCompleto) && array_key_exists('valor', $valorCompleto)) {
+                    $valorParaAdicionar = $valorCompleto['valor'];
                 } else {
-                    $dealCompleto[$campo] = $valorCompleto;
+                    $valorParaAdicionar = $valorCompleto;
+                }
+
+                // Filtra campos com valor null, string vazia ou array vazio
+                if ($valorParaAdicionar !== null && $valorParaAdicionar !== '' && !(is_array($valorParaAdicionar) && empty($valorParaAdicionar))) {
+                    $dealCompleto[$campo] = $valorParaAdicionar;
                 }
             }
             
-            $dealCompleto['companyId'] = (int)$combinacao['companyId'];
-            $dealCompleto['ufCrm_1646069163997'] = $combinacao['opportunityId'];
-            $dealCompleto['ufcrm_1707331568'] = $dealId;
-            $dealCompleto['stageId'] = $destinoInfo['stage_id'];
+            // Garante que os campos específicos sejam tratados corretamente e não sejam nulos/vazios
+            if (!empty($combinacao['companyId'])) {
+                $dealCompleto['companyId'] = [(int)$combinacao['companyId']];
+            }
+            if (!empty($combinacao['opportunityId'])) {
+                $dealCompleto['ufCrm_1646069163997'] = [$combinacao['opportunityId']];
+            }
+            if (!empty($dealId)) {
+                $dealCompleto['ufcrm_1707331568'] = [$dealId];
+            }
+            if (!empty($destinoInfo['stage_id'])) {
+                $dealCompleto['stageId'] = $destinoInfo['stage_id'];
+            }
+            // O campo ufCrm_1755632512 deve ser sempre definido
             $dealCompleto['ufCrm_1755632512'] = 'criando DEALS';
-            $dealCompleto['assignedById'] = 43; // Definindo o usuário responsável como ID 43
+            
+            $dealCompleto['assignedById'] = 43; // Definindo o usuário responsável como ID 43 (sempre presente)
             
             $dealsCompletos[] = $dealCompleto;
         }
         
         return [
-            'entityId' => 2,
+            'entityId' => $entityTypeId,
             'categoryId' => $destinoInfo['category_id'],
             'fields' => $dealsCompletos
         ];
