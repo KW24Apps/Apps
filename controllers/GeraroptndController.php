@@ -67,33 +67,4 @@ class GeraroptndController
             return;
         }
     }
-
-    private function retornarRespostaFinal(array $resultadoCriacao, ?array $resultadoUpdate, int $dealId, array $item, int $processType, int $combinacoesSolicitadas)
-    {
-        $sucesso = ($resultadoCriacao['status'] === 'sucesso');
-        
-        echo json_encode([
-            'sucesso' => $sucesso,
-            'criacao_deals' => [
-                'status' => $resultadoCriacao['status'],
-                'quantidade_criada' => $resultadoCriacao['quantidade'],
-                'ids_criados' => $resultadoCriacao['ids'],
-                'mensagem' => $resultadoCriacao['mensagem'],
-                'tempo_execucao_segundos' => $resultadoCriacao['tempo_total_segundos'] ?? 0
-            ],
-            'update_deal_origem' => [
-                'atualizado' => !empty($resultadoUpdate),
-                'status' => $resultadoUpdate['status'] ?? 'nao_executado',
-                'mensagem' => $resultadoUpdate['mensagem'] ?? 'Nenhum deal novo para vincular.',
-                'total_vinculados' => count($resultadoUpdate['ufCrm_1670953245'] ?? [])
-            ],
-            'contexto_original' => [
-                'deal_origem' => $dealId,
-                'etapa_atual' => $item['stageId']['valor'] ?? '',
-                'process_type' => $processType,
-                'tipo_processo' => $item['ufCrm_1650979003']['texto'] ?? 'Não definido',
-                'combinacoes_solicitadas' => $combinacoesSolicitadas
-            ]
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    }
 }

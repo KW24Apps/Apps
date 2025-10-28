@@ -24,14 +24,6 @@ class GerarOportunidadesService
         $oportunidadesConvertidas = $this->organizarDadosService->getOportunidadesConvertidas();
         $mapeamentoOportunidadesBitrix = $this->organizarDadosService->getMapeamentoOportunidadesBitrix();
 
-        // Gerar JSON de depuração antes de obter combinações
-        $this->gerarJsonDepuracaoOportunidades(
-            $dealId,
-            $oportunidadesOferecidas,
-            $oportunidadesConvertidas,
-            $mapeamentoOportunidadesBitrix
-        );
-
         $dealsExistentesResult = BitrixHelper::listarItensCrm(2, [
             'ufcrm_1707331568' => [$dealId]
         ], ['companyId', 'ufCrm_1646069163997']);
@@ -53,13 +45,12 @@ class GerarOportunidadesService
         $combinacoesDesejadas = [];
         foreach ($empresas as $empresa) {
             foreach ($oportunidadesParaUsar as $nomeOportunidade) {
-                // AQUI: Usar o mapeamento VALUE para ID
                 $opportunityIdBitrix = $mapeamentoOportunidadesBitrix[$nomeOportunidade] ?? null;
 
                 if ($opportunityIdBitrix !== null) {
                     $combinacoesDesejadas[] = [
                         'companyId' => (string)$empresa,
-                        'opportunityId' => (string)$opportunityIdBitrix, // Usar o ID mapeado
+                        'opportunityId' => (string)$opportunityIdBitrix,
                         'opportunityName' => $nomeOportunidade
                     ];
                 } else {
@@ -111,53 +102,6 @@ class GerarOportunidadesService
                 'combinacoes_solicitadas' => count($combinacoesParaCriar)
             ]
         ];
-    }
-
-    private function gerarJsonDepuracaoOportunidades(
-        int $dealId,
-        array $oportunidadesOferecidas,
-        array $oportunidadesConvertidas,
-        array $mapeamentoOportunidadesBitrix
-    ): void {
-        $dadosDepuracao = [];
-        $oportunidadesSelecionadas = array_unique(array_merge($oportunidadesOferecidas, $oportunidadesConvertidas));
-
-        foreach ($oportunidadesSelecionadas as $nomeOportunidade) {
-            $idOportunidadeOferecida = null;
-            $idOportunidadeConvertida = null;
-            $idOportunidadeBitrix = $mapeamentoOportunidadesBitrix[$nomeOportunidade] ?? null;
-
-            // Buscar ID do campo Oportunidades Oferecidas
-            // A função getDealItem() retorna o item completo, que contém os metadados dos campos
-            $dealItem = $this->organizarDadosService->getDealItem();
-            $itemsOferecidas = $dealItem['ufCrm_1688060696']['items'] ?? [];
-            foreach ($itemsOferecidas as $item) {
-                if ($item['VALUE'] === $nomeOportunidade) {
-                    $idOportunidadeOferecida = $item['ID'];
-                    break;
-                }
-            }
-
-            // Buscar ID do campo Oportunidades Convertidas
-            $itemsConvertidas = $dealItem['ufCrm_1728327366']['items'] ?? [];
-            foreach ($itemsConvertidas as $item) {
-                if ($item['VALUE'] === $nomeOportunidade) {
-                    $idOportunidadeConvertida = $item['ID'];
-                    break;
-                }
-            }
-
-            $dadosDepuracao[] = [
-                'nome_amigavel' => $nomeOportunidade,
-                'id_oportunidade_oferecida' => $idOportunidadeOferecida,
-                'id_oportunidade_convertida' => $idOportunidadeConvertida,
-                'id_oportunidade_bitrix_destino' => $idOportunidadeBitrix
-            ];
-        }
-
-        $arquivoJson = __DIR__ . "/../../../logs/oportunidades_depuracao_deal_{$dealId}.json";
-        file_put_contents($arquivoJson, json_encode($dadosDepuracao, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-        LogHelper::logGerarOportunidade("INFO: JSON de depuracao de oportunidades gerado em: {$arquivoJson}");
     }
 
     public function obterCombinacoesParaCriar(): array
