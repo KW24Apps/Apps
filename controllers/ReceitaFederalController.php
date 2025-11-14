@@ -2,7 +2,7 @@
 namespace Controllers;
 
 use Helpers\LogHelper;
-
+use Services\ReceitaFederalService;
 class ReceitaFederalController
 {
     public function executar()
