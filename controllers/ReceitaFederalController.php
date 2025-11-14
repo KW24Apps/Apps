@@ -24,10 +24,11 @@ class ReceitaFederalController
         $result = $service->consultarDadosIniciais($idEmpresaBitrix);
 
         // 4. Retorna o resultado da consulta de dados iniciais
+        header('Content-Type: application/json');
         if ($result['status'] === 'sucesso') {
             // Log negativo: não logar sucesso, apenas erros.
             http_response_code(200);
-            echo json_encode($result); // Retorna os dados completos da consulta
+            echo json_encode($result);
         } else {
             LogHelper::logReceitaFederal("Erro ao coletar dados iniciais para empresa ID '$idEmpresaBitrix': " . $result['mensagem'], __CLASS__ . '::' . __FUNCTION__);
             http_response_code(400); // Erro do cliente (parâmetro ausente, CNPJ não encontrado)
