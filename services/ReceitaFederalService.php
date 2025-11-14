@@ -11,10 +11,35 @@ class ReceitaFederalService
 
     public function processarConsultaReceita(array $webhookData): array
     {
-        $cnpj = preg_replace('/[^0-9]/', '', $webhookData['cnpj']); // Limpa o CNPJ
+        $cnpjToConsult = null;
+        $campoRetorno = strtolower($webhookData['campo_retorno'] ?? '');
 
-        // 1. Consultar a API da Receita Federal
-        $receitaData = $this->consultarApiReceitaFederal($cnpj);
+        // 1. Determinar o CNPJ a ser consultado
+        if ($campoRetorno === 'empresa') {
+            $idEmpresaBitrix = $webhookData['id_empresa_bitrix'] ?? null;
+            if (!$idEmpresaBitrix) {
+                LogHelper::logReceitaFederal("Erro: 'id_empresa_bitrix' ausente para consulta de CNPJ da empresa.", __CLASS__ . '::' . __FUNCTION__);
+                return ['status' => 'erro', 'mensagem' => "Parâmetro 'id_empresa_bitrix' ausente para consulta de CNPJ."];
+            }
+            
+            // Consulta a empresa no Bitrix24 para obter o CNPJ
+            $companyDetails = BitrixCompanyHelper::consultarEmpresa(['empresa' => $idEmpresaBitrix]);
+            if (isset($companyDetails['erro']) || empty($companyDetails['UF_CRM_1641693445101'])) { // UF_CRM_1641693445101 é o campo CNPJ/CPF
+                LogHelper::logReceitaFederal("Erro ao consultar empresa ID $idEmpresaBitrix ou CNPJ não encontrado.", __CLASS__ . '::' . __FUNCTION__);
+                return ['status' => 'erro', 'mensagem' => "CNPJ não encontrado para a empresa ID $idEmpresaBitrix no Bitrix24."];
+            }
+            $cnpjToConsult = preg_replace('/[^0-9]/', '', $companyDetails['UF_CRM_1641693445101']);
+        } else {
+            // Para SPA/Deal, o CNPJ deve vir diretamente no webhook
+            $cnpjToConsult = preg_replace('/[^0-9]/', '', $webhookData['cnpj'] ?? '');
+            if (empty($cnpjToConsult)) {
+                LogHelper::logReceitaFederal("Erro: Parâmetro 'cnpj' ausente no webhook para SPA/Deal.", __CLASS__ . '::' . __FUNCTION__);
+                return ['status' => 'erro', 'mensagem' => "Parâmetro 'cnpj' ausente."];
+            }
+        }
+
+        // 2. Consultar a API da Receita Federal
+        $receitaData = $this->consultarApiReceitaFederal($cnpjToConsult);
         if (isset($receitaData['erro'])) {
             return ['status' => 'erro', 'mensagem' => $receitaData['erro']];
         }
