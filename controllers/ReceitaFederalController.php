@@ -26,9 +26,13 @@ class ReceitaFederalController
         // 4. Retorna o resultado da consulta de dados iniciais
         header('Content-Type: application/json');
         if ($result['status'] === 'sucesso') {
-            // Log negativo: não logar sucesso, apenas erros.
+            // Retorna sucesso e o CNPJ consultado
             http_response_code(200);
-            echo json_encode($result);
+            echo json_encode([
+                'status' => 'sucesso',
+                'mensagem' => "CNPJ '$result[cnpj_encontrado]' encontrado para a empresa ID '$idEmpresaBitrix'.",
+                'cnpj_consultado' => $result['cnpj_encontrado']
+            ]);
         } else {
             LogHelper::logReceitaFederal("Erro ao coletar dados iniciais para empresa ID '$idEmpresaBitrix': " . $result['mensagem'], __CLASS__ . '::' . __FUNCTION__);
             http_response_code(400); // Erro do cliente (parâmetro ausente, CNPJ não encontrado)
