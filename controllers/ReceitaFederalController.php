@@ -2,44 +2,35 @@
 namespace Controllers;
 
 use Helpers\LogHelper;
-use Services\ReceitaFederalService; // Será criado em breve
 
 class ReceitaFederalController
 {
     public function executar()
     {
-        // 1. Receber e validar os dados do webhook
-        // Para requisições POST, os dados podem vir no corpo da requisição (json) ou via $_POST
-        // O usuário mencionou que a URL é `apis.kw24.com.br/receita?cliente=...`, o que sugere $_GET
-        // No entanto, a rota foi definida como POST. Vamos assumir que os dados virão via $_POST ou json_decode(file_get_contents('php://input'))
-        // Para simplificar, vamos usar $_REQUEST que abrange $_GET e $_POST, mas o ideal seria ser mais específico.
-        $data = $_REQUEST; 
+        // Recebe dados da URL (query string)
+        $data = $_GET;
 
-        LogHelper::logReceitaFederal("Webhook recebido (Controller): " . json_encode($data, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
-
-        // Validação básica dos parâmetros
-        $requiredParams = ['chave_acesso', 'cnpj', 'campo_retorno'];
-        foreach ($requiredParams as $param) {
-            if (empty($data[$param])) {
-                LogHelper::logReceitaFederal("Erro: Parâmetro '$param' ausente no webhook.", __CLASS__ . '::' . __FUNCTION__);
-                http_response_code(400);
-                echo json_encode(['status' => 'erro', 'mensagem' => "Parâmetro '$param' ausente."]);
-                return;
-            }
+        // Pega e valida o ID da empresa
+        $idEmpresaBitrix = $data['id'] ?? null;
+        if (empty($idEmpresaBitrix)) {
+            LogHelper::logReceitaFederal("Erro: Parâmetro 'id' (ID da empresa) ausente na URL.", __CLASS__ . '::' . __FUNCTION__);
+            http_response_code(400);
+            echo json_encode(['status' => 'erro', 'mensagem' => "Parâmetro 'id' (ID da empresa) ausente."]);
+            return;
         }
 
-        // Instancia o serviço e processa a consulta
+        // 3. Instancia o serviço e chama a função para consultar dados iniciais
         $service = new ReceitaFederalService();
-        $result = $service->processarConsultaReceita($data);
+        $result = $service->consultarDadosIniciais($idEmpresaBitrix);
 
-        // Retorna o resultado
+        // 4. Retorna o resultado da consulta de dados iniciais
         if ($result['status'] === 'sucesso') {
-            LogHelper::logReceitaFederal("Processamento concluído com sucesso: " . json_encode($result, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
+            LogHelper::logReceitaFederal("Dados iniciais coletados com sucesso para empresa ID '$idEmpresaBitrix'.", __CLASS__ . '::' . __FUNCTION__);
             http_response_code(200);
             echo json_encode($result);
         } else {
-            LogHelper::logReceitaFederal("Erro no processamento: " . json_encode($result, JSON_UNESCAPED_UNICODE), __CLASS__ . '::' . __FUNCTION__);
-            http_response_code(500);
+            LogHelper::logReceitaFederal("Erro ao coletar dados iniciais para empresa ID '$idEmpresaBitrix': " . $result['mensagem'], __CLASS__ . '::' . __FUNCTION__);
+            http_response_code(500); // Ou 404 se o CNPJ não for encontrado, conforme o erro do serviço
             echo json_encode($result);
         }
     }
