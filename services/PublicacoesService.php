@@ -358,7 +358,10 @@ class PublicacoesService
 
         // Mapeia os dados da publicação para os campos UF do Bitrix
         foreach ($this->mapaCamposAtualizacao as $chave => $uf) {
-            if (array_key_exists($chave, $publicacao)) {
+            // Campos de data são enviados sempre (mesmo vazios) para limpar o Bitrix se necessário
+            if (strpos($chave, 'data') === 0) {
+                $fields[$uf] = $publicacao[$chave] ?? '';
+            } elseif (array_key_exists($chave, $publicacao)) {
                 $fields[$uf] = $publicacao[$chave] ?: '';
             }
         }
