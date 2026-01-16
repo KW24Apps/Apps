@@ -26,5 +26,5 @@ return [
     '/scheduler' => ['SchedulerController', 'executar', 'POST'],
     '/importar' => [''],
     '/calcdata/dias' => ['DateCalculatorController', 'calculateDateDifferenceWebhook', 'POST'],
-    '/receita' => ['ReceitaFederalController', 'executar', 'POST']
+    '/receita' => ['ReceitaFederalController', 'executar', 'GET']
 ];

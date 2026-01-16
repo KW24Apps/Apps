@@ -1,6 +1,10 @@
 <?php
 namespace Helpers;
 
+require_once __DIR__ . '/LogHelper.php'; // Adicionado o require_once para LogHelper
+
+use Helpers\LogHelper;
+
 class ReceitaFederalHelper
 {
     private const API_RECEITA_FEDERAL_URL = "https://minhareceita.org/";
@@ -29,9 +33,12 @@ class ReceitaFederalHelper
             return ['erro' => "Erro na requisição cURL: $error"];
         }
 
+        // Log da resposta bruta da API externa, independentemente do status HTTP
+        LogHelper::logReceitaFederal("Resposta bruta da API minhareceita.org para CNPJ $cnpj (HTTP $httpCode): " . $response, __CLASS__ . '::' . __FUNCTION__);
+
         if ($httpCode !== 200) {
             LogHelper::logReceitaFederal("Erro HTTP $httpCode ao consultar a API da Receita Federal para CNPJ $cnpj. Resposta: $response", __CLASS__ . '::' . __FUNCTION__);
-            return ['erro' => "Erro HTTP $httpCode ao consultar a API da Receita Federal. Resposta: $response"];
+            return ['erro' => "Erro HTTP $httpCode ao consultar a API da Receita Federal. Resposta: " . $response];
         }
 
         $data = json_decode($response, true);

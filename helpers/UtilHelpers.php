@@ -191,4 +191,39 @@ class UtilHelpers
 
         return $map[strtolower($mime)] ?? null;
     }
+
+    /**
+     * Realiza o upload de um conteúdo base64 diretamente para uma pasta do Bitrix Disk.
+     * 
+     * @param string $nomeArquivo Nome que o arquivo terá no Disk.
+     * @param string $base64Content Conteúdo do arquivo em base64.
+     * @param int $folderId ID da pasta de destino.
+     * @return int|null ID do arquivo no Disk ou null em caso de falha.
+     */
+    public static function uploadBase64ParaPastaDisk(string $nomeArquivo, string $base64Content, int $folderId): ?int
+    {
+        require_once __DIR__ . '/BitrixHelper.php';
+
+        // Para garantir que o Bitrix reconheça o nome e a extensão no anexo da Timeline,
+        // o parâmetro fileContent deve ser um array contendo [nome, conteúdo_base64]
+        $params = [
+            'id' => $folderId,
+            'data' => [
+                'NAME' => $nomeArquivo
+            ],
+            'fileContent' => [
+                $nomeArquivo,
+                $base64Content
+            ]
+        ];
+
+        // O endpoint disk.folder.uploadfile é o correto para pastas específicas
+        $res = BitrixHelper::chamarApi('disk.folder.uploadfile', $params);
+
+        if (isset($res['result']['ID'])) {
+            return (int)$res['result']['ID'];
+        }
+
+        return null;
+    }
 }

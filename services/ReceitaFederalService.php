@@ -1,88 +1,146 @@
 <?php
+
 namespace Services;
 
-use Helpers\BitrixCompanyHelper;
+require_once __DIR__ . '/../helpers/LogHelper.php';
+require_once __DIR__ . '/../helpers/ReceitaFederalHelper.php';
+require_once __DIR__ . '/../helpers/BitrixCompanyHelper.php';
+require_once __DIR__ . '/../helpers/BitrixDealHelper.php';
+require_once __DIR__ . '/../helpers/BitrixHelper.php';
+
 use Helpers\LogHelper;
-use Helpers\BitrixHelper; // Adicionado para consultar campos
+use Helpers\ReceitaFederalHelper;
+use Helpers\BitrixCompanyHelper;
+use Helpers\BitrixDealHelper;
+use Helpers\BitrixHelper;
 
 class ReceitaFederalService
 {
-    public function consultarDadosIniciais(string $idEmpresaBitrix): array
+    /**
+     * Executa o fluxo completo de consulta e atualização.
+     *
+     * @param string $idEmpresa ID da empresa no Bitrix24.
+     * @param string|null $idDeal ID do deal no Bitrix24 (opcional).
+     * @param string|null $campoRetorno Nome do campo para salvar o retorno (opcional, prioriza o da URL).
+     * @return array Resposta com status e mensagem.
+     */
+    public function processarAtualizacao(string $idEmpresa, ?string $idDeal = null, ?string $campoRetorno = null)
     {
-        // 1. Consultar a empresa no Bitrix24 para obter o CNPJ
-        $companyDetails = BitrixCompanyHelper::consultarEmpresa(['empresa' => $idEmpresaBitrix]);
+        try {
+            // 1. Obter configurações do cliente (já validadas no index.php)
+            $acesso = $GLOBALS['ACESSO_AUTENTICADO'] ?? null;
+            if (!$acesso) {
+                return ['status' => 'erro', 'mensagem' => 'Acesso não autenticado ou configurações não encontradas.'];
+            }
 
-        if (isset($companyDetails['erro'])) {
-            LogHelper::logReceitaFederal("Erro ao consultar empresa ID $idEmpresaBitrix no Bitrix24: " . $companyDetails['erro'], __CLASS__ . '::' . __FUNCTION__);
-            return ['status' => 'erro', 'mensagem' => "Erro ao consultar empresa ID $idEmpresaBitrix no Bitrix24."];
-        }
-        
-        $cnpj = $companyDetails['UF_CRM_1641693445101'] ?? null; // UF_CRM_1641693445101 é o campo CNPJ/CPF
+            $configExtra = $acesso['config_extra'] ?? null;
+            if (is_string($configExtra)) {
+                $configExtra = json_decode($configExtra, true);
+            }
+            
+            $configReceita = $configExtra['receita_federal'] ?? null;
 
-        if (empty($cnpj)) {
-            LogHelper::logReceitaFederal("Erro: CNPJ não encontrado para a empresa ID $idEmpresaBitrix no Bitrix24.", __CLASS__ . '::' . __FUNCTION__);
-            return ['status' => 'erro', 'mensagem' => "CNPJ não encontrado para a empresa ID $idEmpresaBitrix no Bitrix24."];
-        }
+            if (!$configReceita) {
+                return ['status' => 'erro', 'mensagem' => 'Configuração "receita_federal" não encontrada no JSON do cliente.'];
+            }
 
-        // 2. Consultar *todos* os campos da empresa no Bitrix24 usando BitrixHelper::consultarCamposCrm()
-        // A entidade para Company é 3 (CRM_COMPANY_ENTITY_TYPE_ID)
-        $companyFieldsMetadata = BitrixHelper::consultarCamposCrm(3); // 3 é o entityTypeId para Company
+            // 2. Buscar o CNPJ da empresa no Bitrix24
+            $cnpjField = $configReceita['cnpj_field'] ?? null;
+            if (!$cnpjField) {
+                return ['status' => 'erro', 'mensagem' => 'Campo de CNPJ não configurado para este cliente.'];
+            }
 
-        if (isset($companyFieldsMetadata['erro'])) {
-            LogHelper::logReceitaFederal("Erro ao consultar metadados dos campos da empresa no Bitrix24: " . $companyFieldsMetadata['erro'], __CLASS__ . '::' . __FUNCTION__);
-            return ['status' => 'erro', 'mensagem' => "Erro ao consultar metadados dos campos da empresa no Bitrix24."];
-        }
+            $dadosEmpresa = BitrixCompanyHelper::consultarEmpresa([
+                'empresa' => $idEmpresa,
+                'campos' => [$cnpjField]
+            ]);
 
-        // Filtrar e formatar os campos que nos interessam, especialmente os de lista
-        $camposMapeados = [];
-        // Lista de campos a serem mapeados, baseada no receita_federal_bitrix_integration.rd
-        $camposInteresse = [
-            'TITLE',
-            'UF_CRM_1643894689490', // Nome Fantasia
-            'UF_CRM_1641693445101', // CNPJ/CPF
-            'UF_CRM_1651170686',    // UF (Lista)
-            'UF_CRM_1657666567',    // CEP
-            'UF_CRM_1696352922',    // Email
-            'UF_CRM_1657666676',    // Bairro
-            'UF_CRM_1704323923',    // Número
-            'UF_CRM_ADDRESS_CITY',  // Município
-            'UF_CRM_1669387590',    // Código Municipal
-            'UF_CRM_1657666583',    // Logradouro
-            'UF_CRM_1657666659',    // Complemento
-            'UF_CRM_1645141153',    // Capital Social
-            'UF_CRM_1670261459',    // Telefone
-            'UF_CRM_1645141733685', // CNAE Principal
-            'UF_CRM_1710268217',    // CNAE Secundário (Lista)
-            'UF_CRM_1645140434',    // Regime de Tributação (Lista)
-            'UF_CRM_1696339884',    // Natureza Jurídica
-            'ADDRESS'               // Endereço Completo
-        ];
+            if (isset($dadosEmpresa['erro'])) {
+                return ['status' => 'erro', 'mensagem' => 'Erro ao consultar empresa no Bitrix: ' . $dadosEmpresa['erro']];
+            }
 
-        foreach ($companyFieldsMetadata as $fieldId => $fieldInfo) {
-            if (in_array($fieldId, $camposInteresse)) {
-                $camposMapeados[$fieldId] = [
-                    'nome_amigavel' => $fieldInfo['title'] ?? $fieldId,
-                    'tipo' => $fieldInfo['type'] ?? 'desconhecido',
-                    'is_multiple' => $fieldInfo['isMultiple'] ?? false,
-                    'lista_items' => []
-                ];
+            $cnpj = $dadosEmpresa[$cnpjField] ?? null;
+            if (!$cnpj) {
+                return ['status' => 'erro', 'mensagem' => "CNPJ não encontrado no campo $cnpjField da empresa $idEmpresa."];
+            }
 
-                // Se for um campo de lista (enumeration), extrair os IDs e valores
-                if (isset($fieldInfo['items']) && is_array($fieldInfo['items'])) {
-                    foreach ($fieldInfo['items'] as $item) {
-                        $camposMapeados[$fieldId]['lista_items'][$item['ID']] = $item['VALUE'];
-                    }
+            // Limpar CNPJ (apenas números)
+            $cnpjLimpo = preg_replace('/\D/', '', $cnpj);
+
+            // 3. Consultar Receita Federal
+            LogHelper::logReceitaFederal("Iniciando consulta CNPJ $cnpjLimpo para empresa $idEmpresa", __CLASS__ . '::' . __FUNCTION__);
+            $dadosReceita = ReceitaFederalHelper::consultarCnpj($cnpjLimpo);
+
+            if (isset($dadosReceita['erro'])) {
+                $this->registrarRetorno($idEmpresa, $idDeal, "Erro Receita: " . $dadosReceita['erro'], $configReceita, $campoRetorno);
+                return ['status' => 'erro', 'mensagem' => 'Erro na consulta da Receita Federal: ' . $dadosReceita['erro']];
+            }
+
+            // 4. Mapear dados para o Bitrix24
+            $mapeamento = $configReceita['company_mapping'] ?? [];
+            $fieldsToUpdate = [];
+
+            foreach ($mapeamento as $campoReceita => $campoBitrix) {
+                if (isset($dadosReceita[$campoReceita])) {
+                    $fieldsToUpdate[$campoBitrix] = $dadosReceita[$campoReceita];
                 }
             }
-        }
 
-        // Retorna os dados coletados
-        return [
-            'status' => 'sucesso',
-            'mensagem' => "Dados iniciais coletados com sucesso.",
-            'id_empresa_bitrix' => $idEmpresaBitrix,
-            'cnpj_encontrado' => $cnpj,
-            'campos_bitrix_metadata' => $camposMapeados
-        ];
+            // 5. Atualizar Empresa no Bitrix24
+            if (!empty($fieldsToUpdate)) {
+                // Usamos BitrixHelper::chamarApi diretamente para permitir campos que não sejam UF_CRM_ (como TITLE)
+                $payload = [
+                    'id' => $idEmpresa,
+                    'fields' => $fieldsToUpdate
+                ];
+                $updateResult = BitrixHelper::chamarApi('crm.company.update', $payload);
+                
+                if (isset($updateResult['error'])) {
+                    LogHelper::logReceitaFederal("Erro ao atualizar empresa $idEmpresa: " . ($updateResult['error_description'] ?? $updateResult['error']), __CLASS__ . '::' . __FUNCTION__);
+                }
+            }
+
+            // 6. Registrar Retorno/Status
+            $statusMsg = "Dados atualizados com sucesso em " . date('d/m/Y H:i:s');
+            $this->registrarRetorno($idEmpresa, $idDeal, $statusMsg, $configReceita, $campoRetorno);
+
+            return [
+                'status' => 'sucesso',
+                'mensagem' => 'Processamento concluído.',
+                'dados_receita' => $dadosReceita
+            ];
+
+        } catch (\Exception $e) {
+            LogHelper::logReceitaFederal("Exceção no processamento: " . $e->getMessage(), __CLASS__ . '::' . __FUNCTION__);
+            return ['status' => 'erro', 'mensagem' => 'Erro interno: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Registra o status da operação no Deal ou na Empresa.
+     */
+    private function registrarRetorno($idEmpresa, $idDeal, $mensagem, $configReceita, $campoRetornoUrl = null)
+    {
+        // Prioridade do campo de retorno: 1. URL, 2. Config JSON
+        $campoFinal = $campoRetornoUrl;
+        
+        if ($idDeal) {
+            $campoFinal = $campoFinal ?: ($configReceita['return_field_deal'] ?? null);
+            $entityTypeId = $configReceita['deal_entity_type_id'] ?? 2; // Default para Deal padrão (2)
+            if ($campoFinal) {
+                // Atualiza o Deal ou SPA
+                BitrixDealHelper::editarDeal($entityTypeId, $idDeal, [$campoFinal => $mensagem]);
+            }
+        } else {
+            $campoFinal = $campoFinal ?: ($configReceita['return_field_company'] ?? null);
+            if ($campoFinal) {
+                // Atualiza a Empresa
+                $payload = [
+                    'id' => $idEmpresa,
+                    'fields' => [$campoFinal => $mensagem]
+                ];
+                BitrixHelper::chamarApi('crm.company.update', $payload);
+            }
+        }
     }
 }

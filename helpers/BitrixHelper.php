@@ -122,14 +122,14 @@ class BitrixHelper
             else if (preg_match('/^UF_CRM_/i', $campo)) { // Case-insensitive para UF_CRM_
                 $campoNormalizado = strtoupper($campo); // Normaliza para maiúsculas para as regexes específicas
                 
-                // Padrão para SPA: UF_CRM_idspa_codigo -> ufCrmidspa_codigo
-                if (preg_match('/^UF_CRM_(\d+)_(\d+)$/', $campoNormalizado, $m)) {
-                    $campoFormatado = 'ufCrm' . $m[1] . '_' . $m[2];
-                } 
-                // Padrão para Deal/Company/Contact: UF_CRM_codigo -> ufCrm_codigo
-                elseif (preg_match('/^UF_CRM_(\d+)$/', $campoNormalizado, $m)) {
-                    $campoFormatado = 'ufCrm_' . $m[1];
-                } 
+            // Padrão para SPA: UF_CRM_idspa_codigo -> ufCrmidspa_codigo (Suporta alfanumérico no código final)
+            if (preg_match('/^UF_CRM_(\d+)_([A-Z0-9]+)$/', $campoNormalizado, $m)) {
+                $campoFormatado = 'ufCrm' . $m[1] . '_' . $m[2];
+            } 
+            // Padrão para Deal/Company/Contact: UF_CRM_codigo -> ufCrm_codigo (Suporta alfanumérico no código)
+            elseif (preg_match('/^UF_CRM_([A-Z0-9]+)$/', $campoNormalizado, $m)) {
+                $campoFormatado = 'ufCrm_' . $m[1];
+            } 
                 // Se for UF_CRM_ mas não corresponder aos padrões conhecidos, mantém o original
                 else {
                     $campoFormatado = $campo;
