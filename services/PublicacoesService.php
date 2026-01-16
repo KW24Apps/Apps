@@ -188,31 +188,33 @@ class PublicacoesService
      */
     private function precisaAtualizar(?string $dataControle, array $pub): bool
     {
-        // Se não houver data de controle, a atualização é obrigatória
         if (!$dataControle) return true;
 
-        // Converte a data de controle do Bitrix para timestamp
         $tsControle = $this->parseDataParaTimestamp($dataControle);
+        if (!$tsControle) return true;
 
-        // Coleta todas as datas disponíveis na publicação
-        $datas = [
+        $datas = array_filter([
             $pub['dataPublicacao'] ?? null,
             $pub['dataDisponibilizacao'] ?? null,
             $pub['dataDisponibilizacaoWebservice'] ?? null,
-        ];
+        ]);
 
-        // Converte as datas da publicação para timestamps
+        if (!$datas) return true;
+
+        // pega a data MAIS ANTIGA da publicação
         $timestamps = [];
-        foreach (array_filter($datas) as $dStr) {
-            $timestamps[] = $this->parseDataParaTimestamp($dStr);
+        foreach ($datas as $dStr) {
+            $ts = $this->parseDataParaTimestamp($dStr);
+            if ($ts) $timestamps[] = $ts;
         }
 
-        // Se não houver datas na publicação, força a atualização
         if (!$timestamps) return true;
 
-        // Compara a data mais recente da publicação com a do Bitrix
-        $tsMaisRecente = max($timestamps);
-        return $tsMaisRecente > $tsControle;
+        $tsMaisAntiga = min($timestamps);
+
+        // REGRA FINAL:
+        // atualiza SOMENTE se a publicação for ANTERIOR ao controle
+        return $tsMaisAntiga < $tsControle;
     }
 
     /**
@@ -366,23 +368,9 @@ class PublicacoesService
             }
         }
 
-        // Coleta datas para definir o novo ponto de controle do card
-        $datas = [
-            $publicacao['dataPublicacao'] ?? null,
-            $publicacao['dataDisponibilizacao'] ?? null,
-            $publicacao['dataDisponibilizacaoWebservice'] ?? null,
-        ];
-
-        $datas = array_filter($datas);
-
-        // Define a data de controle como a data mais recente encontrada
-        if ($datas) {
-            $timestamps = [];
-            foreach ($datas as $dStr) {
-                $timestamps[$this->parseDataParaTimestamp($dStr)] = $dStr;
-            }
-            $maxTs = max(array_keys($timestamps));
-            $fields[$this->campoControleBitrix] = $timestamps[$maxTs];
+        // Define a data de controle como a data de disponibilização do webservice
+        if (!empty($publicacao['dataDisponibilizacaoWebservice'])) {
+            $fields[$this->campoControleBitrix] = $publicacao['dataDisponibilizacaoWebservice'];
         }
 
         // Retorna o array de campos pronto para o Bitrix

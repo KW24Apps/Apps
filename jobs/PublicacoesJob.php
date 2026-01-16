@@ -31,8 +31,7 @@ class PublicacoesJob
             $service = new PublicacoesService();
 
             // Define se o job roda em modo produção (D e D-1) ou data fixa
-            $dataTeste = 'producao'; 
-
+            $dataTeste = 'producao'; // Alterar para 'producao' para rodar em modo produção
             // Configura o array de datas que serão consultadas
             if ($dataTeste === 'producao') {
                 $datasParaProcessar = [
