@@ -14,19 +14,26 @@ use Helpers\UtilHelpers;
 
 class PublicacoesService
 {
+    // Hash de autenticação do cliente na API Publicações Online
     private $hashCliente = 'e6e973a473050bebc1fbd9f02ed62f6e';
+    // URL base para consulta de publicações
     private $baseUrl = "https://www.publicacoesonline.com.br/index_pe.php";
     
-    // Configurações de Campos Bitrix24
+    // Campo do Bitrix que armazena o número do processo
     private $campoProcessoBitrix = 'ufCrm_1704206234';
+    // Campo de controle para evitar duplicidade de atualizações
     private $campoControleBitrix = 'ufCrm_1768480439';
+    // Campo de retorno para sinalizar atualização ao Bitrix
     private $campoRetornoApi     = 'UF_CRM_1753210523';
+    // Mensagem padrão enviada no retorno da API
     private $valorRetornoApi     = 'Nova Atualização PO';
     
-    // Configurações de Integração
+    // ID da pasta no Bitrix Disk para armazenamento de arquivos
     private $folderIdDisk = 3309742;
+    // ID do usuário Bitrix que assina os comentários na timeline
     private $userIdBitrix = 43;
 
+    // Mapeamento entre campos da API e campos customizados do Bitrix
     private $mapaCamposAtualizacao = [
         'nomeAdvogado'                   => 'UF_CRM_1768421701',
         'oab'                            => 'UF_CRM_1768421967',
@@ -50,28 +57,36 @@ class PublicacoesService
      */
     public function fetchDailyPublications(?string $data = null): array
     {
+        // Define a data da consulta (padrão hoje)
         $data = $data ?? date('Y-m-d');
+        // Monta a URL de consulta com hash e formato JSON
         $url = "{$this->baseUrl}?hashCliente={$this->hashCliente}&data={$data}&retorno=JSON";
         
         $tentativas = 0;
         $maxTentativas = 10;
 
+        // Loop de tentativas em caso de falha na API
         while ($tentativas < $maxTentativas) {
             $tentativas++;
-            LogHelper::logPublicacoes("Tentativa $tentativas de consulta para a data: $data", __METHOD__);
+            // LogHelper::logPublicacoes("Tentativa $tentativas de consulta para a data: $data", __METHOD__); // Log de sucesso removido
 
+            // Realiza a chamada para a API externa
             $body = @file_get_contents($url);
             
+            // Verifica se a resposta da requisição está vazia
             if (!$body) {
                 LogHelper::logPublicacoes("Falha na requisição (body vazio). Aguardando 5 minutos para retentar...", __METHOD__);
                 sleep(300);
                 continue;
             }
 
+            // Decodifica o JSON retornado pela API
             $decoded = json_decode($body, true);
 
+            // Trata mensagens de erro retornadas pela API
             if (isset($decoded['erros'])) {
                 $msgErro = $decoded['erros']['mensagem'] ?? '';
+                // Retorna vazio se não houver publicações disponíveis
                 if (strpos($msgErro, 'Nenhuma Publicação disponivel') !== false) {
                     return ['status' => 'sucesso', 'publicacoes' => []];
                 }
@@ -80,6 +95,7 @@ class PublicacoesService
                 continue;
             }
 
+            // Retorna as publicações em caso de sucesso
             if (is_array($decoded)) {
                 return ['status' => 'sucesso', 'publicacoes' => $decoded];
             }
@@ -88,6 +104,7 @@ class PublicacoesService
             sleep(300);
         }
 
+        // Retorna erro caso atinja o limite de tentativas
         return ['status' => 'erro', 'mensagem' => 'Limite de tentativas de reprocessamento atingido.'];
     }
 
@@ -96,15 +113,19 @@ class PublicacoesService
      */
     public function buscarDealPorProcesso(string $numeroProcesso): ?array
     {
+        // Aborta se o número do processo estiver vazio
         if (empty($numeroProcesso)) return null;
 
+        // Remove caracteres não numéricos para busca simplificada
         $numeroLimpo = preg_replace('/\D/', '', $numeroProcesso);
         $variantes = [$numeroLimpo];
 
+        // Adiciona variante formatada se for um padrão CNJ válido
         if (strlen($numeroLimpo) === 20) {
             $variantes[] = $this->formatarProcessoCNJ($numeroLimpo);
         }
 
+        // Consulta o CRM do Bitrix buscando pelo campo de processo
         $res = BitrixHelper::listarItensCrm(
             2,
             [$this->campoProcessoBitrix => $variantes],
@@ -112,6 +133,7 @@ class PublicacoesService
             1
         );
 
+        // Retorna o ID e a data de controle do card encontrado
         if (!empty($res['items'][0])) {
             return [
                 'id' => $res['items'][0]['id'],
@@ -119,11 +141,13 @@ class PublicacoesService
             ];
         }
 
+        // Retorna nulo se nenhum card for localizado
         return null;
     }
 
     private function formatarProcessoCNJ(string $n): string
     {
+        // Aplica a máscara padrão do CNJ (0000000-00.0000.0.00.0000)
         return substr($n, 0, 7) . '-' . substr($n, 7, 2) . '.' . substr($n, 9, 4) . '.' .
                substr($n, 13, 1) . '.' . substr($n, 14, 2) . '.' . substr($n, 16, 4);
     }
@@ -133,12 +157,15 @@ class PublicacoesService
      */
     private function parseDataParaTimestamp(?string $dataStr): int
     {
+        // Retorna zero se a string de data estiver vazia
         if (empty($dataStr)) return 0;
 
+        // Normaliza a string removendo caracteres de fuso horário e separadores T/Z
         $dataLimpa = preg_replace('/[T]/', ' ', $dataStr);
         $dataLimpa = preg_replace('/[Z]|[\+\-]\d{2}:\d{2}/', '', $dataLimpa);
         $dataLimpa = trim(substr($dataLimpa, 0, 19));
 
+        // Tenta converter a data usando múltiplos formatos comuns
         $d = \DateTime::createFromFormat('d/m/Y H:i:s', $dataLimpa);
         if ($d) return $d->getTimestamp();
 
@@ -151,6 +178,7 @@ class PublicacoesService
         $d = \DateTime::createFromFormat('Y-m-d', $dataLimpa);
         if ($d) return $d->getTimestamp();
 
+        // Fallback para a função nativa strtotime
         $ts = strtotime($dataLimpa);
         return $ts !== false ? $ts : 0;
     }
@@ -160,23 +188,29 @@ class PublicacoesService
      */
     private function precisaAtualizar(?string $dataControle, array $pub): bool
     {
+        // Se não houver data de controle, a atualização é obrigatória
         if (!$dataControle) return true;
 
+        // Converte a data de controle do Bitrix para timestamp
         $tsControle = $this->parseDataParaTimestamp($dataControle);
 
+        // Coleta todas as datas disponíveis na publicação
         $datas = [
             $pub['dataPublicacao'] ?? null,
             $pub['dataDisponibilizacao'] ?? null,
             $pub['dataDisponibilizacaoWebservice'] ?? null,
         ];
 
+        // Converte as datas da publicação para timestamps
         $timestamps = [];
         foreach (array_filter($datas) as $dStr) {
             $timestamps[] = $this->parseDataParaTimestamp($dStr);
         }
 
+        // Se não houver datas na publicação, força a atualização
         if (!$timestamps) return true;
 
+        // Compara a data mais recente da publicação com a do Bitrix
         $tsMaisRecente = max($timestamps);
         return $tsMaisRecente > $tsControle;
     }
@@ -191,15 +225,19 @@ class PublicacoesService
         $correspondencias = [];
         $totalEncontrados = 0;
 
+        // Itera sobre cada publicação retornada pela API
         foreach ($publicacoes as $pub) {
+            // Identifica o número do processo na publicação
             $numeroProcesso = $pub['numeroProcesso'] ?? $pub['numeroProcessoCNJ'] ?? null;
             if (!$numeroProcesso) continue;
 
+            // Tenta localizar o card correspondente no Bitrix
             $deal = $this->buscarDealPorProcesso($numeroProcesso);
 
             if ($deal) {
                 $totalEncontrados++;
 
+                // Verifica se o card precisa de novos dados
                 if ($this->precisaAtualizar($deal['data_controle'], $pub)) {
                     $payload = $this->montarFieldsDeAtualizacao($pub);
                     $ids[] = $deal['id'];
@@ -212,6 +250,7 @@ class PublicacoesService
                 $status = 'Vazio';
             }
 
+            // Registra o mapeamento para o relatório final
             $correspondencias[] = [
                 'processo' => $numeroProcesso,
                 'id_bitrix' => $deal['id'] ?? 'Vazio',
@@ -219,6 +258,7 @@ class PublicacoesService
             ];
         }
 
+        // Retorna o lote de IDs e campos para atualização em massa
         return [
             'correspondencias' => $correspondencias,
             'total_encontrados' => $totalEncontrados,
@@ -233,10 +273,13 @@ class PublicacoesService
      */
     public function executarBatchEdicao(int $entityTypeId, array $ids, array $fields, array $publicacoesOriginais = []): array
     {
+        // Aborta se não houver IDs para atualizar
         if (!$ids) return ['status' => 'nada'];
 
+        // Envia o lote de atualizações para o Bitrix via Helper
         $resultado = BitrixDealHelper::editarDeal($entityTypeId, $ids, $fields);
 
+        // Se a atualização for bem-sucedida, registra cada publicação na timeline
         if ($resultado['status'] === 'sucesso' && !empty($publicacoesOriginais)) {
             foreach ($ids as $index => $id) {
                 $pub = $publicacoesOriginais[$index] ?? null;
@@ -246,6 +289,7 @@ class PublicacoesService
             }
         }
 
+        // Retorna o status final da operação em lote
         return $resultado;
     }
 
@@ -254,28 +298,31 @@ class PublicacoesService
      */
     private function registrarTimelinePublicacao(string $idBitrix, array $pub): void
     {
+        // Define o título do comentário na timeline
         $titulo = "⚖️ NOVA PUBLICAÇÃO ENCONTRADA - " . ($pub['data'] ?? date('d/m/Y'));
         
-        // Formatação em Texto Simples para garantir renderização correta no Bitrix
+        // Monta o corpo da mensagem com as datas e o nome do jornal
         $msg = $titulo . "\n\n";
         $msg .= "📅 Data Disponibilização DJEN: " . ($pub['dataDisponibilizacao'] ?? 'N/A') . "\n";
         $msg .= "📅 Data Publicação DJEN: " . ($pub['dataPublicacao'] ?? 'N/A') . "\n";
         $msg .= "🌐 Data Disponibilização PO: " . ($pub['dataDisponibilizacaoWebservice'] ?? 'N/A') . "\n";
         $msg .= "📰 Nome do Jornal: " . ($pub['nomeJornal'] ?? 'N/A') . "\n\n";
         
+        // Adiciona o conteúdo da publicação removendo tags HTML
         $msg .= "📝 Conteúdo na íntegra:\n";
         $msg .= strip_tags($pub['conteudo'] ?? 'Conteúdo não disponível.');
 
         $fileIds = [];
 
+        // Processa o anexo se houver conteúdo em base64
         if (!empty($pub['conteudo64'])) {
+            // Gera um nome único para o arquivo HTML da publicação
             $fileName = "Publicacao_" . ($pub['numeroProcesso'] ?? 'SemNumero') . "_" . date('Ymd_His') . ".html";
             
-            // Salva na pasta do Disk e anexa ao comentário
+            // Faz o upload do arquivo para o Bitrix Disk
             UtilHelpers::uploadBase64ParaPastaDisk($fileName, $pub['conteudo64'], $this->folderIdDisk);
             
-            // Para o anexo na Timeline ser funcional e ter nome/extensão, 
-            // enviamos o conteúdo base64 diretamente no comentário com o prefixo 'n'
+            // Prepara o anexo para ser enviado junto com o comentário
             $fileIds[] = [
                 $fileName,
                 $pub['conteudo64']
@@ -284,6 +331,7 @@ class PublicacoesService
             $msg .= "\n\n📎 ARQUIVO ANEXADO: $fileName";
         }
 
+        // Configura os parâmetros para a chamada da API de timeline
         $params = [
             'fields' => [
                 'ENTITY_ID' => (int)$idBitrix,
@@ -294,6 +342,7 @@ class PublicacoesService
             ]
         ];
 
+        // Envia o comentário para o Bitrix24
         BitrixHelper::chamarApi('crm.timeline.comment.add', $params);
     }
 
@@ -304,16 +353,17 @@ class PublicacoesService
     {
         $fields = [];
 
-        // Injeta o valor fixo para o campo de retorno da API (Gatilho Bitrix)
+        // Define a mensagem de atualização no campo de retorno do Bitrix
         $fields[$this->campoRetornoApi] = $this->valorRetornoApi;
 
+        // Mapeia os dados da publicação para os campos UF do Bitrix
         foreach ($this->mapaCamposAtualizacao as $chave => $uf) {
             if (array_key_exists($chave, $publicacao)) {
                 $fields[$uf] = $publicacao[$chave] ?: '';
             }
         }
 
-        // Define a data de controle baseada na data mais recente da publicação
+        // Coleta datas para definir o novo ponto de controle do card
         $datas = [
             $publicacao['dataPublicacao'] ?? null,
             $publicacao['dataDisponibilizacao'] ?? null,
@@ -322,6 +372,7 @@ class PublicacoesService
 
         $datas = array_filter($datas);
 
+        // Define a data de controle como a data mais recente encontrada
         if ($datas) {
             $timestamps = [];
             foreach ($datas as $dStr) {
@@ -331,6 +382,7 @@ class PublicacoesService
             $fields[$this->campoControleBitrix] = $timestamps[$maxTs];
         }
 
+        // Retorna o array de campos pronto para o Bitrix
         return $fields;
     }
 }

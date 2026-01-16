@@ -218,31 +218,29 @@ class LogHelper
         self::rotacionarLogCron($arquivoLog);
     }
 
+    // Rotação genérica de logs (manter X dias)
+    private static function rotacionarLog(string $arquivoLog, int $dias = 7): void
+    {
+        if (!file_exists($arquivoLog)) return;
+        if (filesize($arquivoLog) < 1048576) return; // Rotaciona se maior que 1MB
+
+        $linhas = file($arquivoLog, FILE_IGNORE_NEW_LINES);
+        $limite = time() - ($dias * 24 * 60 * 60);
+        $linhasValidas = [];
+
+        foreach ($linhas as $linha) {
+            // Tenta capturar timestamp no início da linha (com ou sem colchetes)
+            if (preg_match('/^\[?(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]?/', $linha, $matches)) {
+                if (strtotime($matches[1]) >= $limite) $linhasValidas[] = $linha;
+            }
+        }
+        file_put_contents($arquivoLog, implode(PHP_EOL, $linhasValidas) . PHP_EOL);
+    }
+
     // Rotação automática do log de CRON (manter 5 dias)
     private static function rotacionarLogCron(string $arquivoLog): void
     {
-        if (!file_exists($arquivoLog)) return;
-        
-        // Se arquivo tem mais de 1MB, rotaciona
-        if (filesize($arquivoLog) > 1048576) { // 1MB
-            $linhas = file($arquivoLog, FILE_IGNORE_NEW_LINES);
-            $agora = time();
-            $cincodiasAtras = $agora - (5 * 24 * 60 * 60); // 5 dias em segundos
-            
-            $linhasValidas = [];
-            foreach ($linhas as $linha) {
-                // Extrai timestamp da linha (formato: 2025-08-15 14:30:01)
-                if (preg_match('/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/', $linha, $matches)) {
-                    $timestampLinha = strtotime($matches[1]);
-                    if ($timestampLinha >= $cincodiasAtras) {
-                        $linhasValidas[] = $linha;
-                    }
-                }
-            }
-            
-            // Reescreve arquivo apenas com linhas válidas
-            file_put_contents($arquivoLog, implode(PHP_EOL, $linhasValidas) . PHP_EOL);
-        }
+        self::rotacionarLog($arquivoLog, 5);
     }
 
     /**
@@ -325,5 +323,8 @@ class LogHelper
 
         $linha = "[$timestamp] [$traceId] [$aplicacao] [$contexto] - $mensagem" . PHP_EOL;
         file_put_contents($arquivoLog, $linha, FILE_APPEND);
+
+        // Mantém apenas os últimos 7 dias de log
+        self::rotacionarLog($arquivoLog, 7);
     }
 }
