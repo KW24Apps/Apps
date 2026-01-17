@@ -21,8 +21,8 @@ class PublicacoesService
     
     // Campo do Bitrix que armazena o número do processo
     private $campoProcessoBitrix = 'ufCrm_1704206234';
-    // Campo de controle para evitar duplicidade de atualizações
-    private $campoControleBitrix = 'ufCrm_1768480439';
+    // Campo múltiplo que contém o histórico de IDs de publicações já processadas
+    private $campoConsultaIdsBitrix = 'ufCrm_1768605969';
     // Campo de retorno para sinalizar atualização ao Bitrix
     private $campoRetornoApi     = 'UF_CRM_1753210523';
     // Mensagem padrão enviada no retorno da API
@@ -50,6 +50,7 @@ class PublicacoesService
         'dataDisponibilizacao'           => 'UF_CRM_1768422630',
         'dataPublicacao'                 => 'UF_CRM_1768422711',
         'dataDisponibilizacaoWebservice' => 'UF_CRM_1768510437',
+        'idWs'                           => 'UF_CRM_1768605860',
     ];
 
     /**
@@ -129,15 +130,18 @@ class PublicacoesService
         $res = BitrixHelper::listarItensCrm(
             2,
             [$this->campoProcessoBitrix => $variantes],
-            ['id', $this->campoControleBitrix],
+            ['id', $this->campoConsultaIdsBitrix],
             1
         );
 
-        // Retorna o ID e a data de controle do card encontrado
+        // Log para depuração do retorno do Bitrix
+        LogHelper::logPublicacoes("Retorno Bitrix para processo $numeroProcesso: " . json_encode($res['items'][0] ?? 'Não encontrado'), __METHOD__);
+
+        // Retorna o ID e a lista de IDs processados do card encontrado
         if (!empty($res['items'][0])) {
             return [
                 'id' => $res['items'][0]['id'],
-                'data_controle' => $res['items'][0][$this->campoControleBitrix] ?? null
+                'ids_processados' => $res['items'][0][$this->campoConsultaIdsBitrix] ?? []
             ];
         }
 
@@ -153,68 +157,33 @@ class PublicacoesService
     }
 
     /**
-     * Converte diversos formatos de data para timestamp de forma segura (comparação nominal).
+     * Verifica se a publicação precisa ser atualizada conferindo se o IDWS já foi processado.
      */
-    private function parseDataParaTimestamp(?string $dataStr): int
+    private function precisaAtualizar($idsProcessados, array $pub): bool
     {
-        // Retorna zero se a string de data estiver vazia
-        if (empty($dataStr)) return 0;
-
-        // Normaliza a string removendo caracteres de fuso horário e separadores T/Z
-        $dataLimpa = preg_replace('/[T]/', ' ', $dataStr);
-        $dataLimpa = preg_replace('/[Z]|[\+\-]\d{2}:\d{2}/', '', $dataLimpa);
-        $dataLimpa = trim(substr($dataLimpa, 0, 19));
-
-        // Tenta converter a data usando múltiplos formatos comuns
-        $d = \DateTime::createFromFormat('d/m/Y H:i:s', $dataLimpa);
-        if ($d) return $d->getTimestamp();
-
-        $d = \DateTime::createFromFormat('d/m/Y', $dataLimpa);
-        if ($d) return $d->getTimestamp();
-
-        $d = \DateTime::createFromFormat('Y-m-d H:i:s', $dataLimpa);
-        if ($d) return $d->getTimestamp();
-
-        $d = \DateTime::createFromFormat('Y-m-d', $dataLimpa);
-        if ($d) return $d->getTimestamp();
-
-        // Fallback para a função nativa strtotime
-        $ts = strtotime($dataLimpa);
-        return $ts !== false ? $ts : 0;
-    }
-
-    /**
-     * Verifica se a publicação precisa ser atualizada comparando timestamps nominais.
-     */
-    private function precisaAtualizar(?string $dataControle, array $pub): bool
-    {
-        if (!$dataControle) return true;
-
-        $tsControle = $this->parseDataParaTimestamp($dataControle);
-        if (!$tsControle) return true;
-
-        $datas = array_filter([
-            $pub['dataPublicacao'] ?? null,
-            $pub['dataDisponibilizacao'] ?? null,
-            $pub['dataDisponibilizacaoWebservice'] ?? null,
-        ]);
-
-        if (!$datas) return true;
-
-        // pega a data MAIS ANTIGA da publicação
-        $timestamps = [];
-        foreach ($datas as $dStr) {
-            $ts = $this->parseDataParaTimestamp($dStr);
-            if ($ts) $timestamps[] = $ts;
+        $idws = $pub['idWs'] ?? null;
+        
+        if (!$idws) {
+            return true; // Se não tem IDWS, atualiza por segurança
         }
 
-        if (!$timestamps) return true;
+        // Garante que idsProcessados seja um array, mesmo que venha null ou string vazia
+        if (empty($idsProcessados)) {
+            $listaIds = [];
+        } elseif (is_array($idsProcessados)) {
+            $listaIds = $idsProcessados;
+        } else {
+            $listaIds = [$idsProcessados];
+        }
 
-        $tsMaisAntiga = min($timestamps);
+        // Verifica se o IDWS atual já existe no histórico do Bitrix
+        foreach ($listaIds as $idExistente) {
+            if (!empty($idExistente) && trim((string)$idExistente) === trim((string)$idws)) {
+                return false; // Já existe, não precisa atualizar
+            }
+        }
 
-        // REGRA FINAL:
-        // atualiza SOMENTE se a publicação for ANTERIOR ao controle
-        return $tsMaisAntiga < $tsControle;
+        return true; // Novo ID, precisa atualizar
     }
 
     /**
@@ -239,8 +208,8 @@ class PublicacoesService
             if ($deal) {
                 $totalEncontrados++;
 
-                // Verifica se o card precisa de novos dados
-                if ($this->precisaAtualizar($deal['data_controle'], $pub)) {
+                // Verifica se o card precisa de novos dados (Validação por IDWS)
+                if ($this->precisaAtualizar($deal['ids_processados'], $pub)) {
                     $payload = $this->montarFieldsDeAtualizacao($pub);
                     $ids[] = $deal['id'];
                     $fields[] = $payload;
@@ -256,7 +225,8 @@ class PublicacoesService
             $correspondencias[] = [
                 'processo' => $numeroProcesso,
                 'id_bitrix' => $deal['id'] ?? 'Vazio',
-                'status' => $status
+                'status' => $status,
+                'id_ws' => $pub['idWs'] ?? '—'
             ];
         }
 
@@ -273,13 +243,13 @@ class PublicacoesService
     /**
      * Executa a edição em lote e dispara os comentários na Timeline.
      */
-    public function executarBatchEdicao(int $entityTypeId, array $ids, array $fields, array $publicacoesOriginais = []): array
+    public function executarBatchEdicao(int $entityTypeId, array $ids, array $fields, array $publicacoesOriginais = [], int $tamanhoLote = 15): array
     {
         // Aborta se não houver IDs para atualizar
         if (!$ids) return ['status' => 'nada'];
 
         // Envia o lote de atualizações para o Bitrix via Helper
-        $resultado = BitrixDealHelper::editarDeal($entityTypeId, $ids, $fields);
+        $resultado = BitrixDealHelper::editarDeal($entityTypeId, $ids, $fields, $tamanhoLote);
 
         // Se a atualização for bem-sucedida, registra cada publicação na timeline
         if ($resultado['status'] === 'sucesso' && !empty($publicacoesOriginais)) {
@@ -366,11 +336,6 @@ class PublicacoesService
             } elseif (array_key_exists($chave, $publicacao)) {
                 $fields[$uf] = $publicacao[$chave] ?: '';
             }
-        }
-
-        // Define a data de controle como a data de disponibilização do webservice
-        if (!empty($publicacao['dataDisponibilizacaoWebservice'])) {
-            $fields[$this->campoControleBitrix] = $publicacao['dataDisponibilizacaoWebservice'];
         }
 
         // Retorna o array de campos pronto para o Bitrix
