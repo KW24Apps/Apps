@@ -24,6 +24,7 @@ class PublicacoesJob
         // Define o webhook de autenticação do Bitrix24 (Usuário 43)
         $GLOBALS['ACESSO_AUTENTICADO']['webhook_bitrix'] =
             'https://gnapp.bitrix24.com.br/rest/43/rcul3rckwkpwc4wv/';
+            
 
         try {
             // Registra o início da execução no monitor de CRON
