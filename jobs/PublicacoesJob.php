@@ -124,16 +124,31 @@ class PublicacoesJob
                         __METHOD__
                     );
 
-                    // Ordena as correspondências por número de processo para agrupar duplicados
+                    // Ordena as correspondências: primeiro os localizados, depois os não localizados (Vazio)
                     usort($correspondencias, function($a, $b) {
+                        $statusA = ($a['status'] === 'Vazio') ? 1 : 0;
+                        $statusB = ($b['status'] === 'Vazio') ? 1 : 0;
+                        
+                        if ($statusA !== $statusB) {
+                            return $statusA <=> $statusB;
+                        }
+                        
                         return strcmp((string)$a['processo'], (string)$b['processo']);
                     });
 
                     $listaProcessos = "";
+                    $totalSincronizados = 0;
+                    $totalProcessos = count($correspondencias);
+
                     foreach ($correspondencias as $item) {
                         $statusOriginal = $item['status'] ?? 'Vazio';
                         
-                        // Remove do relatório os processos que não tiveram novas publicações
+                        // Contabiliza como sincronizado se foi encontrado no Bitrix
+                        if ($item['id_bitrix'] && $item['id_bitrix'] !== 'Vazio') {
+                            $totalSincronizados++;
+                        }
+
+                        // Se já foi atualizado, não exibe na mensagem do Bitrix (mantém apenas no terminal)
                         if ($statusOriginal === 'Já Atualizado') {
                             continue;
                         }
@@ -142,11 +157,12 @@ class PublicacoesJob
                         if ($statusOriginal === 'Atualizar') {
                             $statusFormatado = "🆕 Atualizado";
                         } else {
-                            $statusFormatado = "❌ Registro não localizado no sistema";
+                            $statusFormatado = "❌ Não localizado";
                         }
 
                         $idBitrixRaw = ($item['id_bitrix'] && $item['id_bitrix'] !== 'Vazio') ? $item['id_bitrix'] : null;
                         $idBitrix = $idBitrixRaw ? "[URL=https://gnapp.bitrix24.com.br/crm/deal/details/{$idBitrixRaw}/]{$idBitrixRaw}[/URL]" : '—';
+                        $tituloBitrix = $item['titulo_bitrix'] ?? '—';
                         
                         // Tenta formatar o número do processo se for CNJ (20 dígitos)
                         $processoFormatado = $item['processo'];
@@ -157,12 +173,15 @@ class PublicacoesJob
                         }
 
                         $idWs = $item['id_ws'] ?? '—';
-                        // Formato: Processo | Bitrix | IDPO | Status
-                        $listaProcessos .= "• Processo nº {$processoFormatado} | Bitrix: $idBitrix | IDPO: $idWs | $statusFormatado\n";
+                        
+                        // Novo Formato solicitado
+                        $listaProcessos .= "⚖️ {$processoFormatado} | IDPO {$idWs} | {$statusFormatado}\n";
+                        $listaProcessos .= "  📄 {$tituloBitrix} | 🆔 {$idBitrix}\n\n";
                     }
 
                     if (!empty($listaProcessos)) {
-                        $resumoFinal[] = "📅 *Data: " . date('d/m/Y', strtotime($dataConsulta)) . "*\n" . $listaProcessos;
+                        $dataFormatada = date('d/m/Y', strtotime($dataConsulta));
+                        $resumoFinal[] = "[B]Data da consulta: {$dataFormatada}[/B] — {$totalSincronizados} de {$totalProcessos} processos sincronizados\n\n" . $listaProcessos;
                     }
                 }
 
@@ -204,9 +223,11 @@ class PublicacoesJob
                 $msgChat = "✅ *Processamento de Publicações Concluído*\n\n";
                 $msgChat .= implode("\n\n", $resumoFinal);
                 $msgChat .= "\n\n⏰ Executado em: $dataHoraExecucao";
-
-                BitrixMessageHelper::enviarMensagem('chat46350', $msgChat);
+            } else {
+                $msgChat = "ℹ️ *Processamento de Publicações Concluído*\n\nNenhuma nova publicação encontrada.\n\n⏰ Executado em: $dataHoraExecucao";
             }
+
+            BitrixMessageHelper::enviarMensagem('chat46350', $msgChat);
 
             // Registra a conclusão bem-sucedida do job
             LogHelper::logCronMonitor('EXECUCAO_FINALIZADA', 'PublicacoesJob');

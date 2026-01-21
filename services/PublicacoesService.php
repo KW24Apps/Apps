@@ -129,7 +129,7 @@ class PublicacoesService
         $res = BitrixHelper::listarItensCrm(
             2,
             [$this->campoProcessoBitrix => $variantes],
-            ['id', $this->campoConsultaIdsBitrix],
+            ['id', 'title', $this->campoConsultaIdsBitrix],
             1
         );
 
@@ -140,6 +140,7 @@ class PublicacoesService
         if (!empty($res['items'][0])) {
             return [
                 'id' => $res['items'][0]['id'],
+                'title' => $res['items'][0]['title'] ?? '—',
                 'ids_processados' => $res['items'][0][$this->campoConsultaIdsBitrix] ?? []
             ];
         }
@@ -201,6 +202,13 @@ class PublicacoesService
             $numeroProcesso = $pub['numeroProcesso'] ?? $pub['numeroProcessoCNJ'] ?? null;
             if (!$numeroProcesso) continue;
 
+            // FILTRO: Desconsidera casos onde o número de processo é menor que 10 dígitos numéricos
+            $apenasNumeros = preg_replace('/\D/', '', $numeroProcesso);
+            if (strlen($apenasNumeros) < 10) {
+                LogHelper::logPublicacoes("Processo ignorado por ter menos de 10 dígitos: $numeroProcesso", __METHOD__);
+                continue;
+            }
+
             // Tenta localizar o card correspondente no Bitrix
             $deal = $this->buscarDealPorProcesso($numeroProcesso);
 
@@ -224,6 +232,7 @@ class PublicacoesService
             $correspondencias[] = [
                 'processo' => $numeroProcesso,
                 'id_bitrix' => $deal['id'] ?? 'Vazio',
+                'titulo_bitrix' => $deal['title'] ?? '—',
                 'status' => $status,
                 'id_ws' => $pub['idWs'] ?? '—'
             ];
