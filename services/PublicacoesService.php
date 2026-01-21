@@ -50,7 +50,6 @@ class PublicacoesService
         'dataDisponibilizacao'           => 'UF_CRM_1768422630',
         'dataPublicacao'                 => 'UF_CRM_1768422711',
         'dataDisponibilizacaoWebservice' => 'UF_CRM_1768510437',
-        'idWs'                           => 'UF_CRM_1768605860',
     ];
 
     /**
@@ -325,8 +324,9 @@ class PublicacoesService
     {
         $fields = [];
 
-        // Define a mensagem de atualização no campo de retorno do Bitrix
-        $fields[$this->campoRetornoApi] = $this->valorRetornoApi;
+        // Define a mensagem de atualização no campo de retorno do Bitrix concatenando o ID
+        $idWs = $publicacao['idWs'] ?? '';
+        $fields[$this->campoRetornoApi] = trim($this->valorRetornoApi . ' ' . $idWs);
 
         // Mapeia os dados da publicação para os campos UF do Bitrix
         foreach ($this->mapaCamposAtualizacao as $chave => $uf) {

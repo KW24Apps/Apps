@@ -144,7 +144,8 @@ class PublicacoesJob
                             $statusFormatado = "❌ Registro não localizado no sistema";
                         }
 
-                        $idBitrix = ($item['id_bitrix'] && $item['id_bitrix'] !== 'Vazio') ? $item['id_bitrix'] : '—';
+                        $idBitrixRaw = ($item['id_bitrix'] && $item['id_bitrix'] !== 'Vazio') ? $item['id_bitrix'] : null;
+                        $idBitrix = $idBitrixRaw ? "[URL=https://gnapp.bitrix24.com.br/crm/deal/details/{$idBitrixRaw}/]{$idBitrixRaw}[/URL]" : '—';
                         
                         // Tenta formatar o número do processo se for CNJ (20 dígitos)
                         $processoFormatado = $item['processo'];
