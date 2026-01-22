@@ -163,6 +163,11 @@ class PublicacoesJob
                         $idBitrixRaw = ($item['id_bitrix'] && $item['id_bitrix'] !== 'Vazio') ? $item['id_bitrix'] : null;
                         $idBitrix = $idBitrixRaw ? "[URL=https://gnapp.bitrix24.com.br/crm/deal/details/{$idBitrixRaw}/]{$idBitrixRaw}[/URL]" : '—';
                         $tituloBitrix = $item['titulo_bitrix'] ?? '—';
+
+                        // Limita o tamanho do título para manter o layout limpo
+                        if (mb_strlen($tituloBitrix) > 54) {
+                            $tituloBitrix = mb_substr($tituloBitrix, 0, 52) . '...';
+                        }
                         
                         // Tenta formatar o número do processo se for CNJ (20 dígitos)
                         $processoFormatado = $item['processo'];
