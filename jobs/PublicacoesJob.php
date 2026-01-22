@@ -140,19 +140,22 @@ class PublicacoesJob
 
                     $listaProcessos = "";
                     $totalSincronizados = 0;
-                    $totalProcessos = count($correspondencias);
+                    
+                    // Filtra a lista para manter apenas o que será exibido na mensagem
+                    $correspondenciasExibicao = array_filter($correspondencias, function($item) {
+                        $statusOriginal = $item['status'] ?? 'Vazio';
+                        // Remove se já estiver atualizado ou se for um "Não localizado" repetido
+                        return !($statusOriginal === 'Já Atualizado' || !empty($item['ocultar_no_resumo']));
+                    });
 
-                    foreach ($correspondencias as $item) {
+                    $totalProcessos = count($correspondenciasExibicao);
+
+                    foreach ($correspondenciasExibicao as $item) {
                         $statusOriginal = $item['status'] ?? 'Vazio';
                         
                         // Contabiliza como sincronizado se foi encontrado no Bitrix
                         if ($item['id_bitrix'] && $item['id_bitrix'] !== 'Vazio') {
                             $totalSincronizados++;
-                        }
-
-                        // Se já foi atualizado ou já foi notificado como não localizado, pula a exibição
-                        if ($statusOriginal === 'Já Atualizado' || !empty($item['ocultar_no_resumo'])) {
-                            continue;
                         }
 
                         $statusFormatado = '';
