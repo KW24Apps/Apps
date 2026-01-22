@@ -33,6 +33,9 @@ class PublicacoesService
     // ID do usuário Bitrix que assina os comentários na timeline
     private $userIdBitrix = 43;
 
+    // Caminho do arquivo de controle de notificações não localizadas
+    private $pathNaoLocalizados = __DIR__ . '/../config/nao_localizados.json';
+
     // Mapeamento entre campos da API e campos customizados do Bitrix
     private $mapaCamposAtualizacao = [
         'nomeAdvogado'                   => 'UF_CRM_1768421701',
@@ -349,5 +352,75 @@ class PublicacoesService
 
         // Retorna o array de campos pronto para o Bitrix
         return $fields;
+    }
+
+    /**
+     * Gerencia o controle de notificações de processos não localizados via JSON.
+     */
+    public function filtrarNotificacoesNaoLocalizadas(array &$correspondencias, string $dataConsulta): void
+    {
+        $lista = $this->carregarNaoLocalizados();
+        $alterado = false;
+
+        // Manutenção: Remove registros com mais de 2 dias (D-2)
+        $dataLimite = date('Y-m-d', strtotime('-2 days'));
+        $countAntes = count($lista);
+        $lista = array_filter($lista, function ($reg) use ($dataLimite) {
+            return ($reg['data'] ?? '') >= $dataLimite;
+        });
+        if (count($lista) !== $countAntes) $alterado = true;
+
+        foreach ($correspondencias as $key => &$item) {
+            $idpo = (string)($item['id_ws'] ?? '');
+            if (!$idpo) continue;
+
+            if ($item['status'] === 'Vazio') {
+                // Verifica se este IDPO já foi notificado
+                $jaNotificado = false;
+                foreach ($lista as $reg) {
+                    if (($reg['idpo'] ?? '') === $idpo) {
+                        $jaNotificado = true;
+                        break;
+                    }
+                }
+
+                if ($jaNotificado) {
+                    // Se já notificado, marca para não exibir na lista detalhada
+                    $item['ocultar_no_resumo'] = true;
+                } else {
+                    // Se é a primeira vez, adiciona ao JSON
+                    $lista[] = ['idpo' => $idpo, 'data' => $dataConsulta];
+                    $alterado = true;
+                }
+            } elseif ($item['status'] === 'Atualizar') {
+                // Se foi vinculado agora, remove do JSON de não localizados (caso estivesse lá)
+                foreach ($lista as $idx => $reg) {
+                    if (($reg['idpo'] ?? '') === $idpo) {
+                        unset($lista[$idx]);
+                        $alterado = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($alterado) {
+            $this->salvarNaoLocalizados($lista);
+        }
+    }
+
+    private function carregarNaoLocalizados(): array
+    {
+        if (!file_exists($this->pathNaoLocalizados)) return [];
+        $conteudo = file_get_contents($this->pathNaoLocalizados);
+        return json_decode($conteudo, true) ?: [];
+    }
+
+    private function salvarNaoLocalizados(array $lista): void
+    {
+        if (!is_dir(dirname($this->pathNaoLocalizados))) {
+            mkdir(dirname($this->pathNaoLocalizados), 0777, true);
+        }
+        file_put_contents($this->pathNaoLocalizados, json_encode(array_values($lista), JSON_PRETTY_PRINT));
     }
 }

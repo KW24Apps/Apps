@@ -45,7 +45,7 @@ class PublicacoesJob
                 $datasParaProcessar = [$dataTeste];
             }
 
-            $dataHoraExecucao = date('Y-m-d H:i:s');
+            $dataHoraExecucao = date('d/m/Y H:i:s');
             $resumoFinal = [];
 
             // Inicia o processamento para cada data configurada
@@ -70,6 +70,8 @@ class PublicacoesJob
                     // Prepara o lote de atualizações comparando com o Bitrix
                     $montagem = $service->montarAtualizacoesParaPublicacoes($resultado['publicacoes'], $dataConsulta);
 
+                    // Filtra notificações de processos não localizados (evita repetição)
+                    $service->filtrarNotificacoesNaoLocalizadas($montagem['correspondencias'], $dataConsulta);
 
                     $correspondencias = $montagem['correspondencias'];
                     $totalEncontrados = $montagem['total_encontrados'];
@@ -148,8 +150,8 @@ class PublicacoesJob
                             $totalSincronizados++;
                         }
 
-                        // Se já foi atualizado, não exibe na mensagem do Bitrix (mantém apenas no terminal)
-                        if ($statusOriginal === 'Já Atualizado') {
+                        // Se já foi atualizado ou já foi notificado como não localizado, pula a exibição
+                        if ($statusOriginal === 'Já Atualizado' || !empty($item['ocultar_no_resumo'])) {
                             continue;
                         }
 
@@ -181,7 +183,13 @@ class PublicacoesJob
                         
                         // Novo Formato solicitado
                         $listaProcessos .= "⚖️ {$processoFormatado} | IDPO {$idWs} | {$statusFormatado}\n";
-                        $listaProcessos .= "  📄 {$tituloBitrix} | 🆔 {$idBitrix}\n\n";
+                        
+                        // Oculta a segunda linha se o processo não for localizado
+                        if ($statusOriginal !== 'Vazio') {
+                            $listaProcessos .= "  📄 {$tituloBitrix} | 🆔 {$idBitrix}\n\n";
+                        } else {
+                            $listaProcessos .= "\n";
+                        }
                     }
 
                     if (!empty($listaProcessos)) {
@@ -223,14 +231,30 @@ class PublicacoesJob
                 }
             }
 
-            // Envia mensagem de resumo para o chat do grupo
-            if (!empty($resumoFinal)) {
-                $msgChat = "✅ *Processamento de Publicações Concluído*\n\n";
-                $msgChat .= implode("\n\n", $resumoFinal);
-                $msgChat .= "\n\n⏰ Executado em: $dataHoraExecucao";
-            } else {
-                $msgChat = "ℹ️ *Processamento de Publicações Concluído*\n\nNenhuma nova publicação encontrada.\n\n⏰ Executado em: $dataHoraExecucao";
+            // Calcula o horário da próxima execução (07h, 11h, 15h, 19h, 23h)
+            $horariosCron = [7, 11, 15, 19, 23];
+            $horaAtual = (int)date('H');
+            $proximaHora = "07:00";
+            foreach ($horariosCron as $h) {
+                if ($h > $horaAtual) {
+                    $proximaHora = str_pad($h, 2, '0', STR_PAD_LEFT) . ":00";
+                    break;
+                }
             }
+
+            $dataHoraBR = date('d/m/Y \à\s H:i:s');
+
+            // Monta a mensagem com o novo layout
+            $msgChat = "🔍 [B]Consulta Publicações Online[/B]\n";
+            $msgChat .= "📅 {$dataHoraBR}\n\n";
+
+            if (!empty($resumoFinal)) {
+                $msgChat .= implode("\n\n", $resumoFinal);
+            } else {
+                $msgChat .= "Nenhuma nova publicação encontrada.";
+            }
+
+            $msgChat .= "\n\n⏭️ Próxima atualização às {$proximaHora}";
 
             BitrixMessageHelper::enviarMensagem('chat46350', $msgChat);
 
