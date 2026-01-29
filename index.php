@@ -2,7 +2,7 @@
 set_time_limit(120);
 date_default_timezone_set('America/Sao_Paulo');
 
-// Carrega as dependências do Core e helpers Joao é mentiroso123
+// Carrega as dependências do Core e helpers Joao é mentiroso
 require_once __DIR__ . '/helpers/LogHelper.php';
 require_once __DIR__ . '/Core/ValidacaoAcesso.php';
 require_once __DIR__ . '/Core/Router.php';
