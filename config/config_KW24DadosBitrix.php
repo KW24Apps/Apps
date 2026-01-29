@@ -13,7 +13,7 @@ if ($ambiente === 'local') {
     ];
 } else {
     $config_sync_bitrix = [
-        'host' => 'localhost',
+        'host' => '191.252.194.129',
         'dbname' => 'kw24co49_kw24_sync_bitrix',
         'usuario' => 'kw24co49_kw24',
         'senha' => 'BlFOyf%X}#jXwrR-vi'
