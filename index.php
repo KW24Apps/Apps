@@ -8,6 +8,7 @@ require_once __DIR__ . '/Core/ValidacaoAcesso.php';
 require_once __DIR__ . '/Core/Router.php';
 require_once __DIR__ . '/Repositories/AplicacaoAcessoDAO.php'; // Dependência da validação
 
+
 use Core\Router;
 use Core\ValidacaoAcesso;
 use Helpers\LogHelper;
