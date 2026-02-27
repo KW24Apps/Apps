@@ -15,22 +15,22 @@ class ReceitaFederalController
         // Recebe dados da URL (query string)
         $data = $_GET;
 
-        // 1. Validar ID da empresa (obrigatório)
-        $idEmpresa = $data['id'] ?? null;
+        // 1. Validar ID da empresa (obrigatório idC)
+        $idEmpresa = $data['idC'] ?? $data['id'] ?? null;
         if (empty($idEmpresa)) {
-            LogHelper::logReceitaFederal("Erro: Parâmetro 'id' (ID da empresa) ausente na URL.", __CLASS__ . '::' . __FUNCTION__);
+            LogHelper::logReceitaFederal("Erro: Parâmetro 'idC' (ID da empresa) ausente na URL.", __CLASS__ . '::' . __FUNCTION__);
             http_response_code(400);
-            echo json_encode(['status' => 'erro', 'mensagem' => "Parâmetro 'id' (ID da empresa) ausente."]);
+            echo json_encode(['status' => 'erro', 'mensagem' => "Parâmetro 'idC' (ID da empresa) ausente."]);
             return;
         }
 
-        // 2. Obter parâmetros opcionais
-        $idDeal = $data['deal'] ?? null;
-        $campoRetorno = $data['retorno'] ?? null;
+        // 2. Obter parâmetros opcionais de negócio/SPA
+        $idDeal = $_GET['idD'] ?? null;
+        $entityTypeId = $_GET['spa'] ?? null;
 
         // 3. Instanciar o serviço e processar a atualização
         $service = new ReceitaFederalService();
-        $result = $service->processarAtualizacao($idEmpresa, $idDeal, $campoRetorno);
+        $result = $service->processarAtualizacao($idEmpresa, $idDeal, $entityTypeId);
 
         // 4. Retornar o resultado
         header('Content-Type: application/json');
