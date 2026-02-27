@@ -27,6 +27,9 @@ class Router
      */
     public function dispatch($uri, $method)
     {
+        // Normaliza a URI: remove barras extras no início/fim e garante que comece com /
+        $uri = '/' . ltrim(preg_replace('#/+#', '/', $uri), '/');
+
         if (isset($this->routes[$uri])) {
             $route = $this->routes[$uri];
             $routeMethod = $route[2] ?? 'GET'; // Default para GET se não especificado
