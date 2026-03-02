@@ -54,7 +54,7 @@ class AplicacaoAcessoDAO
             return $resultado ?: null;
         } catch (PDOException $e) {
             LogHelper::logAcessoAplicacao(['mensagem' => 'Erro DB', 'erro' => $e->getMessage()], __CLASS__ . '::' . __FUNCTION__);
-            return null;
+            return ['error_db' => $e->getMessage()];
         }
     }
 
