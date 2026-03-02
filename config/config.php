@@ -13,7 +13,7 @@ if ($ambiente === 0) { // 0 = Local
     ];
 } else { // 1 = Produção
     $config = [
-        'host' => 'localhost',
+        'host' => '127.0.0.0',
         'dbname' => 'kw24co49_api_kwconfig',
         'usuario' => 'kw24co49_kw24',
         'senha' => 'BlFOyf%X}#jXwrR-vi'
