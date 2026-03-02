@@ -23,11 +23,15 @@ class ValidacaoAcesso
 
         if ($slug && $slug !== 'bitrix-sync') {
             $acesso = AplicacaoAcessoDAO::ValidarClienteAplicacao($cliente, $slug);
-            if (!$acesso) {
+            if (!$acesso || isset($acesso['error_db'])) {
+                $msg = 'Acesso negado. Verifique a chave do cliente e as permissões da aplicação.';
+                if (isset($acesso['error_db'])) {
+                    $msg = 'Erro de Banco de Dados: ' . $acesso['error_db'];
+                }
                 http_response_code(401);
                 echo json_encode([
                     'success' => false,
-                    'message' => 'Acesso negado. Verifique a chave do cliente e as permissões da aplicação.'
+                    'message' => $msg
                 ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
                 return false; // Interrompe a execução
             }
