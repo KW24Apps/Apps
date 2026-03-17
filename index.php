@@ -29,6 +29,35 @@ $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'];
 $cliente = $_GET['cliente'] ?? null;
 
+// --- BYPASS PARA DOCUMENTAÇÃO ---
+if (strpos($uri, '/documentacao') === 0) {
+    // Corrige caminhos relativos para os arquivos
+    $filePath = __DIR__ . $uri;
+    
+    // Serve arquivo estático se existir (css, js, md)
+    if (is_file($filePath)) {
+        $ext = pathinfo($filePath, PATHINFO_EXTENSION);
+        $mimeTypes = [
+            'css' => 'text/css',
+            'js'  => 'application/javascript',
+            'md'  => 'text/markdown',
+            'png' => 'image/png',
+            'jpg' => 'image/jpeg',
+            'svg' => 'image/svg+xml'
+        ];
+        if (isset($mimeTypes[$ext])) {
+            header('Content-Type: ' . $mimeTypes[$ext]);
+        }
+        readfile($filePath);
+        exit;
+    } 
+    // Se for o diretório base ou rota, serve o index.html
+    elseif (is_dir($filePath) || $uri === '/documentacao') {
+        readfile(__DIR__ . '/documentacao/index.html');
+        exit;
+    }
+}
+
 // Log de entrada da requisição
 LogHelper::registrarEntradaGlobal($uri, $method);
 
