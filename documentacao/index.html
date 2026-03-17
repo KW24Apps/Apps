@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentação - API KW24</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation (Baseado no app.kw24.com.br) -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-link">
+                    <div class="sidebar-link-inner">
+                        <span class="sidebar-link-text">
+                            <!-- TODO: Logo da empresa aqui -->
+                            <strong>KW24</strong> Docs
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="#intro" class="sidebar-link" onclick="loadContent('intro')">
+                        <div class="sidebar-link-inner">
+                            <span class="sidebar-link-icon"><i class="fas fa-home"></i></span>
+                            <span class="sidebar-link-text">Início</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="#deal-api" class="sidebar-link active" onclick="loadContent('tutorial_api_deal')">
+                        <div class="sidebar-link-inner">
+                            <span class="sidebar-link-icon"><i class="fas fa-handshake"></i></span>
+                            <span class="sidebar-link-text">API de Negócios</span>
+                        </div>
+                    </a>
+                </li>
+                 <!-- Futuras APIs entrarão aqui -->
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-area">
+            <header class="topbar-area">
+                <button class="menu-toggle" onclick="document.body.classList.toggle('sidebar-collapsed')">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h2>Documentação para Desenvolvedores</h2>
+            </header>
+            
+            <section class="content-area" id="markdown-container">
+                <!-- Content will be injected here by JS -->
+                <div class="loading">Carregando documentação...</div>
+            </section>
+        </main>
+    </div>
+
+    <!-- JS Logic -->
+    <script src="assets/js/main.js"></script>
+</body>
+</html>

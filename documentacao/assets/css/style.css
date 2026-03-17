@@ -1,0 +1,298 @@
+/**
+ * LAYOUT CSS - Sistema moderno CSS Grid - Documentação APIs KW24
+ * Baseado no layout de app.kw24.com.br
+ */
+
+/* Reset & Root Variables */
+:root {
+    --sidebar-width: 280px;
+    --sidebar-collapsed-width: 80px;
+    --topbar-height: 70px;
+    
+    --color-primary: #1F2937; /* Dark grayish blue */
+    --color-secondary: #3B82F6; /* Modern Blue */
+    --color-text-main: #F3F4F6;
+    --color-text-muted: #9CA3AF;
+    --color-bg-dark: #111827;
+    --color-bg-panel: #1F2937;
+    --color-border: #374151;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--color-bg-dark);
+    color: var(--color-text-main);
+    min-height: 100vh;
+}
+
+/* Scrollbar theme */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-muted);
+}
+
+/* Layout principal - CSS Grid */
+.app-layout {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    grid-template-rows: 100vh;
+    grid-template-areas: "sidebar main";
+    transition: grid-template-columns 0.3s ease;
+}
+
+/* --- SIDEBAR --- */
+.sidebar {
+    grid-area: sidebar;
+    background-color: var(--color-bg-panel);
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+.sidebar-header {
+    height: var(--topbar-height);
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar-header .sidebar-link-text {
+    font-size: 1.25rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.sidebar-header strong {
+    color: var(--color-secondary);
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 1rem 0;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.sidebar-link {
+    display: block;
+    padding: 0.75rem 1.5rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.sidebar-link:hover, .sidebar-link.active {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--color-secondary);
+}
+
+.sidebar-link.active {
+    border-left-color: var(--color-secondary);
+}
+
+.sidebar-link-inner {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.sidebar-link-icon {
+    font-size: 1.25rem;
+    width: 24px;
+    text-align: center;
+}
+
+/* --- MAIN AREA --- */
+.main-area {
+    grid-area: main;
+    display: grid;
+    grid-template-rows: var(--topbar-height) 1fr;
+    grid-template-areas: 
+        "topbar"
+        "content";
+    overflow: hidden;
+}
+
+.topbar-area {
+    grid-area: topbar;
+    background-color: var(--color-bg-dark);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    z-index: 900;
+    gap: 1.5rem;
+}
+
+.topbar-area h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.menu-toggle {
+    background: none;
+    border: none;
+    color: var(--color-text-main);
+    font-size: 1.25rem;
+    cursor: pointer;
+}
+
+.content-area {
+    grid-area: content;
+    padding: 2rem 3rem;
+    overflow-y: auto;
+    background-color: var(--color-bg-dark);
+}
+
+/* --- MARKDOWN STYLES (Rendered Content) --- */
+#markdown-container {
+    max-width: 900px;
+    line-height: 1.6;
+}
+
+#markdown-container h1 {
+    font-size: 2.25rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+#markdown-container h2 {
+    font-size: 1.75rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: var(--color-secondary);
+}
+
+#markdown-container h3 {
+    font-size: 1.25rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+#markdown-container p {
+    margin-bottom: 1rem;
+    color: var(--color-text-muted);
+}
+
+#markdown-container ul {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+    color: var(--color-text-muted);
+}
+
+#markdown-container li {
+    margin-bottom: 0.5rem;
+}
+
+#markdown-container strong {
+    color: var(--color-text-main);
+}
+
+/* Code block formatting */
+#markdown-container pre {
+    background-color: #000;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    border: 1px solid var(--color-border);
+}
+
+#markdown-container code {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.9rem;
+    color: #A78BFA; /* Light Purple for syntax */
+}
+
+#markdown-container pre code {
+    color: #E5E7EB; /* Standard bright text inside blocks */
+}
+
+/* Inline code formatting */
+#markdown-container p code, #markdown-container li code {
+    background-color: var(--color-bg-panel);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+}
+
+/* Blockquotes / Alerts */
+#markdown-container blockquote {
+    background-color: rgba(245, 158, 11, 0.1);
+    border-left: 4px solid #F59E0B; /* Warning Orange */
+    padding: 1rem 1.5rem;
+    margin: 1.5rem 0;
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+
+#markdown-container blockquote p {
+    color: #FCD34D;
+    margin-bottom: 0.5rem;
+}
+#markdown-container blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+#markdown-container hr {
+    border: 0;
+    height: 1px;
+    background: var(--color-border);
+    margin: 2rem 0;
+}
+
+/* Loading state */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    color: var(--color-secondary);
+    font-weight: 500;
+}
+
+/* Responsive Sidebar Toggle */
+body.sidebar-collapsed .app-layout {
+    grid-template-columns: 0px 1fr;
+}
+
+body.sidebar-collapsed .sidebar {
+    transform: translateX(-100%);
+}
+
+@media (max-width: 768px) {
+    .app-layout {
+        grid-template-columns: 1fr;
+    }
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        width: var(--sidebar-width);
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+    body.sidebar-open .sidebar {
+        transform: translateX(0);
+    }
+}
