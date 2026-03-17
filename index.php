@@ -31,8 +31,9 @@ $cliente = $_GET['cliente'] ?? null;
 
 // --- BYPASS PARA DOCUMENTAÇÃO ---
 if (strpos($uri, '/documentacao') === 0) {
-    // Corrige caminhos relativos para os arquivos
-    $filePath = __DIR__ . $uri;
+    // Calcula o caminho real no disco removendo a barra inicial se necessário
+    $relativePath = ltrim($uri, '/');
+    $filePath = __DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
     
     // Serve arquivo estático se existir (css, js, md)
     if (is_file($filePath)) {
@@ -52,7 +53,7 @@ if (strpos($uri, '/documentacao') === 0) {
         exit;
     } 
     // Se for o diretório base ou rota, serve o index.html
-    elseif (is_dir($filePath) || $uri === '/documentacao') {
+    elseif (is_dir($filePath) || $uri === '/documentacao' || $uri === '/documentacao/') {
         readfile(__DIR__ . '/documentacao/index.html');
         exit;
     }
