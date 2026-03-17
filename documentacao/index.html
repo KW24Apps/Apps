@@ -4,69 +4,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentação - API KW24</title>
+    <title>Documentação — API KW24</title>
+
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Marked.js for Markdown parsing -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Highlight.js — Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- Marked.js — Markdown Parser -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <link rel="stylesheet" href="/documentacao/assets/css/style.css">
 </head>
 
 <body>
-    <div class="app-layout">
-        <!-- Sidebar Navigation (Baseado no app.kw24.com.br) -->
+    <div class="app-layout" id="appLayout">
+
+        <!-- ===== SIDEBAR ===== -->
         <nav class="sidebar" id="sidebar">
+
             <div class="sidebar-header">
-                <div class="sidebar-link">
-                    <div class="sidebar-link-inner">
-                        <span class="sidebar-link-text">
-                            <!-- TODO: Logo da empresa aqui -->
-                            <strong>KW24</strong> Docs
-                        </span>
+                <div class="sidebar-brand">
+                    <div class="brand-logo">
+                        <i class="fas fa-satellite-dish"></i>
                     </div>
+                    <div class="brand-info">
+                        <span class="brand-name">KW24</span>
+                        <span class="brand-sub">Developer Docs</span>
+                    </div>
+                </div>
+                <button class="collapse-btn" id="collapseBtn" title="Recolher menu">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+
+            <div class="sidebar-search">
+                <div class="search-wrap">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="Buscar..." autocomplete="off" spellcheck="false">
+                    <button class="search-clear" id="searchClear">
+                        <i class="fas fa-xmark"></i>
+                    </button>
                 </div>
             </div>
 
-            <ul class="sidebar-menu">
-                <li>
-                    <a href="#intro" class="sidebar-link" onclick="loadContent('intro')">
-                        <div class="sidebar-link-inner">
-                            <span class="sidebar-link-icon"><i class="fas fa-home"></i></span>
-                            <span class="sidebar-link-text">Início</span>
-                        </div>
-                    </a>
-                </li>
-                <li>
-                    <a href="#deal-api" class="sidebar-link active" onclick="loadContent('tutorial_api_deal')">
-                        <div class="sidebar-link-inner">
-                            <span class="sidebar-link-icon"><i class="fas fa-handshake"></i></span>
-                            <span class="sidebar-link-text">API de Negócios</span>
-                        </div>
-                    </a>
-                </li>
-                <!-- Futuras APIs entrarão aqui -->
-            </ul>
+            <nav class="sidebar-nav" id="sidebarNav">
+
+                <!-- Geral -->
+                <ul class="nav-list">
+                    <li>
+                        <a href="#" class="nav-link" data-page="intro">
+                            <span class="nav-icon"><i class="fas fa-house"></i></span>
+                            <span class="nav-text">Início</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- APIs CRM -->
+                <div class="nav-group-label">APIs — CRM</div>
+                <ul class="nav-list">
+                    <li>
+                        <a href="#" class="nav-link" data-page="tutorial_api_deal">
+                            <span class="nav-icon"><i class="fas fa-handshake"></i></span>
+                            <span class="nav-text">Negócios</span>
+                            <span class="nav-badge badge-post" title="3 endpoints">3</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link nav-soon" title="Em breve">
+                            <span class="nav-icon"><i class="fas fa-building"></i></span>
+                            <span class="nav-text">Empresas</span>
+                            <span class="nav-badge badge-soon">breve</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Integrações -->
+                <div class="nav-group-label">Integrações</div>
+                <ul class="nav-list">
+                    <li>
+                        <a href="#" class="nav-link nav-soon" title="Em breve">
+                            <span class="nav-icon"><i class="fas fa-file-signature"></i></span>
+                            <span class="nav-text">ClickSign</span>
+                            <span class="nav-badge badge-soon">breve</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link nav-soon" title="Em breve">
+                            <span class="nav-icon"><i class="fas fa-landmark"></i></span>
+                            <span class="nav-text">Receita Federal</span>
+                            <span class="nav-badge badge-soon">breve</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Utilitários -->
+                <div class="nav-group-label">Utilitários</div>
+                <ul class="nav-list">
+                    <li>
+                        <a href="#" class="nav-link nav-soon" title="Em breve">
+                            <span class="nav-icon"><i class="fas fa-screwdriver-wrench"></i></span>
+                            <span class="nav-text">Ferramentas</span>
+                            <span class="nav-badge badge-soon">breve</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link nav-soon" title="Em breve">
+                            <span class="nav-icon"><i class="fas fa-folder-open"></i></span>
+                            <span class="nav-text">Disco (Disk)</span>
+                            <span class="nav-badge badge-soon">breve</span>
+                        </a>
+                    </li>
+                </ul>
+
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="version-tag">
+                    <i class="fas fa-circle-dot"></i>
+                    <span>v1.0 · API KW24</span>
+                </div>
+            </div>
         </nav>
 
-        <!-- Main Content Area -->
-        <main class="main-area">
-            <header class="topbar-area">
-                <button class="menu-toggle" onclick="document.body.classList.toggle('sidebar-collapsed')">
+        <!-- ===== MAIN AREA ===== -->
+        <div class="main-area">
+
+            <header class="topbar" id="topbar">
+                <button class="mobile-toggle" id="mobileToggle" title="Menu">
                     <i class="fas fa-bars"></i>
                 </button>
-                <h2>Documentação para Desenvolvedores</h2>
+
+                <div class="topbar-breadcrumb" id="breadcrumb">
+                    <span class="breadcrumb-root">Documentação</span>
+                    <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
+                    <span class="breadcrumb-page" id="breadcrumbPage">Início</span>
+                </div>
+
+                <div class="topbar-actions">
+                    <a href="https://apis.kw24.com.br" class="topbar-btn" title="Acessar o sistema">
+                        <i class="fas fa-arrow-up-right-from-square"></i>
+                        <span>Portal KW24</span>
+                    </a>
+                </div>
             </header>
 
-            <section class="content-area" id="markdown-container">
-                <!-- Content will be injected here by JS -->
-                <div class="loading">Carregando documentação...</div>
-            </section>
-        </main>
+            <!-- Content + TOC -->
+            <div class="content-wrapper">
+                <article class="content-area" id="contentArea">
+                    <div class="loading-state" id="loadingState">
+                        <div class="spinner"></div>
+                        <span>Carregando documentação...</span>
+                    </div>
+                </article>
+
+                <aside class="toc-panel" id="tocPanel">
+                    <div class="toc-header">Nesta página</div>
+                    <nav class="toc-nav" id="tocNav"></nav>
+                </aside>
+            </div>
+
+        </div>
     </div>
 
-    <!-- JS Logic -->
+    <!-- Mobile overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <script src="/documentacao/assets/js/main.js"></script>
 </body>
 
