@@ -31,7 +31,7 @@ async function loadContent(fileName) {
 
     try {
         // Fetch the markdown content
-        const response = await fetch(`content/${fileName}.md`);
+        const response = await fetch(`/documentacao/content/${fileName}.md`);
         
         if (!response.ok) {
             throw new Error(`Erro HTTTP: ${response.status}`);
