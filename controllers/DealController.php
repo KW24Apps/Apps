@@ -11,13 +11,28 @@ use Helpers\LogHelper; // Adicionado para logs
 use Services\DealService;
 
 class DealController
+{
+    private function getRequestParams()
     {
+        $params = array_merge($_GET, $_POST);
+        
+        $jsonBody = file_get_contents('php://input');
+        if (!empty($jsonBody)) {
+            $jsonParams = json_decode($jsonBody, true);
+            if (is_array($jsonParams)) {
+                $params = array_merge($params, $jsonParams);
+            }
+        }
+        
+        return $params;
+    }
+
     public function criar()
     {
         // Definir timeout de 30 minutos para criação de deals
         set_time_limit(1800); // 30 minutos = 1800 segundos
         
-        $params = array_merge($_GET, $_POST);
+        $params = $this->getRequestParams();
 
         $spa = $params['spa'] ?? null;
         $categoryId = $params['CATEGORY_ID'] ?? null;
@@ -40,7 +55,7 @@ class DealController
 
     public function consultar()
     { 
-        $params = $_GET;
+        $params = $this->getRequestParams();
         $entityId = $params['spa'] ?? $params['entityId'] ?? null;
         $dealId = $params['deal'] ?? $params['id'] ?? null;
         $fields = $params['campos'] ?? $params['fields'] ?? null;
@@ -56,7 +71,7 @@ class DealController
         // Definir timeout de 30 minutos para edição de deals
         set_time_limit(1800); // 30 minutos = 1800 segundos
         
-        $params = array_merge($_GET, $_POST); // Usar array_merge para incluir POST também
+        $params = $this->getRequestParams(); // Ler de GET, POST e JSON body
         $spa = $params['spa'] ?? $params['entityId'] ?? null;
         $dealId = $params['deal'] ?? $params['id'] ?? null;
 
