@@ -126,45 +126,48 @@ class DocumentoService
             return ['success' => false, 'mensagem' => $mensagem];
         }
 
-        // Tenta pegar de 'lists' ou 'signers' dependendo da versão da API que está retornando
+        // Tenta pegar de 'lists' na resposta do documento, senão busca explicitamente
         $listas = $documentoContext['document']['lists'] ?? [];
-        $pendentes = 0;
+        if (empty($listas)) {
+            $vinculos = ClickSignHelper::listarVinculosDocumento($documentKey, $token);
+            $listas = $vinculos['lists'] ?? [];
+        }
+
+        // Caso a API V1 retorne os arrays diretamente na base do retorno das listas
+        if (isset($vinculos) && is_array($vinculos) && !isset($vinculos['lists']) && isset($vinculos[0])) {
+            $listas = $vinculos;
+        }
+
         $enviados = 0;
+        $falhas = 0;
+        $totalVinculos = count($listas);
+
+        if ($totalVinculos === 0) {
+             $codigoRetorno = ClickSignCodes::FALHA_ATUALIZAR_DOCUMENTO;
+             $mensagemCustomizada = " - Não foi possível encontrar os vínculos deste documento na ClickSign.";
+             $mensagem = UtilService::getMessageDescription($codigoRetorno) . $mensagemCustomizada;
+             UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, $documentKey, $codigoRetorno, $mensagemCustomizada);
+             return ['success' => false, 'mensagem' => $mensagem];
+        }
 
         foreach ($listas as $item) {
-            $isSigned = false;
+            $vinculoInfo = $item['list'] ?? $item;
+            $requestSignatureKey = $vinculoInfo['request_signature_key'] ?? $vinculoInfo['key'] ?? null;
 
-            // Na estrutura de `lists`, o status da assinatura pode estar dentro do objeto signer
-            if (isset($item['signer']['has_signed']) && $item['signer']['has_signed'] === true) {
-                $isSigned = true;
-            }
-
-            if (!$isSigned) {
-                $pendentes++;
-                // A key do objeto list geralmente é a request_signature_key
-                $requestSignatureKey = $item['request_signature_key'] ?? $item['key'] ?? null;
-
-                if ($requestSignatureKey) {
-                    $resultado = ClickSignHelper::enviarNotificacao($requestSignatureKey, "Prezado(a), segue lembrete do documento para assinatura pendente.");
-                    if (!isset($resultado['errors'])) {
-                        $enviados++;
-                    } else {
-                        LogHelper::logClickSign("Erro ao reenviar notificação para o signer: " . json_encode($resultado), 'service');
-                    }
+            if ($requestSignatureKey) {
+                // A própria ClickSign ignora quem já assinou ao enviarmos a notificação
+                $resultado = ClickSignHelper::enviarNotificacao($requestSignatureKey, "Prezado(a), segue lembrete do documento para assinatura pendente.");
+                if (!isset($resultado['errors'])) {
+                    $enviados++;
+                } else {
+                    $falhas++;
+                    LogHelper::logClickSign("Erro notificação (key $requestSignatureKey): " . json_encode($resultado), 'service');
                 }
             }
         }
 
-        if ($pendentes === 0) {
-            $codigoRetorno = ClickSignCodes::EMAILS_REENVIADOS; // Vamos criar este código no Enum
-            $mensagemCustomizada = " - Todos os signatários já assinaram, nenhum e-mail reenviado.";
-            $mensagem = UtilService::getMessageDescription($codigoRetorno) . $mensagemCustomizada;
-            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, true, $documentKey, $codigoRetorno, $mensagemCustomizada);
-            return ['success' => true, 'mensagem' => $mensagem];
-        }
-
         $codigoRetorno = ClickSignCodes::EMAILS_REENVIADOS;
-        $mensagemCustomizada = " - E-mails reenviados para $enviados de $pendentes signatários pendentes.";
+        $mensagemCustomizada = " - $enviados notificações enviadas para os $totalVinculos vínculos.";
         $mensagem = UtilService::getMessageDescription($codigoRetorno) . $mensagemCustomizada;
         UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, true, $documentKey, $codigoRetorno, $mensagemCustomizada);
         LogHelper::logClickSign($mensagem, 'service');
