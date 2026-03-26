@@ -92,6 +92,12 @@ class ClickSignHelper
         return self::enviarRequisicao('GET', "/documents?page=$page", [], 'v1', $token);
     }
 
+    // LISTAS — Recuperar vínculos do documento
+    public static function listarVinculosDocumento($documentKey, $token = null)
+    {
+        return self::enviarRequisicao('GET', "/lists?document_key=$documentKey", [], 'v1', $token);
+    }
+
     // SIGNATÁRIO — Criação (agora usando método unificado)
     public static function criarSignatario($dados)
     {
