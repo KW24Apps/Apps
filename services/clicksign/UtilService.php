@@ -226,6 +226,7 @@ class UtilService
             case ClickSignCodes::DOCUMENTO_ENVIADO: return "Documento enviado para assinatura.";
             case ClickSignCodes::ASSINATURA_REALIZADA: return "Assinatura realizada por - ";
             case ClickSignCodes::PROCESSO_FINALIZADO_COM_ANEXO: return "Documento assinado e anexado.";
+            case ClickSignCodes::EMAILS_REENVIADOS: return "Notificação de assinatura: ";
             case ClickSignCodes::PRAZO_ESTENDIDO_AUTO: return "Prazo estendido automaticamente.";
             case ClickSignCodes::ASSINATURA_CANCELADA_PRAZO: return "Assinatura cancelada: Prazo finalizado.";
             case ClickSignCodes::ASSINATURA_CANCELADA_MANUAL: return "Assinatura cancelada: Cancelada manualmente.";

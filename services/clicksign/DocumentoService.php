@@ -99,6 +99,79 @@ class DocumentoService
         }
     }
 
+    public static function reenviarEmail(array $params): array
+    {
+        $authData = self::getAuthAndDocumentKey($params);
+        if (!$authData['success'] || empty($authData['documentKey'])) {
+            return $authData;
+        }
+
+        $documentKey = $authData['documentKey'];
+        $entityId = $authData['spa'];
+        $id = $authData['dealId'];
+        $paramsForUpdate = $authData['paramsForUpdate'];
+
+        // Precisamos do token para buscar o documento e os signatários pendentes
+        $configExtra = $GLOBALS['ACESSO_AUTENTICADO']['config_extra'] ?? null;
+        $configJson = $configExtra ? json_decode($configExtra, true) : [];
+        $spaKey = 'SPA_' . $entityId;
+        $token = $configJson[$spaKey]['clicksign_token'] ?? null;
+
+        $documentoContext = ClickSignHelper::buscarDocumento($documentKey, $token);
+
+        if (!isset($documentoContext['document'])) {
+            $codigoRetorno = ClickSignCodes::FALHA_ATUALIZAR_DOCUMENTO; // Reutilizando ou criando um específico
+            $mensagem = UtilService::getMessageDescription($codigoRetorno) . " - Falha ao buscar documento na ClickSign.";
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, false, $documentKey, $codigoRetorno, null);
+            return ['success' => false, 'mensagem' => $mensagem];
+        }
+
+        // Tenta pegar de 'lists' ou 'signers' dependendo da versão da API que está retornando
+        $listas = $documentoContext['document']['lists'] ?? [];
+        $pendentes = 0;
+        $enviados = 0;
+
+        foreach ($listas as $item) {
+            $isSigned = false;
+
+            // Na estrutura de `lists`, o status da assinatura pode estar dentro do objeto signer
+            if (isset($item['signer']['has_signed']) && $item['signer']['has_signed'] === true) {
+                $isSigned = true;
+            }
+
+            if (!$isSigned) {
+                $pendentes++;
+                // A key do objeto list geralmente é a request_signature_key
+                $requestSignatureKey = $item['request_signature_key'] ?? $item['key'] ?? null;
+
+                if ($requestSignatureKey) {
+                    $resultado = ClickSignHelper::enviarNotificacao($requestSignatureKey, "Prezado(a), segue lembrete do documento para assinatura pendente.");
+                    if (!isset($resultado['errors'])) {
+                        $enviados++;
+                    } else {
+                        LogHelper::logClickSign("Erro ao reenviar notificação para o signer: " . json_encode($resultado), 'service');
+                    }
+                }
+            }
+        }
+
+        if ($pendentes === 0) {
+            $codigoRetorno = ClickSignCodes::EMAILS_REENVIADOS; // Vamos criar este código no Enum
+            $mensagemCustomizada = " - Todos os signatários já assinaram, nenhum e-mail reenviado.";
+            $mensagem = UtilService::getMessageDescription($codigoRetorno) . $mensagemCustomizada;
+            UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, true, $documentKey, $codigoRetorno, $mensagemCustomizada);
+            return ['success' => true, 'mensagem' => $mensagem];
+        }
+
+        $codigoRetorno = ClickSignCodes::EMAILS_REENVIADOS;
+        $mensagemCustomizada = " - E-mails reenviados para $enviados de $pendentes signatários pendentes.";
+        $mensagem = UtilService::getMessageDescription($codigoRetorno) . $mensagemCustomizada;
+        UtilService::atualizarRetornoBitrix($paramsForUpdate, $entityId, $id, true, $documentKey, $codigoRetorno, $mensagemCustomizada);
+        LogHelper::logClickSign($mensagem, 'service');
+
+        return ['success' => true, 'mensagem' => $mensagem];
+    }
+
     private static function getAuthAndDocumentKey(array $params): array
     {
         $entityId = $params['spa'] ?? null;
