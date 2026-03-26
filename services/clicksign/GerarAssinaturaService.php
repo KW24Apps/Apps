@@ -130,7 +130,8 @@ class GerarAssinaturaService
                 'content_base64' => $arquivoConvertido['data']['base64'],
                 'name'           => $arquivoConvertido['data']['nome'],
                 'path'           => '/' . $arquivoConvertido['data']['nome'],
-                'deadline_at'    => $dataAssinatura
+                'deadline_at'    => $dataAssinatura,
+                'remind_interval'=> 2
             ]
         ];
 
