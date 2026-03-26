@@ -34,6 +34,7 @@ class ClickSignCodes
     const DOCUMENTO_ENVIADO = 'CS401';
     const ASSINATURA_REALIZADA = 'CS402';
     const PROCESSO_FINALIZADO_COM_ANEXO = 'CS405';
+    const EMAILS_REENVIADOS = 'CS406';
 
     // CS5XX - Estados de Documento e Jobs
     const PRAZO_ESTENDIDO_AUTO = 'CS501'; // Nosso código customizado
