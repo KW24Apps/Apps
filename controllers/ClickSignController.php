@@ -52,6 +52,10 @@ class ClickSignController
                 $response = DocumentoService::atualizarDataDocumento($params);
                 break;
 
+            case 'Lembrete':
+                $response = DocumentoService::reenviarEmail($params);
+                break;
+
             default:
                 $response = ['success' => false, 'mensagem' => "Ação '$action' é inválida."];
                 LogHelper::logClickSign($response['mensagem'], 'controller');
