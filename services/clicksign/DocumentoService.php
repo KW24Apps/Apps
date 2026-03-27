@@ -128,8 +128,14 @@ class DocumentoService
 
         // Tenta pegar de 'lists' na resposta do documento, senão busca explicitamente
         $listas = $documentoContext['document']['lists'] ?? [];
+        
+        // Log para depurarmos a resposta do buscarDocumento no servidor
+        LogHelper::logClickSign("DUMP_BUSCAR_DOCUMENTO: " . json_encode($documentoContext), 'service');
+
         if (empty($listas)) {
             $vinculos = ClickSignHelper::listarVinculosDocumento($documentKey, $token);
+            // Log para depurarmos a resposta das listas no servidor
+            LogHelper::logClickSign("DUMP_LISTAR_VINCULOS: " . json_encode($vinculos), 'service');
             $listas = $vinculos['lists'] ?? [];
         }
 
