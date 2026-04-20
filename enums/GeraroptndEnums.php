@@ -32,8 +32,8 @@ class GeraroptndEnums
     const CAMPOS_DIAGNOSTICO = [
         'ufCrm_1670953245', // Negócios Vinculados à Negociação (NÃO copiar)
         'ufCrm_1689718588', // Todas Empresas do Negócio (NÃO copiar)
-        'ufCrm_1688060696', // Oportunidades Oferecidas (NÃO copiar)
-        'ufCrm_1728327366', // Oportunidades Convertidas (NÃO copiar)
+        'ufCrm_1765464627', // Oportunidades Oferecidas (NOVO - Vínculo CRM)
+        'ufCrm_1772039407', // Oportunidades Convertidas (NOVO - Vínculo CRM)
         'stageId',          // Fase do negócio (NÃO copiar - definido individualmente)
     ];
 
@@ -41,7 +41,7 @@ class GeraroptndEnums
     // CAMPOS PARA GERAÇÃO (PREENCHIDOS INDIVIDUALMENTE)
     // ============================================
     const CAMPOS_GERACAO = [
-        'ufCrm_1646069163997', // Oportunidade (definido individualmente)
+        'ufCrm_1772040430', // Oportunidade (NOVO - Vínculo CRM)
         'companyId',           // Cliente (definido individualmente)
         'ufcrm_1707331568',    // Negócio Closer (definido individualmente)
     ];
@@ -53,10 +53,10 @@ class GeraroptndEnums
         'id',                     // ID do deal original (NÃO copiar)
         'ufCrm_1670953245',       // Negócios Vinculados à Negociação (NÃO copiar)
         'ufCrm_1689718588',       // Todas Empresas do Negócio (NÃO copiar)
-        'ufCrm_1688060696',       // Oportunidades Oferecidas (NÃO copiar)
-        'ufCrm_1728327366',       // Oportunidades Convertidas (NÃO copiar)
+        'ufCrm_1765464627',       // Oportunidades Oferecidas (NÃO copiar)
+        'ufCrm_1772039407',       // Oportunidades Convertidas (NÃO copiar)
         'stageId',                // Fase do negócio (definido individualmente conforme tipo de processo)
-        'ufCrm_1646069163997',    // Oportunidade (definido individualmente)
+        'ufCrm_1772040430',       // Oportunidade (definido individualmente)
         'companyId',              // Cliente (definido individualmente)
         'ufcrm_1707331568',       // Negócio Closer (definido individualmente)
     ];
@@ -65,9 +65,9 @@ class GeraroptndEnums
     // CAMPOS DE OPORTUNIDADES (PARA MAPEAMENTO)
     // ============================================
     const CAMPOS_OPORTUNIDADES = [
-        'ufCrm_1688060696' => 'oferecida',   // Oportunidades Oferecidas  
-        'ufCrm_1728327366' => 'convertida',  // Oportunidades Convertidas
-        'ufCrm_1646069163997' => 'oportunidade' // Oportunidade (para usar na criação)
+        'ufCrm_1765464627' => 'oferecida',   // Oportunidades Oferecidas  
+        'ufCrm_1772039407' => 'convertida',  // Oportunidades Convertidas
+        'ufCrm_1772040430' => 'oportunidade' // Oportunidade (para usar na criação)
     ];
 
     // ============================================
