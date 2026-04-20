@@ -35,12 +35,12 @@ class OrganizarDadosService
 
     public function getOportunidadesOferecidas(): array
     {
-        return $this->extrairListaDeCampo($this->dealItem, 'ufCrm_1688060696', true);
+        return $this->extrairListaDeCampo($this->dealItem, 'ufCrm_1765464627');
     }
 
     public function getOportunidadesConvertidas(): array
     {
-        return $this->extrairListaDeCampo($this->dealItem, 'ufCrm_1728327366', true);
+        return $this->extrairListaDeCampo($this->dealItem, 'ufCrm_1772039407');
     }
 
     public function getCamposParaEspelhar(): array
@@ -74,16 +74,12 @@ class OrganizarDadosService
     
     public function getDestinoInfo(): array
     {
-        // Prioridade 1: Verificar campo "Consultoria"
-        $consultoriaValor = $this->dealItem['ufCrm_1737406675']['valor'] ?? null;
-        if ($consultoriaValor === GeraroptndEnums::UFCRM_CONSULTORIA_SIM_ID) {
-            return ['category_id' => GeraroptndEnums::CATEGORIA_CONSULTORIA, 'stage_id' => GeraroptndEnums::STAGE_ID_TRIAGEM_CONSULTORIA];
-        }
-
         $tipoProcessoTexto = $this->dealItem['ufCrm_1650979003']['texto'] ?? 'Não definido';
         $tipoNormalizado = strtolower(trim($tipoProcessoTexto));
+        $processType = $this->getProcessType();
 
-        if ($this->getProcessType() == 1) { // Solicitando Diagnóstico
+        // 1. Prioridade Absoluta: Solicitar Diagnóstico (sempre vai para Diagnóstico)
+        if ($processType == 1) { // 1 = ETAPA_SOLICITAR_DIAGNOSTICO
             $vaiParaRelatorio = in_array($tipoNormalizado, ['administrativo', 'administrativo (anexo v)', 'administrativo anexo 5', 'contencioso ativo']) || empty($tipoProcessoTexto) || $tipoProcessoTexto === 'Não definido';
             if ($vaiParaRelatorio) {
                 return ['category_id' => GeraroptndEnums::CATEGORIA_RELATORIO_PRELIMINAR, 'stage_id' => GeraroptndEnums::FASE_TRIAGEM_RELATORIO];
@@ -91,7 +87,15 @@ class OrganizarDadosService
             return ['category_id' => GeraroptndEnums::CATEGORIA_CONTENCIOSO, 'stage_id' => GeraroptndEnums::FASE_TRIAGEM];
         }
 
-        if ($this->getProcessType() == 2 || $this->getProcessType() == 3) { // Concluído
+        // 2. Se for "Concluído" (2 ou 3)
+        if ($processType == 2 || $processType == 3) {
+            // Verifica o campo Consultoria apenas neste momento
+            $consultoriaValor = $this->dealItem['ufCrm_1737406675']['valor'] ?? null;
+            if ($consultoriaValor === GeraroptndEnums::UFCRM_CONSULTORIA_SIM_ID) {
+                return ['category_id' => GeraroptndEnums::CATEGORIA_CONSULTORIA, 'stage_id' => GeraroptndEnums::STAGE_ID_TRIAGEM_CONSULTORIA];
+            }
+
+            // Se não for consultoria, segue a lógica normal de concluído
             if ($tipoNormalizado === 'administrativo') {
                 return ['category_id' => GeraroptndEnums::CATEGORIA_OPERACIONAL, 'stage_id' => GeraroptndEnums::FASE_TRIAGEM_OPERACIONAL];
             }
@@ -101,41 +105,25 @@ class OrganizarDadosService
         return ['category_id' => null, 'stage_id' => null];
     }
 
-    private function extrairListaDeCampo(array $item, string $campo, bool $filtrarNegativos = false): array
+    private function extrairListaDeCampo(array $item, string $campo): array
     {
-        if (empty($item[$campo]['texto'])) {
+        $valor = $item[$campo]['valor'] ?? [];
+        
+        if (empty($valor)) {
             return [];
         }
 
-        $texto = $item[$campo]['texto'];
-        $valores = is_array($texto) ? $texto : explode(',', $texto);
+        $valores = is_array($valor) ? $valor : [$valor];
 
-        if ($filtrarNegativos) {
-            return array_filter($valores, function ($valor) {
-                return !in_array(strtoupper(trim($valor)), ['N', 'NAO', 'NÃO', 'NENHUMA', 'NONE', '']);
-            });
-        }
-
-        return $valores;
-    }
-
-    public function getMapeamentoOportunidadesBitrix(): array
-    {
-        if ($this->oportunidadesMapeadasBitrix === null) {
-            $entityTypeId = 2; // Deals
-            $campoOportunidadeId = 'ufCrm_1646069163997'; // ID do campo "Oportunidade"
-
-            $camposCrm = BitrixHelper::consultarCamposCrm($entityTypeId);
-            $mapeamento = [];
-
-            if (isset($camposCrm[$campoOportunidadeId]['items'])) {
-                foreach ($camposCrm[$campoOportunidadeId]['items'] as $item) {
-                    $mapeamento[$item['VALUE']] = $item['ID'];
-                }
+        // Se o valor vier no formato Bitrix CRM Bond (ex: "D_123" ou "C_456")
+        // No caso de cards do novo funil (Deals), o prefixo é "D_"
+        return array_map(function ($v) {
+            if (is_string($v) && strpos($v, '_') !== false) {
+                $partes = explode('_', $v);
+                return end($partes);
             }
-            $this->oportunidadesMapeadasBitrix = $mapeamento;
-        }
-        return $this->oportunidadesMapeadasBitrix;
+            return (string)$v;
+        }, $valores);
     }
 
     public function getDealItem(): array

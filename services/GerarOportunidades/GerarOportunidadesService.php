@@ -22,19 +22,19 @@ class GerarOportunidadesService
         $empresas = $this->organizarDadosService->getEmpresas();
         $oportunidadesOferecidas = $this->organizarDadosService->getOportunidadesOferecidas();
         $oportunidadesConvertidas = $this->organizarDadosService->getOportunidadesConvertidas();
-        $mapeamentoOportunidadesBitrix = $this->organizarDadosService->getMapeamentoOportunidadesBitrix();
+        // $mapeamentoOportunidadesBitrix = $this->organizarDadosService->getMapeamentoOportunidadesBitrix(); // Removed
 
         $dealsExistentesResult = BitrixHelper::listarItensCrm(2, [
             'ufcrm_1707331568' => [$dealId]
-        ], ['companyId', 'ufCrm_1646069163997']);
+        ], ['companyId', 'ufCrm_1772040430']);
         
         $dealsExistentes = [];
         if ($dealsExistentesResult['success'] && !empty($dealsExistentesResult['items'])) {
             foreach ($dealsExistentesResult['items'] as $deal) {
-                if (isset($deal['companyId'], $deal['ufCrm_1646069163997'])) {
+                if (isset($deal['companyId'], $deal['ufCrm_1772040430'])) {
                     $dealsExistentes[] = [
                         'companyId' => (string)$deal['companyId'],
-                        'opportunityId' => (string)$deal['ufCrm_1646069163997']
+                        'opportunityId' => (string)$deal['ufCrm_1772040430']
                     ];
                 }
             }
@@ -44,18 +44,18 @@ class GerarOportunidadesService
         
         $combinacoesDesejadas = [];
         foreach ($empresas as $empresa) {
-            foreach ($oportunidadesParaUsar as $nomeOportunidade) {
-                $opportunityIdBitrix = $mapeamentoOportunidadesBitrix[$nomeOportunidade] ?? null;
+            foreach ($oportunidadesParaUsar as $opportunityId) { // Now directly iterating over IDs
+                // $opportunityIdBitrix = $mapeamentoOportunidadesBitrix[$nomeOportunidade] ?? null; // Removed
 
-                if ($opportunityIdBitrix !== null) {
+                // if ($opportunityIdBitrix !== null) { // Simplified logic
                     $combinacoesDesejadas[] = [
                         'companyId' => (string)$empresa,
-                        'opportunityId' => (string)$opportunityIdBitrix,
-                        'opportunityName' => $nomeOportunidade
+                        'opportunityId' => (string)$opportunityId, // Use the ID directly
+                        // 'opportunityName' => $nomeOportunidade // Removed
                     ];
-                } else {
-                    LogHelper::logGerarOportunidade("WARNING: Oportunidade '{$nomeOportunidade}' não encontrada no mapeamento para o campo ufCrm_1646069163997. Deal ID: {$dealId}");
-                }
+                // } else { // Removed
+                //     LogHelper::logGerarOportunidade("WARNING: Oportunidade '{$nomeOportunidade}' não encontrada no mapeamento para o campo ufCrm_1646069163997. Deal ID: {$dealId}"); // Removed
+                // } // Removed
             }
         }
         
@@ -111,19 +111,19 @@ class GerarOportunidadesService
         $empresas = $this->organizarDadosService->getEmpresas();
         $oportunidadesOferecidas = $this->organizarDadosService->getOportunidadesOferecidas();
         $oportunidadesConvertidas = $this->organizarDadosService->getOportunidadesConvertidas();
-        $mapeamentoOportunidadesBitrix = $this->organizarDadosService->getMapeamentoOportunidadesBitrix();
+        // $mapeamentoOportunidadesBitrix = $this->organizarDadosService->getMapeamentoOportunidadesBitrix(); // Removed
 
         $dealsExistentesResult = BitrixHelper::listarItensCrm(2, [
             'ufcrm_1707331568' => [$dealId]
-        ], ['companyId', 'ufCrm_1646069163997']);
+        ], ['companyId', 'ufCrm_1772040430']);
         
         $dealsExistentes = [];
         if ($dealsExistentesResult['success'] && !empty($dealsExistentesResult['items'])) {
             foreach ($dealsExistentesResult['items'] as $deal) {
-                if (isset($deal['companyId'], $deal['ufCrm_1646069163997'])) {
+                if (isset($deal['companyId'], $deal['ufCrm_1772040430'])) {
                     $dealsExistentes[] = [
                         'companyId' => (string)$deal['companyId'],
-                        'opportunityId' => (string)$deal['ufCrm_1646069163997']
+                        'opportunityId' => (string)$deal['ufCrm_1772040430']
                     ];
                 }
             }
@@ -133,19 +133,19 @@ class GerarOportunidadesService
         
         $combinacoesDesejadas = [];
         foreach ($empresas as $empresa) {
-            foreach ($oportunidadesParaUsar as $nomeOportunidade) {
-                // AQUI: Usar o mapeamento VALUE para ID
-                $opportunityIdBitrix = $mapeamentoOportunidadesBitrix[$nomeOportunidade] ?? null;
+            foreach ($oportunidadesParaUsar as $opportunityId) { // Now directly iterating over IDs
+                // AQUI: Usar o mapeamento VALUE para ID // Removed
+                // $opportunityIdBitrix = $mapeamentoOportunidadesBitrix[$nomeOportunidade] ?? null; // Removed
 
-                if ($opportunityIdBitrix !== null) {
+                // if ($opportunityIdBitrix !== null) { // Simplified logic
                     $combinacoesDesejadas[] = [
                         'companyId' => (string)$empresa,
-                        'opportunityId' => (string)$opportunityIdBitrix, // Usar o ID mapeado
-                        'opportunityName' => $nomeOportunidade
+                        'opportunityId' => (string)$opportunityId, // Usar o ID mapeado
+                        // 'opportunityName' => $nomeOportunidade // Removed
                     ];
-                } else {
-                    LogHelper::logGerarOportunidade("WARNING: Oportunidade '{$nomeOportunidade}' não encontrada no mapeamento para o campo ufCrm_1646069163997. Deal ID: {$dealId}");
-                }
+                // } else { // Removed
+                //     LogHelper::logGerarOportunidade("WARNING: Oportunidade '{$nomeOportunidade}' não encontrada no mapeamento para o campo ufCrm_1646069163997. Deal ID: {$dealId}"); // Removed
+                // } // Removed
             }
         }
         
@@ -196,7 +196,7 @@ class GerarOportunidadesService
                 $dealCompleto['companyId'] = [(int)$combinacao['companyId']];
             }
             if (!empty($combinacao['opportunityId'])) {
-                $dealCompleto['ufCrm_1646069163997'] = $combinacao['opportunityId']; // Alterado para enviar como string, não array
+                $dealCompleto['ufCrm_1772040430'] = $combinacao['opportunityId']; 
             }
             if (!empty($dealId)) {
                 $dealCompleto['ufcrm_1707331568'] = [$dealId];
